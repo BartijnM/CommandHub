@@ -35,7 +35,7 @@ De server maakt één `AppState` met `Arc<ToolRegistry>` en `Arc<ExecutionServic
 
 `try_acquire` controleert de shutdownstatus en houdt de leesbewaker vast tijdens capaciteitsreservering. `begin_shutdown` bewaart `true` via `send_replace`, ook zonder ontvangers. Nieuwe uitvoeringen krijgen daarna `Cancelled`. `shutdown().await` signaleert shutdown en wacht op alle vier permits. Dat bewijst afronding van de uitvoeringsfutures en hun opruimpogingen, maar verzamelt geen opruimfouten en is op zichzelf geen processtatuscontrole.
 
-Bij Ctrl+C roept `main.rs` eerst `begin_shutdown` aan. Axum sluit graceful af; daarna wacht `shutdown().await` op capaciteitsvrijgave. Pas vervolgens wordt een eventuele serverfout doorgegeven. Normaal stoppen verloopt via expliciete annulering of shutdown. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet; daarbij kan geen normaal uitvoeringsresultaat of afgewachte opruimfout worden teruggegeven. Dit vangnet is getest op Windows, nog niet op Linux.
+`main.rs` geeft de Ctrl+C-future aan `server::serve`. Die signaleert eerst `begin_shutdown`, laat Axum graceful afsluiten en wacht daarna op `shutdown().await` voordat een serverfout wordt doorgegeven. De signaalbron kan in TCP-tests door een kanaal worden vervangen; productie en test gebruiken hetzelfde serverafsluitpad. Normaal stoppen verloopt via expliciete annulering of shutdown. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet. Omdat die Tokio-vlag op Unix alleen de directe child stopt, bewaart `ProcessGuard` de wrapper en vraagt bij drop een groepssignaal via `start_kill` aan. Op Unix probeert `stop_child` de groep ook te beëindigen nadat de leider is afgerond; ESRCH betekent dat de groep al verdwenen is. Bij drop kan geen normaal uitvoeringsresultaat of afgewachte opruimfout worden teruggegeven. Dit vangnet is getest op Windows, nog niet op Linux.
 
 ## HTTP-adapter en tests
 
@@ -49,4 +49,10 @@ Maak onderscheid tussen ongeldige invoer, onbekende tool, capaciteitsgebrek, sta
 
 ## Platformbeleid
 
-Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Alleen Windows heeft nu een controle op het verdwijnen van het subprocess via `tasklist`. `stop_child` slaat `kill()` over bij een afgerond direct child; het bijbehorende Windows-scenario slaagt, maar bewijst geen identiek gedrag op Linux of welke wrapperactie voor opruiming zorgt.
+Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Windows controleert het verdwijnen via async `tasklist`. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbreken en zombie/exitstatus betekenen beëindigd, niet noodzakelijk al gereaped. Alleen Windows is uitgevoerd. De voorbereide Unix-groepsopruiming en dropbewaker moeten nog op Ubuntu worden geverifieerd.
+
+## Aanvullende verificatie en logging
+
+`src/tests/http_execution_tests.rs` start echte loopbackservers en TCP-clients. Gecontroleerde tools starten een eigen subprocess en schrijven beide PID's weg; een bestandssignaal geeft ze vrij. Daardoor bewijzen de tests vier gelijktijdige uitvoeringen, een vijfde afwijzing, capaciteitsherstel en shutdown tijdens een actieve procesboom. De minimale testclient gebruikt HTTP/1.0 met connection-close zodat geen chunked decoder of extra dependency nodig is.
+
+`src/tests/process_checks.rs` deelt platformafhankelijke processtatuscontroles. Logging blijft in de kernwrapper: alleen registry-toolnaam (anders `<unknown>`), resultaat, exitcode/foutcategorie en duur. Er worden geen argumenten, executablepaden of stdout/stderr opgenomen. De tijdelijke tracing-subscribers van loggingtests zijn in childprocessen geïsoleerd om parallelle testinteractie te vermijden.

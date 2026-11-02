@@ -11,7 +11,7 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F03 bevat een gedeelde, begrensde procesuitvoerder en `POST /tools/{toolname}` voor geconfigureerde tools zonder dynamische parameters. De kern levert stdout, stderr, exitcode, succes en duur en begrenst output, tijd en capaciteit. Expliciete annulering en shutdown zijn aangesloten. De HTTP-route is op Windows automatisch en handmatig geverifieerd. Gerapporteerde stand op 2026-10-30: **55 geslaagde tests, 2 genegeerde helpers**. Logging, echte HTTP-concurrency, formatter/Clippy en als laatste Linux blijven open. F03 blijft In uitvoering.
+F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. Linux-controles en Unix-groepsopruiming zijn voorbereid maar niet op Linux uitgevoerd. F03 blijft In uitvoering tot Linux-verificatie en review/merge.
 
 ## Hoe werkt de code?
 
@@ -29,11 +29,11 @@ F03 bevat een gedeelde, begrensde procesuitvoerder en `POST /tools/{toolname}` v
 
 Shutdown gebruikt `watch::Sender<bool>`: `false` is actief, `true` betekent afsluiten. Elke uitvoering maakt vóór processtart een ontvanger. `try_acquire` houdt de leesbewaker vast tijdens controle en reservering, zodat shutdown niet daartussen kan worden ingesteld. `send_replace(true)` bewaart de status ook zonder ontvangers. Nieuwe uitvoeringen krijgen `Cancelled`; actieve uitvoeringen gaan door hun opruimroute.
 
-`shutdown().await` vraagt alle vier permits tegelijk aan en wacht zo op afronding van bestaande uitvoeringsfutures. Hij verzamelt geen opruimfouten en bewijst zonder PID-controle niet dat elk proces weg is. Bij Ctrl+C signaleert `main.rs` eerst shutdown, laat Axum graceful afsluiten en wacht daarna op de uitvoeringsservice, ook voordat een eventuele serverfout wordt doorgegeven.
+`shutdown().await` vraagt alle vier permits tegelijk aan en wacht zo op afronding van bestaande uitvoeringsfutures. Hij verzamelt geen opruimfouten en bewijst zonder PID-controle niet dat elk proces weg is. `main.rs` geeft de Ctrl+C-future aan `server::serve`. Dat signaleert shutdown, laat Axum graceful afsluiten en wacht op de uitvoeringsservice, ook vóór het doorgeven van een serverfout. TCP-tests injecteren een kanaalsignaal in hetzelfde serverpad.
 
 `AppState` bevat gedeelde `Arc`-verwijzingen naar registry en executor. `Clone` kopieert deze verwijzingen, niet de service. `FromRef<AppState>` laat de ontdekcontroller alleen de registry ontvangen. `async move` geeft de Ctrl+C-future een eigen serviceverwijzing. `state.clone()` voorkomt dat de router de enige state verbruikt voordat shutdown die opnieuw nodig heeft.
 
-**Stopbeleid:** expliciete annulering/shutdown is de normale route met afgewachte opruimpoging. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet. Daarbij is geen normaal uitvoeringsresultaat of afgewachte opruimfout beschikbaar. Na `abort` wacht de test de taak af voordat capaciteit en PID worden gecontroleerd. Deze scenario's zijn getest op Windows; Linux en expliciet HTTP-clientdisconnectbeleid blijven open.
+**Stopbeleid:** expliciete annulering/shutdown is de normale route met afgewachte opruimpoging. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet, aangevuld met `ProcessGuard` dat op Unix de groepswrapper een stopsignaal laat sturen. Daarbij is geen normaal uitvoeringsresultaat of afgewachte opruimfout beschikbaar. Na `abort` wacht de test de taak af voordat capaciteit en PID worden gecontroleerd. Deze scenario's zijn getest op Windows; Linux en expliciet HTTP-clientdisconnectbeleid blijven open.
 
 ## HTTP-adapter
 
@@ -49,21 +49,26 @@ Alle vijf testmodules staan onder `src/tests/`. De productiebestanden koppelen z
 
 De testbinary start genegeerde helpers als aparte processen. De subprocess-helper schrijft een PID-bestand en start `ping` op Windows of `sleep` op Unix. Markers via `--skip` kiezen grote output of een direct child dat eerder terugkeert; drop van een `std::process::Child` beëindigt het subprocess niet automatisch. Oude PID-bestanden worden vooraf verwijderd; scenario's hebben verschillende namen met het bovenliggende test-PID. `join!` laat uitvoering en signaalgever voortgang maken totdat een geldig PID beschikbaar is.
 
-De zeven Windows-opruimscenario's gebruiken `assert_windows_process_stopped`. De proceslijst wordt async opgevraagd met 3 s timeout en `kill_on_drop(true)`; gedurende maximaal 5 s wordt elke 50 ms opnieuw gecontroleerd totdat het PID ontbreekt. Dat voorkomt een enkele timinggevoelige momentopname. Eventuele blokkerende OS-processtart krijgt hiermee geen harde tijdsgarantie. Linux heeft nog geen PID-controle.
+De zeven opruimscenario's en de TCP-tests delen nu `process_checks::assert_stopped`. Op Windows wordt de proceslijst async opgevraagd met 3 s timeout en `kill_on_drop(true)`; gedurende maximaal 5 s wordt elke 50 ms opnieuw gecontroleerd totdat het PID ontbreekt. Dat voorkomt een enkele timinggevoelige momentopname. Eventuele blokkerende OS-processtart krijgt hiermee geen harde tijdsgarantie. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbrekende processen en zombies gelden als beëindigd. Deze platformtak is lokaal niet gecompileerd of uitgevoerd.
 
-## Verificatie — actuele stand 2026-10-30
+## Verificatie — actuele stand 2026-11-02
 
-| Controle | Resultaat en beperkingen |
+| Controle | Resultaat |
 | --- | --- |
-| `cargo test --locked` na testverplaatsing | Gerapporteerd: 55 passed, 0 failed, 2 ignored, 0 filtered out; 2,89 s op Windows |
-| Echte `POST /tools/git_version`, JSON `{}` | Succes; stdout `git version 2.55.0.windows.3\n`, lege stderr, exitcode 0, duration 61 ms |
-| Status en Ctrl+C | Status werkt; terminalprompt keert terug bij Ctrl+C zonder actieve tools |
-| Formatter en Clippy | Niet opnieuw geverifieerd na alle uitbreidingen; eerdere afkeur op 2026-10-29 is historisch |
-| Linux | Niet uitgevoerd; lokaal geen Linux-omgeving. Als laatste behandelen via te controleren CI-opzet |
+| `cargo fmt --check` | Geslaagd op Windows |
+| `cargo clippy --all-targets --locked -- -D warnings` | Geslaagd op Windows |
+| `cargo test --locked` | 59 passed, 0 failed, 4 ignored, 0 filtered out; 5,72 s op Windows |
+| `cargo build --locked` | Geslaagd op Windows |
+| Echte TCP-concurrency | Vier bevestigde actieve procesbomen, vijfde request 503 binnen testbewaking; na vrijgave vier HTTP 200-responses en succesvolle nieuwe uitvoering |
+| Actieve HTTP-shutdown | Hetzelfde afsluitpad als Ctrl+C, geïnjecteerd signaal, client 503, server afgerond, child/subprocess gestopt en geen nieuwe TCP-verbinding |
+| Logging | Succes/niet-nul exit en onbekende tool gecontroleerd; argumentwaarden, clientwaarde en procesoutput ontbreken in testlogs |
+| Linux | Niet uitgevoerd: WSL niet geïnstalleerd; alleen Windows-target aanwezig. Ubuntu-CI moet platformacceptatie aantonen |
 
-De suite omvat configuratie, uitvoering, resultaatmodel, controller en router. De twee genegeerde functies zijn helpers die door andere tests expliciet worden gestart, geen overgeslagen acceptatietests. HTTP-controles bewaken succes, niet-nul exit, 400/404/413/500/502/503/504, parameters afwijzen, shutdownafwijzing en bodygrens. De 503-capaciteitstest reserveert vier permits; vijf echte gelijktijdige HTTP-verzoeken en Ctrl+C tijdens actieve HTTP-uitvoering zijn nog niet getest.
+De twee nieuwe HTTP-helpers verklaren de stijging van 2 naar 4 genegeerde functies. Ze worden expliciet als child gestart en zijn geen overgeslagen acceptatietests. De TCP-testclient gebruikt HTTP/1.0 met connection-close; alle requests lopen over echte sockets. PID-bestanden bevestigen dat processen gestart zijn vóór capaciteit/shutdown wordt beoordeeld. De tests controleren zowel direct child als subprocess.
 
-Tijdens deze documentatie-update zijn de actuele code en tests nagelezen. Er zijn geen Cargo- of Git-commando's uitgevoerd; de gerapporteerde controles zijn vastgelegd. Alleen documentatie is gewijzigd.
+De OS-signaalbron zelf is niet tijdens actieve uitvoering geautomatiseerd aangeroepen: de integratietest gebruikt een kanaal om hetzelfde `server::serve`-afsluitpad te activeren. Eerder is echte Ctrl+C zonder actieve tools handmatig gecontroleerd. Op 2026-10-30 is tevens een echte POST naar `git_version` vastgelegd (succes, exitcode 0, 61 ms).
+
+De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests en build uit. Er is een jobtimeout van 15 minuten toegevoegd; de workflow is niet gestart of gepubliceerd. Geen Git-commando's, commit, push of merge uitgevoerd.
 
 ## Problemen en oplossingen
 
@@ -72,7 +77,7 @@ Tijdens deze documentatie-update zijn de actuele code en tests nagelezen. Er zij
 - State zonder `.clone()` aan de router doorgeven gaf E0382 bij later shutdowngebruik. Gedeelde verwijzingen klonen behoudt beide eigenaars.
 - Blokkerend `tasklist` en één momentopname zijn vervangen door async begrensd pollen. `from_utf8_lossy` voorkomt fouten door procesnamen met niet-UTF-8-bytes.
 - Testcode maakte productiebestanden lang. Verplaatsing naar `src/tests/` houdt code gescheiden met behoud van private toegang en helperpaden.
-- Naamopschoning van de helper en `_cancellation`, overige formatter-/lintmeldingen en Linux-opruimsemantiek zijn nog niet als afgerond geverifieerd.
+- Windows-formatter-/lintmeldingen zijn opgelost: overbodige haakjes, ongebruikte lint-expectation en samen te voegen voorwaarden. De zombie-lint bij de helper met vroegtijdige parent-exit heeft een expliciete `expect` met reden: het bewust achterlaten is precies het scenario dat de test moet opvangen. Linux-opruimsemantiek blijft ongeverifieerd.
 
 ## Werksessies
 
@@ -135,8 +140,18 @@ Tijdens deze documentatie-update zijn de actuele code en tests nagelezen. Er zij
 - Geordend: alle testmodules naar `src/tests/` verplaatst; volledige suite opnieuw geslaagd.
 - Overdracht: eerst logging en echte HTTP-concurrency, daarna Windows-eindcontroles en documentatie, als laatste Linux. F03 blijft In uitvoering; geen commit/merge uitgevoerd.
 
+### 2026-11-02 — Resterende F03-code en Windows-eindcontrole
+
+- Expliciet toegestaan: resterende F03-codewijzigingen, controles en algemene documentatie zelfstandig uitvoeren. Geen Git-commando's.
+- Loggingwrapper en foutcategorieën nagelezen. De isolatiehelper is aan het begin van beide loggingtests aangesloten en een dubbele aanroep is verwijderd. De gewone parallelle suite isoleert de tijdelijke subscribers nu per childproces.
+- `server::serve` toegevoegd: de signaalbron wordt geïnjecteerd, terwijl de afsluitvolgorde gelijk blijft aan de productiecode met Ctrl+C. Rusts generieke `impl Future<Output = ()>` laat een kanaal in tests toe zonder HTTP in de uitvoeringskern te brengen.
+- Echte TCP-concurrency met vier actieve child/subprocess-paren toegevoegd, vijfde request 503 en succesvolle uitvoering na vrijgave. Nieuwe subprocess-helpers hebben startbevestiging en een vrijgavesignaal; geen willekeurige wachttijd om capaciteit te veronderstellen.
+- Actieve HTTP-shutdown getest: 503-response, afgewachte server, beide PID's gestopt en geen geaccepteerde nieuwe verbinding. Op Windows kan een verbinding naar een gesloten poort eerst timen-out; de test faalt alleen bij een werkelijk geslaagde verbinding.
+- Gedeelde proceschecks ingevoerd. Lokale broncontrole van `process-wrap` wees uit dat Tokio kill-on-drop op Unix alleen de directe child stopt; `ProcessGuard` vraagt daar bij drop ook groepsbeëindiging. `stop_child` probeert op Unix de groep ook na parent-exit te stoppen. Windows behoudt JobObject-gedrag.
+- Linux-`/proc`-controle en een Linux-specifieke controle van de eigen PID toegevoegd. Zombies zijn niet meer actief, maar kunnen nog op reaping wachten. Linux is niet uitgevoerd; `wsl --list --quiet` meldt niet geïnstalleerd en de toolchain heeft alleen de Windows-target.
+- Formatter toegepast; Clippy met warnings als errors, volledige tests en build geslaagd op Windows. Laatste resultaat: 59 geslaagd, 4 genegeerde helpers. Ubuntu/Windows-workflow nagelezen en jobtimeout toegevoegd.
+- Overdracht: voer Ubuntu-CI uit zodra repositorywijzigingen via de normale werkwijze beschikbaar zijn. Platformfouten oplossen en resultaten vastleggen voordat F03 naar Review/Klaar kan.
+
 ## Vervolg
 
-Behandel nu het todo-punt uitvoeringslogging met toolnaam, uitkomst/foutcategorie en duur, zonder parameterwaarden, executablepaden, geheimen of stdout/stderr. Voeg daarna een integratiecontrole met vijf echte gelijktijdige requests en shutdown tijdens actieve HTTP-uitvoering toe. Voer formatter, Clippy en volledige tests uit en los eventuele meldingen op. Als laatste Linux-procescontrole en daadwerkelijke verificatie via CI; lokaal is geen Linux beschikbaar.
-
-Blijf werken met kleine controleerbare leerstappen, exacte bestandslocaties en begrijpelijke Rust-uitleg. Benoem het behandelde todo-punt en de geverifieerde afronding. Geef volledige functies wanneer dat het invoeren verduidelijkt. Bestanden lezen mag; wijzigingen en overige uitvoering alleen op expliciet verzoek. Documentatie algemeen formuleren en alleen op verzoek aanpassen. Geen Git-commando's uitvoeren.
+Alle uitvoerbare Windows-taken zijn gecontroleerd. Resterend: Linux via de bestaande CI-matrix compileren, linten en uitvoeren, zo nodig Unix-procesopruiming corrigeren en de resultaten documenteren. F03 blijft In uitvoering tot platformacceptatie; daarna review en merge volgens de projectwerkwijze. Geen Git-commando's uitvoeren zonder nieuwe expliciete opdracht.

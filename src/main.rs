@@ -5,6 +5,15 @@ mod execution;
 mod models;
 mod registry;
 mod routes;
+mod server;
+
+#[cfg(test)]
+#[path = "tests/http_execution_tests.rs"]
+mod http_execution_tests;
+
+#[cfg(test)]
+#[path = "tests/process_checks.rs"]
+mod process_checks;
 
 use std::error::Error;
 use std::sync::Arc;
@@ -36,21 +45,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000").await?;
     tracing::info!(adres = %listener.local_addr()?, "CommandHub gestart");
 
-    // Start de Axum-server met de router en registreer een handler voor Ctrl+C
-    let execution = Arc::clone(&state.execution);
-
-    let server_result = axum::serve(listener, routes::router(state.clone()))
-        .with_graceful_shutdown(async move {
-            if let Err(fout) = tokio::signal::ctrl_c().await {
-                tracing::error!(error = %fout, "Ctrl+C afhandeling mislukt");
-            }
-
-            execution.begin_shutdown();
-        })
-        .await;
-
-    state.execution.shutdown().await;
-    server_result?;
+    // Dezelfde afsluitroute wordt ook met actieve HTTP-uitvoeringen getest.
+    server::serve(listener, state, async {
+        if let Err(fout) = tokio::signal::ctrl_c().await {
+            tracing::error!(error = %fout, "Ctrl+C afhandeling mislukt");
+        }
+    })
+    .await?;
 
     Ok(())
 }

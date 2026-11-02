@@ -54,17 +54,19 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - [x] Expliciete annulering met `oneshot` en `tokio::select!` implementeren; signaal, gesloten kanaal en subprocessopruiming met capaciteitsvrijgave op Windows testen.
 - [x] Server-shutdown signaleren, nieuwe uitvoeringen weigeren en capaciteitsvrijgave afwachten; Windows-subprocesstest, wachtgedrag en Ctrl+C zonder actieve tools controleren.
 - [x] Future-drop en Tokio-taakafbreking op Windows afzonderlijk testen; expliciete annulering/shutdown als normale stoproute en `KillOnDrop` als vangnet vastleggen. Linux valt onder de platformcontrole hieronder.
-- [ ] Procesboomopruiming bij timeout, outputoverschrijding, eerder afgerond child en annulering op Linux rechtstreeks controleren en uitvoeren.
+- [x] Linux-processtatuscontroles via `/proc` voorbereiden en de zeven opruimscenario's ook daarop aansluiten; zombieprocessen als beëindigd onderscheiden.
+- [x] Unix-groepsopruiming na een afgeronde leider en een groepsbewaker bij future-drop voorbereiden op basis van de lokale wrapperimplementatie.
+- [ ] Linux-code daadwerkelijk compileren, linten en uitvoeren via Ubuntu-CI; procesopruiming en eventuele platformfouten verifiëren.
 - [x] Windows-procescontrole async maken met 3 s timeout per `tasklist`, `kill_on_drop` en herhaald controleren tot maximaal 5 s met intervallen van 50 ms. Geen harde OS-processtartgarantie.
 - [x] POST /tools/{toolname} aansluiten met gedeelde state, uitsluitend `{}`, 16 KiB bodylimiet, resultaatmodel en vaste foutresponses; Windows-routetests en echte POST controleren.
 - [x] Gerichte tests voor succesvolle/niet-succesvolle exit, timeout, outputlimiet en capaciteitsvrijgave toevoegen.
 - [x] Reproduceerbare subprocess-helper met PID-bestand, optionele grote output en vroegtijdig afgerond child toevoegen; gecontroleerde annulering laten wachten op een leesbaar PID.
 - [x] HTTP-tests voor succes, niet-nul exit, 400/404/413/500/502/503/504, bodygrens, parameterafwijzing en shutdownafwijzing uitvoeren op Windows.
 - [x] Testmodules scheiden van productiecode onder `src/tests/` met behoud van logische modulepaden; volledige suite opnieuw controleren.
-- [ ] Uitvoeringslogging toevoegen en controleren; geen geheimen, parameterwaarden, executablepaden of procesoutput loggen.
-- [ ] Vijf echte gelijktijdige HTTP-uitvoeringen testen; de bestaande 503-test reserveert alleen vier permits.
-- [ ] Ctrl+C tijdens actieve HTTP-uitvoering handmatig of via integratie testen.
-- [ ] Formatter-/lintmeldingen oplossen en alle verplichte Cargo-controles opnieuw uitvoeren.
+- [x] Uitvoeringslogging met registry-toolnaam, uitkomst/foutcategorie en duur toevoegen; handmatig en met geïsoleerde tests controleren dat clientwaarden, argumentwaarden en procesoutput ontbreken.
+- [x] Vijf echte HTTP-verzoeken testen: vier actieve procesbomen, vijfde direct 503, daarna vier succesvolle responses en aantoonbaar capaciteitsherstel.
+- [x] Hetzelfde serverafsluitpad als Ctrl+C via integratie testen met actief TCP-request, 503-response, beëindigde child/subprocess en gesloten luisterpoort. Signaalbron geïnjecteerd; geen OS-Ctrl+C verstuurd.
+- [x] Windows-formatter-/lintmeldingen oplossen; formatter, Clippy, volledige tests en build op 2026-11-02 uitvoeren.
 
 ## Acceptatiecriteria
 
@@ -78,12 +80,13 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - GitHub issue: nog vast te leggen.
 - Branch: feature/F03-procesuitvoering.
 - Pull request: nog niet aangemaakt.
-- Tests/handmatige verificatie (2026-10-30, Windows): volledige suite na verplaatsing naar `src/tests/`: 55 passed, 0 failed, 2 ignored, 0 filtered out, 2,89 s (gerapporteerd resultaat). Echte POST naar `git_version`: succes, lege stderr, exitcode 0, duration 61 ms. Statusroute en Ctrl+C zonder actieve tools werken. Linux, logging, echte HTTP-concurrency en formatter-/Clippy-eindcontrole blijven open. Zie de [F03-notitie](../../notities/F03-procesuitvoering.md).
+- Tests/verificatie (2026-11-02, Windows): formatter, Clippy (`-D warnings`), build en volledige suite slagen: 59 passed, 0 failed, 4 ignored. Echte TCP-concurrency en shutdown met actieve procesboom slagen. Linux voorbereid maar niet uitgevoerd; WSL en Linux-target ontbreken. De Ubuntu/Windows-CI-matrix is nagelezen en begrensd op 15 minuten, niet gestart. Zie de [F03-notitie](../../notities/F03-procesuitvoering.md).
 - [Featurenotitie](../../notities/F03-procesuitvoering.md).
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd.
-- [x] Documentatie en notitie bijgewerkt tot de gecontroleerde stand van 2026-10-30.
-- [x] Voortgang bijgewerkt tot de gecontroleerde stand van 2026-10-30.
+- [x] Relevante Windows-controles geslaagd.
+- [ ] Linux-controles geslaagd en volledige platformacceptatie aangetoond.
+- [x] Documentatie en notitie bijgewerkt tot de gecontroleerde stand van 2026-11-02.
+- [x] Voortgang bijgewerkt tot de gecontroleerde stand van 2026-11-02.
 - [ ] PR gemerged; pas daarna status Klaar.

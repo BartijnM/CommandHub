@@ -3,6 +3,56 @@ use tokio::io::AsyncWriteExt;
 use super::*;
 use crate::config::{ConfigFile, ParameterDefinition, ParameterType};
 
+#[derive(Clone)]
+struct LogBuffer {
+    bytes: Arc<std::sync::Mutex<Vec<u8>>>,
+}
+
+impl std::io::Write for LogBuffer {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        self.bytes
+            .lock()
+            .map_err(|_| std::io::Error::other("logbuffer vergrendelen mislukt"))?
+            .extend_from_slice(bytes);
+
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+async fn run_logging_test_in_isolation(test_name: &str) -> bool {
+    const CHILD_MARKER: &str = "COMMANDHUB_LOGGING_TEST_CHILD";
+
+    if std::env::var(CHILD_MARKER).ok().as_deref() == Some(test_name) {
+        return false;
+    }
+
+    let test_program = std::env::current_exe().expect("het testprogramma moet beschikbaar zijn");
+
+    let mut command = tokio::process::Command::new(test_program);
+    command
+        .args(["--exact", test_name, "--nocapture"])
+        .env(CHILD_MARKER, test_name)
+        .kill_on_drop(true);
+
+    let output = tokio::time::timeout(Duration::from_secs(15), command.output())
+        .await
+        .expect("de geïsoleerde loggingtest moet tijdig afronden")
+        .expect("de geïsoleerde loggingtest moet starten");
+
+    assert!(
+        output.status.success(),
+        "geïsoleerde loggingtest mislukt:\n{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    true
+}
+
 fn test_registry(parameters: Vec<ParameterDefinition>) -> ToolRegistry {
     let config = ConfigFile {
         tools: vec![ToolDefinition {
@@ -16,57 +66,6 @@ fn test_registry(parameters: Vec<ParameterDefinition>) -> ToolRegistry {
     };
 
     ToolRegistry::new(config)
-}
-
-#[cfg(windows)]
-async fn windows_process_ids() -> Vec<u32> {
-    let mut command = tokio::process::Command::new("tasklist");
-    command.args(["/FO", "CSV", "/NH"]).kill_on_drop(true);
-
-    let output = tokio::time::timeout(Duration::from_secs(3), command.output())
-        .await
-        .expect("tasklist moet binnen drie seconden afronden")
-        .expect("de Windows-proceslijst moet opgevraagd kunnen worden");
-
-    assert!(output.status.success(), "tasklist moet succesvol eindigen");
-
-    let process_list = String::from_utf8_lossy(&output.stdout);
-
-    let process_ids: Vec<u32> = process_list
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| {
-            line.split("\",\"")
-                .nth(1)
-                .expect("elke procesregel moet een PID-kolom bevatten")
-                .trim_matches('"')
-                .parse::<u32>()
-                .expect("de PID-kolom moet een geldig getal bevatten")
-        })
-        .collect();
-
-    assert!(!process_ids.is_empty(), "de proceslijst mag niet leeg zijn");
-
-    process_ids
-}
-
-#[cfg(windows)]
-async fn assert_windows_process_stopped(process_id: u32) {
-    tokio::time::timeout(Duration::from_secs(5), async {
-        loop {
-            let process_ids = windows_process_ids().await;
-
-            if !process_ids.contains(&process_id) {
-                return;
-            }
-
-            tokio::time::sleep(Duration::from_millis(50)).await;
-        }
-    })
-    .await
-    .unwrap_or_else(|_| {
-        panic!("subprocess {process_id} is na vijf seconden nog niet als gestopt bevestigd");
-    });
 }
 
 #[cfg(any(windows, unix))]
@@ -92,6 +91,10 @@ async fn start_met_platformwrapper_en_wacht_op_succes() {
 
 #[test]
 #[ignore]
+#[expect(
+    clippy::zombie_processes,
+    reason = "Deze helper laat bewust een subprocess achter om procesboomopruiming te testen"
+)]
 fn subprocess_helper_bij_timeout() {
     #[cfg(windows)]
     let mut subprocess = std::process::Command::new("ping")
@@ -207,10 +210,7 @@ async fn stopt_subproces_bij_timeout() {
         "het subprocess-ID moet groter dan nul zijn"
     );
 
-    #[cfg(windows)]
-    {
-        assert_windows_process_stopped(subprocess_id).await;
-    }
+    crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
@@ -287,10 +287,7 @@ async fn stopt_subproces_bij_outputoverschrijding() {
         "het subprocess-ID moet groter dan nul zijn"
     );
 
-    #[cfg(windows)]
-    {
-        assert_windows_process_stopped(subprocess_id).await;
-    }
+    crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
@@ -364,10 +361,7 @@ async fn stopt_subproces_als_parent_al_is_afgerond() {
         "het subprocess-ID moet groter dan nul zijn"
     );
 
-    #[cfg(windows)]
-    {
-        assert_windows_process_stopped(subprocess_id).await;
-    }
+    crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
@@ -412,10 +406,10 @@ async fn stopt_subproces_bij_annulering() {
     let resultaat = tokio::time::timeout(Duration::from_secs(6), async {
         let annulering = async {
             loop {
-                if let Ok(text) = std::fs::read_to_string(&pid_file) {
-                    if text.parse::<u32>().is_ok() {
-                        break;
-                    }
+                if let Ok(text) = std::fs::read_to_string(&pid_file)
+                    && text.parse::<u32>().is_ok()
+                {
+                    break;
                 }
 
                 tokio::time::sleep(Duration::from_millis(10)).await;
@@ -465,10 +459,7 @@ async fn stopt_subproces_bij_annulering() {
         "het subprocess-ID moet groter dan nul zijn"
     );
 
-    #[cfg(windows)]
-    {
-        assert_windows_process_stopped(subprocess_id).await;
-    }
+    crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
@@ -511,10 +502,10 @@ async fn stopt_subproces_bij_shutdown() {
     let resultaat = tokio::time::timeout(Duration::from_secs(6), async {
         let shutdown = async {
             loop {
-                if let Ok(text) = std::fs::read_to_string(&pid_file) {
-                    if text.parse::<u32>().is_ok() {
-                        break;
-                    }
+                if let Ok(text) = std::fs::read_to_string(&pid_file)
+                    && text.parse::<u32>().is_ok()
+                {
+                    break;
                 }
 
                 tokio::time::sleep(Duration::from_millis(10)).await;
@@ -555,10 +546,7 @@ async fn stopt_subproces_bij_shutdown() {
         "het subprocess-ID moet groter dan nul zijn"
     );
 
-    #[cfg(windows)]
-    {
-        assert_windows_process_stopped(subprocess_id).await;
-    }
+    crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
@@ -603,10 +591,10 @@ async fn stopt_subproces_bij_drop_van_uitvoeringsfuture() {
 
         let subprocess_gestart = async {
             loop {
-                if let Ok(text) = std::fs::read_to_string(&pid_file) {
-                    if text.parse::<u32>().is_ok() {
-                        break;
-                    }
+                if let Ok(text) = std::fs::read_to_string(&pid_file)
+                    && text.parse::<u32>().is_ok()
+                {
+                    break;
                 }
 
                 tokio::time::sleep(Duration::from_millis(10)).await;
@@ -643,10 +631,7 @@ async fn stopt_subproces_bij_drop_van_uitvoeringsfuture() {
         "het subprocess-ID moet groter dan nul zijn"
     );
 
-    #[cfg(windows)]
-    {
-        assert_windows_process_stopped(subprocess_id).await;
-    }
+    crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
@@ -694,10 +679,10 @@ async fn stopt_subproces_bij_afbreken_van_taak() {
 
     let gestart = tokio::time::timeout(Duration::from_secs(6), async {
         loop {
-            if let Ok(text) = std::fs::read_to_string(&pid_file) {
-                if text.parse::<u32>().is_ok() {
-                    break;
-                }
+            if let Ok(text) = std::fs::read_to_string(&pid_file)
+                && text.parse::<u32>().is_ok()
+            {
+                break;
             }
 
             tokio::time::sleep(Duration::from_millis(10)).await;
@@ -738,10 +723,7 @@ async fn stopt_subproces_bij_afbreken_van_taak() {
         "het subprocess-ID moet groter dan nul zijn"
     );
 
-    #[cfg(windows)]
-    {
-        assert_windows_process_stopped(subprocess_id).await;
-    }
+    crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
@@ -1225,4 +1207,137 @@ async fn volle_capaciteit_geeft_http_503() {
             "message": "Uitvoercapaciteit bereikt"
         })
     );
+}
+
+#[tokio::test]
+async fn logt_onbekende_tool_zonder_clientwaarde() {
+    if run_logging_test_in_isolation("execution::tests::logt_onbekende_tool_zonder_clientwaarde")
+        .await
+    {
+        return;
+    }
+
+    use tracing::instrument::WithSubscriber;
+
+    let buffer = LogBuffer {
+        bytes: Arc::new(std::sync::Mutex::new(Vec::new())),
+    };
+    let writer = buffer.clone();
+
+    let subscriber = tracing_subscriber::fmt()
+        .without_time()
+        .with_ansi(false)
+        .with_max_level(tracing::Level::TRACE)
+        .with_writer(move || writer.clone())
+        .finish();
+
+    let registry = test_registry(Vec::new());
+    let service = ExecutionService::new();
+    let client_value = "niet_loggen_geheime_testwaarde_7391";
+
+    let result = service
+        .execute_parameterless(&registry, client_value)
+        .with_subscriber(subscriber)
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::UnknownTool)));
+
+    let bytes = buffer
+        .bytes
+        .lock()
+        .expect("de logbuffer moet leesbaar zijn")
+        .clone();
+
+    let logs = String::from_utf8(bytes).expect("de opgevangen logs moeten UTF-8 zijn");
+
+    assert!(logs.contains("Tooluitvoering afgewezen of mislukt"));
+    assert!(logs.contains("tool=\"<unknown>\""));
+    assert!(logs.contains("category=\"unknown_tool\""));
+    assert!(logs.contains("duration_ms="));
+    assert!(!logs.contains(client_value));
+}
+
+#[tokio::test]
+async fn logt_resultaten_zonder_argumenten_of_procesoutput() {
+    if run_logging_test_in_isolation(
+        "execution::tests::logt_resultaten_zonder_argumenten_of_procesoutput",
+    )
+    .await
+    {
+        return;
+    }
+
+    use tracing::instrument::WithSubscriber;
+
+    let buffer = LogBuffer {
+        bytes: Arc::new(std::sync::Mutex::new(Vec::new())),
+    };
+    let writer = buffer.clone();
+
+    let subscriber = tracing_subscriber::fmt()
+        .without_time()
+        .with_ansi(false)
+        .with_max_level(tracing::Level::TRACE)
+        .with_writer(move || writer.clone())
+        .finish();
+
+    let secret_marker = "commandhub-geheime-testwaarde-7391";
+    let success_registry = test_registry(Vec::new());
+
+    let failure_registry = ToolRegistry::new(ConfigFile {
+        tools: vec![ToolDefinition {
+            name: "git_fout".to_owned(),
+            description: "Test veilige logging van procesafloop".to_owned(),
+            command: "git".to_owned(),
+            arguments: vec![format!("--{secret_marker}")],
+            parameters: Vec::new(),
+            timeout: Some(10_000),
+        }],
+    });
+
+    let service = ExecutionService::new();
+
+    let (success, failure) = (async {
+        let success = service
+            .execute_parameterless(&success_registry, "git_versie")
+            .await
+            .expect("de Git-versie moet opgevraagd kunnen worden");
+
+        let failure = service
+            .execute_parameterless(&failure_registry, "git_fout")
+            .await
+            .expect("een niet-nul exitcode moet een resultaat geven");
+
+        (success, failure)
+    })
+    .with_subscriber(subscriber)
+    .await;
+
+    assert!(success.success);
+    assert!(!success.stdout.trim().is_empty());
+
+    assert!(!failure.success);
+    assert!(failure.stderr.contains(secret_marker));
+
+    let bytes = buffer
+        .bytes
+        .lock()
+        .expect("de logbuffer moet leesbaar zijn")
+        .clone();
+
+    let logs = String::from_utf8(bytes).expect("de opgevangen logs moeten UTF-8 zijn");
+
+    assert!(
+        logs.contains("tool=\"git_versie\""),
+        "de verwachte toolnaam ontbreekt; opgevangen logs:\n{logs}"
+    );
+    assert!(logs.contains("tool=\"git_fout\""));
+    assert!(logs.contains("success=true"));
+    assert!(logs.contains("success=false"));
+    assert!(logs.contains("exit_code="));
+    assert!(logs.contains("duration_ms="));
+
+    assert!(!logs.contains("--version"));
+    assert!(!logs.contains(success.stdout.trim()));
+    assert!(!logs.contains(secret_marker));
 }

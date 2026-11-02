@@ -57,6 +57,29 @@ struct CapturedOutput {
     _budget_permits: Vec<OwnedSemaphorePermit>,
 }
 
+// Tokio kill-on-drop stopt op Unix alleen de directe child. Deze bewaker stuurt
+// bij future-drop ook een stopsignaal via de ProcessGroup-wrapper.
+struct ProcessGuard(Box<dyn ChildWrapper>);
+
+impl ProcessGuard {
+    fn as_mut(&mut self) -> &mut dyn ChildWrapper {
+        self.0.as_mut()
+    }
+
+    async fn wait(&mut self) -> io::Result<std::process::ExitStatus> {
+        self.0.wait().await
+    }
+}
+
+impl Drop for ProcessGuard {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        {
+            let _ = self.0.start_kill();
+        }
+    }
+}
+
 // Service die verantwoordelijk is voor het uitvoeren van tools, het beheren van gelijktijdige uitvoeringen en het afhandelen van uitvoerbeperkingen.
 pub struct ExecutionService {
     permits: Arc<Semaphore>,
@@ -128,13 +151,56 @@ impl ExecutionService {
         &self,
         registry: &ToolRegistry,
         name: &str,
+        cancellation: oneshot::Receiver<()>,
+    ) -> Result<ExecutionResult, ExecutionError> {
+        let started_at = Instant::now();
+
+        let tool_name = registry
+            .tools()
+            .iter()
+            .find(|tool| tool.name == name)
+            .map(|tool| tool.name.as_str())
+            .unwrap_or("<unknown>");
+
+        let result = self
+            .execute_parameterless_inner(registry, name, cancellation)
+            .await;
+
+        match &result {
+            Ok(output) => {
+                tracing::info!(
+                    tool = tool_name,
+                    success = output.success,
+                    exit_code = ?output.exit_code,
+                    duration_ms = %started_at.elapsed().as_millis(),
+                    "Tooluitvoering afgerond"
+                );
+            }
+            Err(error) => {
+                tracing::warn!(
+                    tool = tool_name,
+                    category = error.category(),
+                    duration_ms = %started_at.elapsed().as_millis(),
+                    "Tooluitvoering afgewezen of mislukt"
+                );
+            }
+        }
+
+        result
+    }
+
+    async fn execute_parameterless_inner(
+        &self,
+        registry: &ToolRegistry,
+        name: &str,
         _cancellation: oneshot::Receiver<()>,
     ) -> Result<ExecutionResult, ExecutionError> {
         // Zoek de tooldefinitie op basis van de naam en controleer of deze geen parameters heeft.
         let tool = find_parameterless_tool(registry, name)?;
         let started_at = Instant::now();
         let mut shutdown = self.shutdown.subscribe();
-        let (mut child, _permit) = self.start_process(tool)?;
+        let (child, _permit) = self.start_process(tool)?;
+        let mut child = ProcessGuard(child);
 
         // Bepaal de timeout voor de uitvoering, standaard 10 seconden als geen specifieke timeout is opgegeven.
         let timeout = Duration::from_millis(tool.timeout.unwrap_or(10_000));
@@ -202,7 +268,7 @@ pub fn find_parameterless_tool<'a>(
     let has_placeholders = tool
         .arguments
         .iter()
-        .any(|argument| (argument.contains('{') || argument.contains('}')));
+        .any(|argument| argument.contains('{') || argument.contains('}'));
 
     if has_parameters || has_placeholders {
         return Err(ExecutionError::ParametersNotSupported);
@@ -298,20 +364,59 @@ async fn read_process_output(
     )
 }
 
-// Stopt een lopend proces door te controleren of het al is voltooid. Als het proces nog actief is, wordt het beëindigd. Eventuele fouten bij het wachten of beëindigen van het proces worden geretourneerd als ExecutionError.
+// Unix beëindigt de groep ook na afloop van de leider; Windows gebruikt het Job
+// Object. Gecontroleerd stoppen wacht op de child en geeft beheerfouten terug.
 async fn stop_child(child: &mut dyn ChildWrapper) -> Result<(), ExecutionError> {
-    if child
-        .try_wait()
-        .map_err(ExecutionError::ProcessWaitFailed)?
-        .is_none()
+    #[cfg(unix)]
     {
-        let kill_future = child.kill();
-        std::pin::Pin::from(kill_future)
+        // Ook na afloop van de groepsleider kunnen subprocessen nog leven.
+        child
+            .try_wait()
+            .map_err(ExecutionError::ProcessWaitFailed)?;
+        match child.start_kill() {
+            Ok(()) => {}
+            // ESRCH: de procesgroep is al verdwenen.
+            Err(error) if error.raw_os_error() == Some(3) => {}
+            Err(error) => return Err(ExecutionError::ProcessKillFailed(error)),
+        }
+        child
+            .wait()
             .await
-            .map_err(ExecutionError::ProcessKillFailed)?;
+            .map_err(ExecutionError::ProcessWaitFailed)?;
+        Ok(())
     }
+    #[cfg(not(unix))]
+    {
+        if child
+            .try_wait()
+            .map_err(ExecutionError::ProcessWaitFailed)?
+            .is_none()
+        {
+            let kill_future = child.kill();
+            std::pin::Pin::from(kill_future)
+                .await
+                .map_err(ExecutionError::ProcessKillFailed)?;
+        }
 
-    Ok(())
+        Ok(())
+    }
+}
+
+impl ExecutionError {
+    fn category(&self) -> &'static str {
+        match self {
+            Self::UnknownTool => "unknown_tool",
+            Self::ParametersNotSupported => "parameters_not_supported",
+            Self::CapacityExceeded => "capacity_exceeded",
+            Self::TimedOut => "execution_timeout",
+            Self::OutputLimitExceeded => "output_limit_exceeded",
+            Self::Cancelled => "execution_cancelled",
+            Self::ProcessStartFailed(_) => "process_start_failed",
+            Self::OutputReadFailed(_) => "output_read_failed",
+            Self::ProcessWaitFailed(_) => "process_wait_failed",
+            Self::ProcessKillFailed(_) => "process_kill_failed",
+        }
+    }
 }
 
 // Implementeert de Display-trait voor ExecutionError om een leesbare foutmelding te genereren op basis van het type fout.

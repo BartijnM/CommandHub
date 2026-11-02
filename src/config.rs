@@ -87,7 +87,6 @@ pub struct ToolDefinition {
     pub name: String,
     pub description: String,
 
-    #[expect(dead_code, reason = "Gebruikt door de procesuitvoerder in F03")]
     pub command: String,
 
     pub arguments: Vec<String>,
