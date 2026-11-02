@@ -4,7 +4,7 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-De hoofdapplicatie biedt `GET /status`, `GET /tools` en parameterloze uitvoering via `POST /tools/{toolname}`. F02 is gemerged; F03 staat opnieuw In uitvoering wegens een Linux-test-race uit CI-run #21. De `/proc`-controle is gericht gecorrigeerd voor ESRCH (proces verdwijnt tijdens lezen) en heeft drie regressietests. Op Windows slagen formatter, Clippy, build en 62 tests; 4 genegeerde functies zijn proceshelpers. Run #20 was groen op beide platforms, maar #21 faalde op Ubuntu en slaagde op Windows. Een nieuwe Ubuntu-run moet de correctie bevestigen vóór review/merge. Zie [voortgang](docs/voortgang.md), [F03-notitie](notities/F03-procesuitvoering.md) en [F00-notitie](notities/F00-mcp-proef.md).
+De hoofdapplicatie biedt `GET /status`, `GET /tools` en parameterloze uitvoering via `POST /tools/{toolname}`. F02 is gemerged; F03 staat op Review. De ESRCH-race in de Linux-procescontrole is gecorrigeerd met drie regressietests. Op Windows slagen formatter, Clippy, build en 62 tests; 4 genegeerde functies zijn proceshelpers. GitHub Actions-run #22 bevestigt daarna succes op Ubuntu én Windows. Review en merge moeten nog worden bevestigd. Zie [voortgang](docs/voortgang.md), [F03-notitie](notities/F03-procesuitvoering.md) en [F00-notitie](notities/F00-mcp-proef.md).
 
 ## Installeren en gebruiken
 

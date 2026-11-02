@@ -11,7 +11,7 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. CI-run #20 slaagde op beide platforms, maar run #21 vond een Linux-statusleesrace. De ESRCH-correctie en regressietests zijn lokaal gecontroleerd; een nieuwe Ubuntu-run blijft nodig. F03 staat opnieuw In uitvoering.
+F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. CI-run #20 slaagde op beide platforms, maar run #21 vond een Linux-statusleesrace. De ESRCH-correctie en regressietests zijn lokaal gecontroleerd; CI-run #22 bevestigt daarna succes op beide platforms. F03 staat terug op Review tot review/merge.
 
 ## Hoe werkt de code?
 
@@ -62,7 +62,7 @@ De zeven opruimscenario's en de TCP-tests delen nu `process_checks::assert_stopp
 | Echte TCP-concurrency | Vier bevestigde actieve procesbomen, vijfde request 503 binnen testbewaking; na vrijgave vier HTTP 200-responses en succesvolle nieuwe uitvoering |
 | Actieve HTTP-shutdown | Hetzelfde afsluitpad als Ctrl+C, geïnjecteerd signaal, client 503, server afgerond, child/subprocess gestopt en geen nieuwe TCP-verbinding |
 | Logging | Succes/niet-nul exit en onbekende tool gecontroleerd; argumentwaarden, clientwaarde en procesoutput ontbreken in testlogs |
-| Ubuntu/Windows CI | #20 beide groen; #21 Windows groen, Ubuntu 59 passed, 1 failed, 4 ignored (ESRCH). Hercontrole na correctie open |
+| Ubuntu/Windows CI | #20 beide groen; #21 Ubuntu-fout door ESRCH; na correctie #22 beide platformjobs Success. Exacte testtotalen van #22 niet zichtbaar |
 
 De twee nieuwe HTTP-helpers verklaren de stijging van 2 naar 4 genegeerde functies. Ze worden expliciet als child gestart en zijn geen overgeslagen acceptatietests. De TCP-testclient gebruikt HTTP/1.0 met connection-close; alle requests lopen over echte sockets. PID-bestanden bevestigen dat processen gestart zijn vóór capaciteit/shutdown wordt beoordeeld. De tests controleren zowel direct child als subprocess.
 
@@ -171,6 +171,14 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 - Status terug naar In uitvoering; Linux-acceptatie weer open totdat een nieuwe Ubuntu-run de correctie bevestigt. Historische run #20 blijft als eerder bewijs bewaard, maar is geen actuele stabiele eindacceptatie.
 - Code en documentatie aangepast; geen Git-commando's uitgevoerd.
 
+### 2026-11-02 — ESRCH-correctie bevestigd in CI-run #22
+
+- Bewijs: aangeleverde screenshot van run #22 op `feature/F03-procesuitvoering`. Ubuntu en Windows hebben status Success.
+- Zichtbare duur: Ubuntu 45 s, Windows 2 m 51 s, totaal 2 m 55 s. Geen exacte testtotalen uit de screenshot afgeleid.
+- De nieuwe run bevestigt de eerder open Linux-hercontrole na de gerichte ESRCH-correctie en drie regressietests. Status terug naar Review; de eerdere fout uit #21 blijft als historie bewaard.
+- De screenshot toont Node.js-verouderingswaarschuwingen en een aankondiging over migratie van het ubuntu-latest-label. Die annotaties verhinderen geen geslaagde run; onderhoud kan afzonderlijk worden beoordeeld.
+- Alleen algemene documentatie aangepast. Geen code, tests of Git-commando's uitgevoerd. Review en merge zijn niet aangetoond.
+
 ## Vervolg
 
-Laat de correctie en documentatie via de normale featurebranchwerkwijze opnieuw door Ubuntu- en Windows-CI controleren. Beoordeel daarna de actuele resultaten en herhaal de eerder timinggevoelige Linux-controle. Pas vervolgens review/merge afronden en F03 Klaar markeren. Geen Git-commando's uitvoeren.
+Neem de documentatie-update mee op de featurebranch en controleer de CI van de laatste branchstand. Rond review/merge naar develop af; markeer F03 pas Klaar na bevestigde merge en pak daarna F04 op. Geen Git-commando's uitvoeren zonder nieuwe expliciete opdracht.

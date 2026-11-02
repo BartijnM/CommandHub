@@ -8,7 +8,7 @@ F00 staat klaar voor review. De aparte proefserver werkt via Streamable HTTP; MC
 
 F02 is gemerged. De hoofdapp leest en valideert de JSON-configuratie bij startup, bouwt een immutable registry en serveert `GET /tools` met toolmetadata en inputschema's. De route laat command en vaste argumenten weg. Configuratie-laadfouten zijn gericht getest; handmatig is bevestigd dat ongeldige configuratie startup stopt met een bruikbare diagnose en dat een aangepaste tool na herstart zonder rebuild zichtbaar wordt. Formatter, Clippy en 14 tests slaagden op Windows. De standaardtimeout is 10 seconden (maximaal 60 seconden); standaardbestand is `config/tools.json`, overschrijfbaar met `COMMANDHUB_CONFIG`. Zie [F02-featureplan](features/F02-toolconfiguratie.md) en [F02-notitie](../notities/F02-toolconfiguratie.md).
 
-F03 staat opnieuw In uitvoering. De geslaagde platformrun #20 is gevolgd door run #21: Windows groen, Ubuntu faalt in `stopt_subproces_bij_annulering`. De processtatushelper behandelde ESRCH tijdens `/proc`-lezen onterecht als fatale fout. Die race is gecorrigeerd en deterministisch getest, zonder procesopruimchecks te verwijderen. Lokale Windows-eindcontroles slagen met 62 tests en 4 genegeerde proceshelpers. Een nieuwe Ubuntu-run moet de correctie bevestigen. Zie [F03-featureplan](features/F03-procesuitvoering.md) en [F03-notitie](../notities/F03-procesuitvoering.md).
+F03 staat terug op Review. De ESRCH-race uit run #21 is gecorrigeerd en heeft drie regressietests. Lokale Windows-controles slagen met 62 tests en 4 genegeerde proceshelpers. De aangeleverde screenshot van CI-run #22 bevestigt Success op zowel Ubuntu als Windows; de correctie is daarmee ook via Linux-CI gecontroleerd. Review en merge naar develop zijn nog te bevestigen. Zie [F03-featureplan](features/F03-procesuitvoering.md) en [F03-notitie](../notities/F03-procesuitvoering.md).
 
 ## Aanwezig
 
@@ -18,11 +18,11 @@ Documentatieopzet, featureplannen, notities per feature, Axum-statusroute, confi
 
 - F00: review en PR-merge. De proef onderzoekt `tool_not_found` en een extra argument; bredere fout- en transportsecuritytests horen bij F05 waar relevant.
 - F01: `Cargo.lock` committen en repository-/develop-/GitHub-Project-inrichting afronden. CI is inmiddels geslaagd op GitHub; Linux is lokaal niet uitgevoerd. Status blijft open tot review en merge.
-- F03: nieuwe Ubuntu-CI na de ESRCH-racecorrectie controleren; daarna pas review/merge. De Node.js 20-annotaties zijn een afzonderlijk onderhoudspunt en niet de oorzaak van deze testfout.
+- F03: review/merge naar develop bevestigen na meenemen van de documentatie-update. Run #22 is op beide platforms geslaagd. Node.js-annotaties en de aangekondigde wijziging van het ubuntu-latest-label zijn afzonderlijke CI-onderhoudspunten, geen testfouten.
 
 ## Volgende stap
 
-Neem de correctie en documentatie mee op de featurebranch en controleer een nieuwe Ubuntu/Windows-CI-run. De Ubuntu-fout betrof een race in de processtatuscontrole: een al verdwenen proces kan ESRCH opleveren tijdens lezen. De helper accepteert nu NotFound/ENOENT en ESRCH, maar blijft toegangs-/formaatfouten melden. Markeer Linux pas opnieuw geverifieerd na een geslaagde run van deze correctie; sluit of merge de branch nog niet. Geen Git-commando's uitvoeren.
+Neem deze documentatie-update mee op de featurebranch en controleer de CI van de laatste branchstand. Rond review/merge naar develop af en markeer F03 pas Klaar nadat de merge is bevestigd. Daarna volgt F04. De fout uit run #21 en de bevestigde correctie in run #22 blijven als verificatiegeschiedenis vastgelegd. Geen Git-commando's uitvoeren.
 
 ## Verificatie
 
@@ -39,3 +39,6 @@ De screenshot toont ook Node.js 20-verouderingsannotaties bij de actions. Beide 
 ### Aanvulling — CI-run #21 en ESRCH-correctie
 
 Het aangeleverde Ubuntu-log meldt 59 passed, 1 failed en 4 ignored. De fout is `No such process (os error 3)` tijdens lezen van `/proc/<pid>/stat`; geen assertion dat het subprocess nog draaide. De pure leesresultaat-/statusafhandeling is apart testbaar gemaakt en drie regressietests simuleren deze fout, actieve/zombie/exitstatus en echte toegangs-/formaatfouten. Actuele lokale Windows-controles: formatter, Clippy en build geslaagd; volledige suite 62 passed, 0 failed, 4 ignored, 5,78 s. Linux-hercontrole ontbreekt; geen Git-commando's uitgevoerd.
+### Actueel CI-bewijs na racecorrectie — run #22
+
+De aangeleverde screenshot toont `Success` voor `Checks (ubuntu-latest)` en `Checks (windows-latest)` op `feature/F03-procesuitvoering`. Ubuntu: 45 s; Windows: 2 m 51 s; totale run: 2 m 55 s. Exacte CI-testtotalen zijn niet zichtbaar. Hiermee is de hierboven als open beschreven hercontrole van de ESRCH-correctie afgerond. Status terug naar Review; review/merge nog niet bevestigd. Alleen documentatie aangepast, geen tests of Git-commando's uitgevoerd.

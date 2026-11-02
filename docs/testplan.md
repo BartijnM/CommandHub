@@ -1,11 +1,11 @@
 # Testplan
 
-Status bijgewerkt: 2026-11-02. Lokaal op Windows slagen formatter, Clippy, build en 62 tests (4 genegeerde helpers). CI-run #20 slaagde op beide platforms; run #21 faalde op Ubuntu door ESRCH tijdens `/proc`-lezen. De race is gecorrigeerd en heeft drie platformonafhankelijk uitvoerbare regressietests. Ubuntu moet de correctie nog bevestigen.
+Status bijgewerkt: 2026-11-02. Lokaal op Windows slagen formatter, Clippy, build en 62 tests (4 proceshelpers genegeerd). Na de ESRCH-race uit CI-run #21 is de processtatushelper gecorrigeerd en zijn drie regressietests toegevoegd. De aangeleverde screenshot van run #22 bevestigt geslaagde Ubuntu- en Windows-jobs. Platformacceptatie is weer aangetoond; review/merge blijven open.
 
 | Eisen | Aanwezig bewijs en resterende controles |
 | --- | --- |
 | R01–R03 | Configuratievalidatie en laadfouten; ontdekking via HTTP; eerdere handmatige herstartcontrole zonder rebuild |
-| R04–R06 | Toolselectie, succes, niet-nul exit, startfout, output, timeout, annulering en shutdown. Windows-PID-controles na stoproutes, future-drop en taakafbreking. Linux-hercontrole na ESRCH-correctie open |
+| R04–R06 | Toolselectie, succes, niet-nul exit, startfout, output, timeout, annulering en shutdown. Windows-PID-controles na stoproutes, future-drop en taakafbreking. Linux-hercontrole na ESRCH-correctie geslaagd in #22 |
 | R07 | Gedeeld outputbudget, child-output boven 1 MiB, capaciteitsgrens/vrijgave. HTTP-body exact 16 KiB toegestaan en groter afgewezen. HTTP 503 bij vier vastgehouden permits én bij vier echte actieve TCP-uitvoeringen; capaciteitsherstel na hun succesvolle afloop getest |
 | R08–R10 | F04: dynamische parameters, typen, onbekende velden, optie-injectie en padbeleid |
 | R11/R16 | F00: MCP Inspector CLI; protocol-/Origin-/Host-controles bij F05 verder verifiëren |
@@ -70,3 +70,6 @@ De CI-screenshot toont niet-blokkerende Node.js 20-verouderingsannotaties. De vo
 ## Regressie: proces verdwijnt tijdens /proc-lezen
 
 Run #21: Ubuntu meldt 59 passed, 1 failed, 4 ignored; fout in `stopt_subproces_bij_annulering` door ESRCH. De statushelper accepteert nu zowel NotFound/ENOENT als ESRCH als verdwenen proces. Alleen deze afwezigheidsfouten worden zo behandeld; PermissionDenied en ongeldige stat-data blijven fouten. Drie deterministische tests controleren deze classificatie en actieve/zombie/exitstatus, ook op Windows. Die tests slagen, net als de lokale volledige suite (62 passed, 4 ignored) en formatter/Clippy/build. Daadwerkelijke Ubuntu-hercontrole na de correctie blijft open; een eerdere groene run is geen bewijs dat deze race niet meer optreedt.
+### Resultaat hercontrole — run #22
+
+De screenshot toont beide platformjobs groen: Ubuntu 45 s, Windows 2 m 51 s, totale run 2 m 55 s. Daarmee is de eerder open hercontrole na ESRCH-correctie uitgevoerd en geslaagd. De eerdere fout en lokale regressieresultaten blijven hierboven historisch vastgelegd; exacte CI-testtotalen zijn niet aangeleverd. Bij deze documentatie-update zijn geen tests opnieuw uitgevoerd.
