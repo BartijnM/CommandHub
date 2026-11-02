@@ -3,15 +3,31 @@ use std::time::Duration;
 // Een zombie op Linux is gestopt, maar wacht nog op reaping door zijn ouder/init.
 #[cfg(target_os = "linux")]
 pub(crate) fn linux_process_running(process_id: u32) -> bool {
-    let stat = match std::fs::read_to_string(format!("/proc/{process_id}/stat")) {
+    linux_stat_process_running(std::fs::read_to_string(format!("/proc/{process_id}/stat")))
+        .unwrap_or_else(|error| panic!("Linux-processtatus lezen mislukt: {error}"))
+}
+
+// Los van /proc testbaar, ook op Windows: verdwijnen tussen open() en read()
+// kan op Linux ESRCH opleveren in plaats van ENOENT.
+fn linux_stat_process_running(result: std::io::Result<String>) -> std::io::Result<bool> {
+    const ESRCH: i32 = 3;
+    let stat = match result {
         Ok(stat) => stat,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return false,
-        Err(error) => panic!("Linux-processtatus lezen mislukt: {error}"),
+        Err(error)
+            if error.kind() == std::io::ErrorKind::NotFound
+                || error.raw_os_error() == Some(ESRCH) =>
+        {
+            return Ok(false);
+        }
+        Err(error) => return Err(error),
     };
-    let (_, fields) = stat
-        .rsplit_once(") ")
-        .expect("/proc-stat moet een processtatus bevatten");
-    !matches!(fields.chars().next(), Some('Z' | 'X'))
+    let (_, fields) = stat.rsplit_once(") ").ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, "processtatus ontbreekt")
+    })?;
+    let state = fields.chars().next().ok_or_else(|| {
+        std::io::Error::new(std::io::ErrorKind::InvalidData, "processtatus is leeg")
+    })?;
+    Ok(!matches!(state, 'Z' | 'X'))
 }
 
 #[cfg(windows)]
@@ -65,4 +81,34 @@ pub(crate) async fn assert_stopped(process_id: u32) {
 fn linux_status_herkent_actief_en_ontbrekend_proces() {
     assert!(linux_process_running(std::process::id()));
     assert!(!linux_process_running(u32::MAX));
+}
+
+#[test]
+fn linux_stat_herkent_verdwijnen_tijdens_lezen() {
+    for error in [
+        std::io::Error::from(std::io::ErrorKind::NotFound),
+        std::io::Error::from_raw_os_error(3),
+    ] {
+        assert!(
+            !linux_stat_process_running(Err(error)).expect("verdwenen proces geldt als gestopt")
+        );
+    }
+}
+
+#[test]
+fn linux_stat_onderscheidt_actief_zombie_en_exit() {
+    // De procesnaam mag zelf spaties en haakjes bevatten.
+    for (state, running) in [('R', true), ('S', true), ('Z', false), ('X', false)] {
+        let stat = format!("123 (test (process)) {state} 1 2 3");
+        assert_eq!(linux_stat_process_running(Ok(stat)).unwrap(), running);
+    }
+}
+
+#[test]
+fn linux_stat_verbergt_geen_toegangs_of_formaatfout() {
+    let error = linux_stat_process_running(Err(std::io::ErrorKind::PermissionDenied.into()))
+        .expect_err("geen toegang is geen bewijs van procesbeeindiging");
+    assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
+    assert!(linux_stat_process_running(Ok("ongeldige stat".into())).is_err());
+    assert!(linux_stat_process_running(Ok("123 (test) ".into())).is_err());
 }

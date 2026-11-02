@@ -1,6 +1,6 @@
 # Architectuur
 
-Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux is via de geslaagde Ubuntu-CI gecontroleerd; MCP-integratie volgt in F05.
+Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en wacht op Ubuntu-hercontrole. MCP-integratie volgt in F05.
 
 ## Beoogde gegevensstroom
 
@@ -18,7 +18,7 @@ Bij het starten: configuratie laden → configuratie valideren → registry bouw
 | Registry | Gevalideerde tooldefinities op naam beschikbaar maken |
 | Config loader | JSON lezen en controleren; ongeldige configuratie stopt startup |
 | Validation | Parameters en uitvoeringsbeleid controleren |
-| Process executor | Proces, uitvoer, tijdslimiet, capaciteit, expliciete annulering en opruimen beheren; subprocessopruiming en shutdown zijn in Windows-tests gecontroleerd; Linux is via CI gecontroleerd |
+| Process executor | Proces, uitvoer, tijdslimiet, capaciteit, expliciete annulering en opruimen beheren; subprocessopruiming en shutdown zijn in Windows-tests gecontroleerd; Linux-hercontrole na ESRCH-correctie blijft open |
 | Logging | Context, uitkomst en duur vastleggen zonder gevoelige inhoud |
 
 ## Structuur groeit met de features
@@ -56,3 +56,6 @@ Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever
 `src/tests/http_execution_tests.rs` start echte loopbackservers en TCP-clients. Gecontroleerde tools starten een eigen subprocess en schrijven beide PID's weg; een bestandssignaal geeft ze vrij. Daardoor bewijzen de tests vier gelijktijdige uitvoeringen, een vijfde afwijzing, capaciteitsherstel en shutdown tijdens een actieve procesboom. De minimale testclient gebruikt HTTP/1.0 met connection-close zodat geen chunked decoder of extra dependency nodig is.
 
 `src/tests/process_checks.rs` deelt platformafhankelijke processtatuscontroles. Logging blijft in de kernwrapper: alleen registry-toolnaam (anders `<unknown>`), resultaat, exitcode/foutcategorie en duur. Er worden geen argumenten, executablepaden of stdout/stderr opgenomen. De tijdelijke tracing-subscribers van loggingtests zijn in childprocessen geïsoleerd om parallelle testinteractie te vermijden.
+## Linux-statusleesrace
+
+Een proces kan verdwijnen nadat de /proc-statfile is geopend maar voordat lezen klaar is. Naast NotFound/ENOENT kan dan ESRCH optreden. De gedeelde testhelper scheidt het lezen van de classificatie van `io::Result<String>`, zodat die race deterministisch getest kan worden. Afwezigheid betekent beëindigd; toegangs- en formaatfouten blijven fouten. De correctie is op Windows getest met gesimuleerde Linux-leesresultaten; een nieuwe Ubuntu-run moet de echte platformroute bevestigen na de fout in CI-run #21.

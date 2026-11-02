@@ -11,7 +11,7 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. Daarna toont CI-run #20 geslaagde Ubuntu- en Windows-jobs. Linux-verificatie is daarmee aangetoond; F03 staat op Review tot review/merge zijn bevestigd.
+F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. CI-run #20 slaagde op beide platforms, maar run #21 vond een Linux-statusleesrace. De ESRCH-correctie en regressietests zijn lokaal gecontroleerd; een nieuwe Ubuntu-run blijft nodig. F03 staat opnieuw In uitvoering.
 
 ## Hoe werkt de code?
 
@@ -57,12 +57,12 @@ De zeven opruimscenario's en de TCP-tests delen nu `process_checks::assert_stopp
 | --- | --- |
 | `cargo fmt --check` | Geslaagd op Windows |
 | `cargo clippy --all-targets --locked -- -D warnings` | Geslaagd op Windows |
-| `cargo test --locked` | 59 passed, 0 failed, 4 ignored, 0 filtered out; 5,72 s op Windows |
+| `cargo test --locked` na ESRCH-correctie | 62 passed, 0 failed, 4 ignored, 0 filtered out; 5,78 s op Windows |
 | `cargo build --locked` | Geslaagd op Windows |
 | Echte TCP-concurrency | Vier bevestigde actieve procesbomen, vijfde request 503 binnen testbewaking; na vrijgave vier HTTP 200-responses en succesvolle nieuwe uitvoering |
 | Actieve HTTP-shutdown | Hetzelfde afsluitpad als Ctrl+C, geïnjecteerd signaal, client 503, server afgerond, child/subprocess gestopt en geen nieuwe TCP-verbinding |
 | Logging | Succes/niet-nul exit en onbekende tool gecontroleerd; argumentwaarden, clientwaarde en procesoutput ontbreken in testlogs |
-| Ubuntu/Windows CI | Aangeleverde screenshot van GitHub Actions-run #20: beide platformjobs Success; exacte CI-testtotalen niet zichtbaar |
+| Ubuntu/Windows CI | #20 beide groen; #21 Windows groen, Ubuntu 59 passed, 1 failed, 4 ignored (ESRCH). Hercontrole na correctie open |
 
 De twee nieuwe HTTP-helpers verklaren de stijging van 2 naar 4 genegeerde functies. Ze worden expliciet als child gestart en zijn geen overgeslagen acceptatietests. De TCP-testclient gebruikt HTTP/1.0 met connection-close; alle requests lopen over echte sockets. PID-bestanden bevestigen dat processen gestart zijn vóór capaciteit/shutdown wordt beoordeeld. De tests controleren zowel direct child als subprocess.
 
@@ -161,6 +161,16 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 - Linux-todo en platformacceptatie afgevinkt. Status naar Review; geen bewijs van review of merge, dus nog niet Klaar.
 - Alleen algemene documentatie aangepast. Geen Rust-/workflowwijzigingen, tests of Git-commando's uitgevoerd.
 
+### 2026-11-02 — Racecorrectie na CI-run #21
+
+- Bewijs: Ubuntu faalt in `stopt_subproces_bij_annulering` bij lezen van `/proc/<pid>/stat`: ESRCH (os error 3). Het proces is al verdwenen; de helper herkende alleen NotFound als afwezig. Dit is geen bewijs van een nog draaiend subprocess.
+- Oorzaak: het proces kan tussen openen en uitlezen verdwijnen. De eerdere groene #20-run kon deze timinggevoelige fout missen.
+- Correctie: pure afhandeling van `io::Result<String>` afgesplitst van het echte /proc-lezen. Zowel NotFound/ENOENT als ESRCH betekenen beëindigd; andere leesfouten en ongeldige data blijven fouten. Geen extra wachttijd en geen verwijderde procesasserties.
+- Drie regressietests toegevoegd voor verdwijnen tijdens lezen, actieve/zombie/exitstatus (ook met haakjes in de procesnaam) en behoud van toegangs-/formaatfouten.
+- Verificatie op Windows: 3 gerichte regressietests, formatter, Clippy, build en volledige suite geslaagd; totaal 62 passed, 4 ignored, 5,78 s. De Linux-specifieke leesroute kan lokaal niet worden uitgevoerd.
+- Status terug naar In uitvoering; Linux-acceptatie weer open totdat een nieuwe Ubuntu-run de correctie bevestigt. Historische run #20 blijft als eerder bewijs bewaard, maar is geen actuele stabiele eindacceptatie.
+- Code en documentatie aangepast; geen Git-commando's uitgevoerd.
+
 ## Vervolg
 
-Neem de documentatie-update mee op de featurebranch, controleer de CI van de laatste branchstand en rond review/merge naar develop af. Markeer F03 pas Klaar wanneer de merge is bevestigd; daarna volgt F04. Beoordeel Node.js-annotaties bij de actions eventueel als afzonderlijk onderhoudspunt. Geen Git-commando's uitvoeren zonder nieuwe expliciete opdracht.
+Laat de correctie en documentatie via de normale featurebranchwerkwijze opnieuw door Ubuntu- en Windows-CI controleren. Beoordeel daarna de actuele resultaten en herhaal de eerder timinggevoelige Linux-controle. Pas vervolgens review/merge afronden en F03 Klaar markeren. Geen Git-commando's uitvoeren.

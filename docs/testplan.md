@@ -1,17 +1,17 @@
 # Testplan
 
-Status bijgewerkt: 2026-11-02. Formatter, Clippy, build en de volledige suite slagen op Windows: **59 passed, 0 failed, 4 ignored**. Logging, echte TCP-concurrency en actieve server-shutdown zijn gecontroleerd. Aanvullend toont de aangeleverde screenshot van CI-run #20 succes op Ubuntu en Windows. Daarmee is de platformacceptatie via CI aangetoond; review en merge blijven open.
+Status bijgewerkt: 2026-11-02. Lokaal op Windows slagen formatter, Clippy, build en 62 tests (4 genegeerde helpers). CI-run #20 slaagde op beide platforms; run #21 faalde op Ubuntu door ESRCH tijdens `/proc`-lezen. De race is gecorrigeerd en heeft drie platformonafhankelijk uitvoerbare regressietests. Ubuntu moet de correctie nog bevestigen.
 
 | Eisen | Aanwezig bewijs en resterende controles |
 | --- | --- |
 | R01–R03 | Configuratievalidatie en laadfouten; ontdekking via HTTP; eerdere handmatige herstartcontrole zonder rebuild |
-| R04–R06 | Toolselectie, succes, niet-nul exit, startfout, output, timeout, annulering en shutdown. Windows-PID-controles na stoproutes, future-drop en taakafbreking. Linux-CI geslaagd |
+| R04–R06 | Toolselectie, succes, niet-nul exit, startfout, output, timeout, annulering en shutdown. Windows-PID-controles na stoproutes, future-drop en taakafbreking. Linux-hercontrole na ESRCH-correctie open |
 | R07 | Gedeeld outputbudget, child-output boven 1 MiB, capaciteitsgrens/vrijgave. HTTP-body exact 16 KiB toegestaan en groter afgewezen. HTTP 503 bij vier vastgehouden permits én bij vier echte actieve TCP-uitvoeringen; capaciteitsherstel na hun succesvolle afloop getest |
 | R08–R10 | F04: dynamische parameters, typen, onbekende velden, optie-injectie en padbeleid |
 | R11/R16 | F00: MCP Inspector CLI; protocol-/Origin-/Host-controles bij F05 verder verifiëren |
 | R12 | Windows-routetests voor succes, niet-nul exit als 200, 400/404/413/500/502/503/504 en shutdownafwijzing; echte POST naar geconfigureerde tool geslaagd |
 | R13 | Vaste foutcodes en geen OS-details in JSON getest. Loggingwrapper en geïsoleerde loggingtests controleren geselecteerde metadata en het ontbreken van client-/argumentwaarden en procesoutput |
-| R14/R15 | Kern is transportonafhankelijk; HTTP-adapter gebruikt gedeelde state. Dezelfde kernscenario's en PID-opruiming worden op Linux door de geslaagde Ubuntu-CI gecontroleerd |
+| R14/R15 | Kern is transportonafhankelijk; HTTP-adapter gebruikt gedeelde state. Ubuntu-run #20 slaagde, maar na de race uit #21 moet de gecorrigeerde statuscontrole opnieuw worden uitgevoerd |
 | R17 | README bevat start- en POST-voorbeeld; complete demo en schone-checkoutcontrole volgen bij oplevering |
 
 ## Testindeling
@@ -67,3 +67,6 @@ De eindcontroles van 2026-11-02 zijn daadwerkelijk uitgevoerd op Windows. Linux 
 5. Logging, concurrency en het gecontroleerde shutdownpad tijdens uitvoering tonen.
 6. MCP-demo bij F05; complete demo en herstart zonder rebuild bij oplevering.
 De CI-screenshot toont niet-blokkerende Node.js 20-verouderingsannotaties. De volledige annotatietekst en de afzonderlijke testlogs zijn niet aangeleverd; daaruit worden geen aanvullende aantallen of details afgeleid.
+## Regressie: proces verdwijnt tijdens /proc-lezen
+
+Run #21: Ubuntu meldt 59 passed, 1 failed, 4 ignored; fout in `stopt_subproces_bij_annulering` door ESRCH. De statushelper accepteert nu zowel NotFound/ENOENT als ESRCH als verdwenen proces. Alleen deze afwezigheidsfouten worden zo behandeld; PermissionDenied en ongeldige stat-data blijven fouten. Drie deterministische tests controleren deze classificatie en actieve/zombie/exitstatus, ook op Windows. Die tests slagen, net als de lokale volledige suite (62 passed, 4 ignored) en formatter/Clippy/build. Daadwerkelijke Ubuntu-hercontrole na de correctie blijft open; een eerdere groene run is geen bewijs dat deze race niet meer optreedt.
