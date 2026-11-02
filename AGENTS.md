@@ -17,3 +17,12 @@ Lees eerst README.md, docs/voortgang.md, docs/requirements.md, docs/architectuur
 - Meld wat niet getest kon worden en waarom.
 - Geen commit, push, merge of externe publicatie zonder opdracht van de gebruiker.
 
+## Leerbegeleiding
+
+CommandHub is een leerproject en het eerste Rust-project van de eigenaar. Werk daarom in kleine, controleerbare stappen:
+
+- Begin waar mogelijk met een kleine werkende verticale slice: laat één normaal scenario end-to-end werken en test het.
+- Breid die werkende basis daarna stap voor stap uit tot de requirements en acceptatiecriteria zijn aangetoond. Stel noodzakelijke veiligheids- en foutafhandeling niet uit tot na het aansluiten van een publieke route.
+- Geef bij leerstappen één klein codefragment tegelijk. Benoem het exacte bestand en de plek waar het fragment hoort, en leg de relevante Rust-syntax en ontwerpkeuzes begrijpelijk uit.
+- Laat de eigenaar het codefragment zelf invoeren. Wacht op de uitkomst van de gerichte controle voordat de volgende stap wordt gegeven.
+- Pas documentatie alleen aan wanneer de eigenaar daar om vraagt. Wanneer documentatie-update is gevraagd, werk dan de actuele voortgang en de notitie van de feature bij.

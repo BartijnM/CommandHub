@@ -70,13 +70,13 @@ Handmatig is bevestigd dat een dubbele toolnaam startup verhindert met de diagno
 
 - Gebouwd: Serde-types voor configuratie, tools, parameters en het ondersteunde parametertype. `load()` leest de standaardlocatie of `COMMANDHUB_CONFIG`, deserialiseert JSON en valideert de configuratie; startup logt alleen het aantal tools.
 - Gebouwd: immutable registry, gedeeld via Axum-state, en `GET /tools` met naam, beschrijving en JSON Schema-inputschema. De route laat executable en vaste argumenten weg.
-- Tests volgens gebruikersrapport: 11 slagen. Daaronder deserialisatie, onbekende/ontbrekende velden, tool- en parameternaamvalidatie, timeoutgrenzen, placeholders en de response van `GET /tools`.
-- Handmatige controle volgens gebruiker: server start zonder errors en `/tools` werkt; de response is in de browser bekeken.
+- Gerapporteerde testresultaten: 11 slagen. Daaronder deserialisatie, onbekende/ontbrekende velden, tool- en parameternaamvalidatie, timeoutgrenzen, placeholders en de response van `GET /tools`.
+- Gerapporteerde handmatige controle: server start zonder errors en `/tools` werkt; de response is in de browser bekeken.
 - Nog open: gerichte tests voor configuratiebestand-laadfouten en verificatie dat een nieuw geconfigureerde tool na herstart zichtbaar wordt zonder rebuild. Volledige formatter-, Clippy- en Cargo-testresultaten zijn niet in deze sessie opnieuw uitgevoerd.
 
 ## Vervolg
 
-F02 is inhoudelijk gereed en staat ter review. Na review en merge kan de status Klaar worden. Voor F03 blijven toegestane executabletypen en uitvoeringsgrenzen open; zie het [featureplan](../docs/features/F02-toolconfiguratie.md).
+F02 is gemerged en staat op Klaar; de merge is op 2026-10-26 bevestigd. De volgende implementatie is F03; zie het [featureplan](../docs/features/F03-procesuitvoering.md).
 
 ### 2026-10-23 — F02 afronden
 
@@ -84,3 +84,8 @@ F02 is inhoudelijk gereed en staat ter review. Na review en merge kan de status 
 - Bevestigd: een aangepaste toolconfiguratie wordt na herstart zichtbaar op `GET /tools`, zonder de executable opnieuw te bouwen.
 - Gecontroleerd: formatter, Clippy en 14 tests slagen op Windows.
 - Status: acceptatiecriteria aangetoond; feature staat ter review. Merge is nog niet uitgevoerd.
+
+### 2026-10-26 — Merge bevestigd
+
+- Bevestigd: F02 is als gemerged gemeld; documentatiestatus bijgewerkt naar Klaar.
+- Vervolg: F03 is gestart; de uitvoeringsafspraken staan in het [F03-featureplan](../docs/features/F03-procesuitvoering.md).

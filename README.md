@@ -4,11 +4,11 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-De hoofdapplicatie bevat `GET /status`, JSON-toolconfiguratie bij startup, een immutable toolregistry en `GET /tools` voor ontdekking. Procesuitvoering en MCP-integratie in de hoofdapplicatie zijn nog niet geïmplementeerd. De afzonderlijke F00-proef met MCP via HTTP is getest en staat klaar voor review; zie [de F00-notitie](notities/F00-mcp-proef.md). F02 staat ter review; zie [de actuele voortgang](docs/voortgang.md).
+De hoofdapplicatie biedt `GET /status`, `GET /tools` en parameterloze uitvoering via `POST /tools/{toolname}`. F02 is gemerged; F03 staat op Review. De ESRCH-race in de Linux-procescontrole is gecorrigeerd met drie regressietests. Op Windows slagen formatter, Clippy, build en 62 tests; 4 genegeerde functies zijn proceshelpers. GitHub Actions-run #22 bevestigt daarna succes op Ubuntu én Windows. Review en merge moeten nog worden bevestigd. Zie [voortgang](docs/voortgang.md), [F03-notitie](notities/F03-procesuitvoering.md) en [F00-notitie](notities/F00-mcp-proef.md).
 
 ## Installeren en gebruiken
 
-Zie [START-HIER.md](START-HIER.md) voor installatie, Cargo-commando's en Git.
+Zie de instructies hieronder voor installatie en Cargo-commando's. De featurevolgorde en branchwerkwijze staan in [de roadmap](docs/roadmap.md).
 
 Benodigd: recente stabiele Rust-toolchain met ondersteuning voor editie 2024, Cargo en op Windows de MSVC-buildtools. Git is nodig voor versiebeheer.
 
@@ -26,6 +26,14 @@ Open [de statusroute](http://127.0.0.1:3000/status):
 ```
 
 De server luistert alleen lokaal op poort 3000. Stop met Ctrl+C. Apache, PHP en MySQL zijn niet nodig.
+
+Voer met de server actief in een tweede PowerShell-terminal de geconfigureerde parameterloze tool uit:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3000/tools/git_version" -ContentType "application/json" -Body '{}' | ConvertTo-Json
+```
+
+De response bevat `success`, `stdout`, `stderr`, `exitCode` en `duration` in milliseconden. F03 accepteert alleen een leeg JSON-object; dynamische parameters volgen in F04. De requestbody mag maximaal 16 KiB zijn. Zie [het API-contract](docs/api-en-configuratie.md) voor foutresponses.
 
 ## Documentatie
 

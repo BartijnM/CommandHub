@@ -1,11 +1,25 @@
 {
-    "tools": [
+  "tools": [
+    {
+      "name": "git_version",
+      "description": "Show the installed Git version",
+      "command": "git",
+      "arguments": ["--version"],
+      "parameters": []
+    },
+    {
+      "name": "git_status",
+      "description": "Show the status of a Git repository",
+      "command": "git",
+      "arguments": ["-C", "{repository}", "status"],
+      "parameters": [
         {
-            "name": "git_version",
-            "description": "Show the installed Git version",
-            "command": "git",
-            "arguments": ["--version"],
-            "parameters": []
+          "name": "repository",
+          "type": "string",
+          "required": true
         }
-    ]
+      ],
+      "timeout": 5000
+    }
+  ]
 }

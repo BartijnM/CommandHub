@@ -36,7 +36,7 @@ Uitgevoerd op Windows op 2026-10-21:
 - `GET http://127.0.0.1:3000/status`: HTTP 200 met `{"status":"ok","applicatie":"commandhub"}`.
 - Startup logging was zichtbaar. Ctrl+C stopte de server; de terminal rapporteerde exitcode 1 doordat het draaiende proces met een interrupt werd afgebroken.
 - CI-workflow voor Ubuntu en Windows toegevoegd in `.github/workflows/ci.yml`; uitvoering op GitHub is nog niet geverifieerd.
-- `Cargo.lock` bestaat al. Committen, repository-/branchinrichting en GitHub Project blijven open gebruikersstappen; hiervoor zijn geen Git-commando's uitgevoerd.
+- `Cargo.lock` bestaat al. Committen, repository-/branchinrichting en GitHub Project blijven open projectstappen; hiervoor zijn geen Git-commando's uitgevoerd.
 
 Linux is lokaal niet gecontroleerd. De CI-matrix moet dat na publicatie van de branch aantonen.
 

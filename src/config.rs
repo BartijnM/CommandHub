@@ -17,6 +17,7 @@ impl ConfigFile {
                 return Err(format!("Dubbele toolnaam: {}", tool.name));
             }
 
+            // Controleer of de timeout, indien aanwezig, binnen het bereik van 1 tot 60000 ms ligt
             if let Some(timeout) = tool.timeout
                 && !(1..=60_000).contains(&timeout)
             {
@@ -28,17 +29,20 @@ impl ConfigFile {
 
             let mut parameter_names: HashSet<&str> = HashSet::new();
 
+            // Controleer op dubbele parameter namen
             for parameter in &tool.parameters {
                 if !parameter_names.insert(parameter.name.as_str()) {
                     return Err(format!("Dubbele parameter in tool '{}'", tool.name));
                 }
             }
 
+            // Controleer of alle placeholders in de argumenten verwijzen naar bestaande parameters
             for argument in &tool.arguments {
                 if !argument.contains('{') && !argument.contains('}') {
                     continue;
                 }
 
+                // Controleer of de placeholder een volledig argument is, d.w.z. het moet beginnen met '{' en eindigen met '}'
                 let Some(after_open_brace) = argument.strip_prefix('{') else {
                     return Err(format!(
                         "Placeholder moet een volledig argument zijn in tool '{}'",
@@ -46,6 +50,7 @@ impl ConfigFile {
                     ));
                 };
 
+                // Controleer of de placeholder eindigt met '}'
                 let Some(parameter_name) = after_open_brace.strip_suffix('}') else {
                     return Err(format!(
                         "Placeholder moet een volledig argument zijn in tool '{}'",
@@ -53,6 +58,7 @@ impl ConfigFile {
                     ));
                 };
 
+                // Controleer of de placeholder geen lege naam heeft en geen extra '{' of '}' bevat
                 if parameter_name.is_empty()
                     || parameter_name.contains('{')
                     || parameter_name.contains('}')
@@ -60,6 +66,7 @@ impl ConfigFile {
                     return Err(format!("Ongeldige placeholder in tool '{}'", tool.name));
                 }
 
+                // Controleer of de placeholder verwijst naar een bestaande parameter
                 if !parameter_names.contains(parameter_name) {
                     return Err(format!(
                         "Placeholder verwijst naar een onbekende parameter in tool '{}'",
@@ -75,11 +82,11 @@ impl ConfigFile {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+// De definitie van een tool
 pub struct ToolDefinition {
     pub name: String,
     pub description: String,
 
-    #[expect(dead_code, reason = "Gebruikt door de procesuitvoerder in F03")]
     pub command: String,
 
     pub arguments: Vec<String>,
@@ -89,6 +96,7 @@ pub struct ToolDefinition {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
+// De parameterdefinitie voor een tool
 pub struct ParameterDefinition {
     pub name: String,
     #[serde(rename = "type")]
@@ -98,10 +106,12 @@ pub struct ParameterDefinition {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "lowercase")]
+// De parameter types die momenteel worden ondersteund
 pub enum ParameterType {
     String,
 }
 
+/// Laad de configuratie uit het bestand dat wordt opgegeven door de omgevingsvariabele COMMANDHUB_CONFIG,
 pub fn load() -> Result<ConfigFile, std::io::Error> {
     let path = std::env::var_os("COMMANDHUB_CONFIG")
         .map(std::path::PathBuf::from)
@@ -110,6 +120,7 @@ pub fn load() -> Result<ConfigFile, std::io::Error> {
     load_from_path(&path)
 }
 
+/// Laad de configuratie uit het opgegeven pad
 fn load_from_path(path: &std::path::Path) -> Result<ConfigFile, std::io::Error> {
     let contents = std::fs::read_to_string(path).map_err(|error| {
         std::io::Error::new(
@@ -121,6 +132,7 @@ fn load_from_path(path: &std::path::Path) -> Result<ConfigFile, std::io::Error> 
         )
     })?;
 
+    // Parse de JSON en valideer de configuratie
     let config: ConfigFile = serde_json::from_str(&contents).map_err(|error| {
         std::io::Error::new(
             std::io::ErrorKind::InvalidData,
@@ -131,6 +143,7 @@ fn load_from_path(path: &std::path::Path) -> Result<ConfigFile, std::io::Error> 
         )
     })?;
 
+    // Valideer de configuratie
     config.validate().map_err(|error| {
         std::io::Error::new(
             std::io::ErrorKind::InvalidData,
@@ -145,206 +158,5 @@ fn load_from_path(path: &std::path::Path) -> Result<ConfigFile, std::io::Error> 
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn test_tool(name: &str, timeout: Option<u64>) -> ToolDefinition {
-        ToolDefinition {
-            name: name.to_owned(),
-            description: "Test tool".to_owned(),
-            command: "test-command".to_owned(),
-            arguments: Vec::new(),
-            parameters: Vec::new(),
-            timeout,
-        }
-    }
-
-    fn test_parameter(name: &str) -> ParameterDefinition {
-        ParameterDefinition {
-            name: name.to_owned(),
-            kind: ParameterType::String,
-            required: true,
-        }
-    }
-
-    #[test]
-    fn missing_timeout_becomes_none() {
-        let json = r#"
-        {
-            "tools": [
-                {
-                    "name": "git_version",
-                    "description": "Show the installed Git version",
-                    "command": "git",
-                    "arguments": ["--version"],
-                    "parameters": []
-                }
-            ]
-        }
-        "#;
-
-        let config: ConfigFile =
-            serde_json::from_str(json).expect("geldige configuratie moet worden ingelezen");
-
-        assert_eq!(config.tools[0].timeout, None);
-    }
-
-    #[test]
-    fn unknown_tool_field_is_rejected() {
-        let json = r#"
-        {
-            "tools": [
-                {
-                    "name": "git_version",
-                    "description": "Show the installed Git version",
-                    "command": "git",
-                    "arguments": ["--version"],
-                    "parameters": [],
-                    "unexpected": true
-                }
-            ]
-        }
-        "#;
-
-        assert!(serde_json::from_str::<ConfigFile>(json).is_err());
-    }
-
-    #[test]
-    fn duplicate_tool_names_are_rejected() {
-        let config = ConfigFile {
-            tools: vec![test_tool("duplicate", None), test_tool("duplicate", None)],
-        };
-
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn timeout_outside_allowed_range_is_rejected() {
-        for timeout in [Some(0), Some(60_001)] {
-            let config = ConfigFile {
-                tools: vec![test_tool("test_tool", timeout)],
-            };
-
-            assert!(config.validate().is_err());
-        }
-    }
-
-    #[test]
-    fn valid_full_placeholder_is_accepted() {
-        let mut tool = test_tool("list_files", None);
-        tool.arguments = vec!["{path}".to_owned()];
-        tool.parameters = vec![test_parameter("path")];
-
-        let config = ConfigFile { tools: vec![tool] };
-
-        assert!(config.validate().is_ok());
-    }
-
-    #[test]
-    fn unknown_placeholder_is_rejected() {
-        let mut tool = test_tool("list_files", None);
-        tool.arguments = vec!["{missing}".to_owned()];
-        tool.parameters = vec![test_parameter("path")];
-
-        let config = ConfigFile { tools: vec![tool] };
-
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn partial_placeholder_is_rejected() {
-        let mut tool = test_tool("list_files", None);
-        tool.arguments = vec!["prefix-{path}".to_owned()];
-        tool.parameters = vec![test_parameter("path")];
-
-        let config = ConfigFile { tools: vec![tool] };
-
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn duplicate_parameter_names_are_rejected() {
-        let mut tool = test_tool("list_files", None);
-        tool.parameters = vec![test_parameter("path"), test_parameter("path")];
-
-        let config = ConfigFile { tools: vec![tool] };
-
-        assert!(config.validate().is_err());
-    }
-
-    #[test]
-    fn invalid_json_is_rejected() {
-        let result = serde_json::from_str::<ConfigFile>(r#"{"tools":["#);
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn missing_required_tool_field_is_rejected() {
-        let json = r#"
-    {
-        "tools": [
-            {
-                "name": "git_version",
-                "description": "Show the installed Git version",
-                "arguments": [],
-                "parameters": []
-            }
-        ]
-    }
-    "#;
-
-        let result = serde_json::from_str::<ConfigFile>(json);
-
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn missing_config_file_returns_not_found() {
-        let path =
-            std::env::temp_dir().join(format!("commandhub-missing-config-{}", std::process::id()));
-
-        let error = load_from_path(&path).unwrap_err();
-
-        assert_eq!(error.kind(), std::io::ErrorKind::NotFound);
-    }
-
-    #[test]
-    fn invalid_json_file_returns_invalid_data() {
-        let path = std::env::temp_dir().join(format!(
-            "commandhub-invalid-json-{}.json",
-            std::process::id()
-        ));
-
-        std::fs::write(&path, r#"{"tools:["#).expect("testbestand moet geschreven kunnen worden");
-
-        let error = load_from_path(&path).expect_err("kapotte JSON moet worden afgewezen");
-
-        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
-        assert!(error.to_string().contains("Ongeldige JSON"));
-
-        std::fs::remove_file(path).expect("testbestand moet opgeruimd kunnen worden");
-    }
-
-    #[test]
-    fn invalid_config_file_returns_invalid_data() {
-        let path = std::env::temp_dir().join(format!(
-            "commandhub-invalid-config-{}.json",
-            std::process::id()
-        ));
-
-        let json = r#"{"tools":[
-            {"name":"duplicate","description":"First","command":"test","arguments":[],"parameters":[]},
-            {"name":"duplicate","description":"Second","command":"test","arguments":[],"parameters":[]}
-        ]}"#;
-
-        std::fs::write(&path, json).expect("testbestand moet geschreven kunnen worden");
-
-        let error = load_from_path(&path).expect_err("dubbele toolnamen moeten worden afgewezen");
-
-        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
-        assert!(error.to_string().contains("Ongeldige configuratie"));
-
-        std::fs::remove_file(path).expect("testbestand moet opgeruimd kunnen worden");
-    }
-}
+#[path = "tests/config_tests.rs"]
+mod tests;

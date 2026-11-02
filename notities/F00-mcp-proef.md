@@ -72,7 +72,7 @@ De hoofdcrate en de geïsoleerde proef zijn op Windows beide gecontroleerd met `
 - Gewijzigd: documentatie bijgewerkt met extra-argumentgedrag en eindcontroleresultaten.
 - Geleerd: de extra parameter werd geaccepteerd; vertrouw voor latere invoervalidatie op expliciete validatie in de kern, niet op deze proefhandler.
 - Gecontroleerd: `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` en `cargo test --locked` vanuit zowel repositoryroot als proefmap; alle geslaagd, beide testbuilds hadden 0 tests.
-- Open vragen: PR-review en merge door de gebruiker; bredere protocol/securitytests horen bij latere integratie.
+- Open vragen: PR-review en merge; bredere protocol/securitytests horen bij latere integratie.
 
 ## Vervolg
 

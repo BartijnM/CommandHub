@@ -44,4 +44,8 @@ Een tool heeft een naam, beschrijving, executable (`command`), lijst losse argum
 
 `timeout` weglaten betekent 10 seconden. Een ingestelde timeout moet groter zijn dan 0 en maximaal 60 seconden zijn. De applicatie leest het voorbeeldformaat strikt in en wijst onbekende velden en ongeldige configuraties af. De voorbeelden tonen configuratie; procesuitvoering en bijbehorende beveiligingsgrenzen vallen buiten F02. De genoemde `ls`-opdracht is niet op elk platform beschikbaar; kies bij uitvoering een platformgeschikte executable.
 
-De client levert alleen parameterwaarden en kan `command` of vaste argumenten niet wijzigen. De toegestane executabletypen (waaronder eventueel Windows `.bat`/`.cmd`) en uitvoer- en capaciteitsgrenzen moeten vóór generieke uitvoering in F03 worden vastgelegd.
+De client kan `command` of vaste argumenten niet wijzigen. F03 voert alleen tools zonder dynamische parameters uit; daarvoor bevat `parameters` een lege lijst en worden geen placeholders gebruikt. Parametervervanging volgt in F04.
+
+F03 staat native executables en expliciet geconfigureerde interpreters toe. Voor een script configureert de beheerder de interpreter als `command` en het script als vast argument. De server start niet automatisch een shell en dispatcht niet impliciet naar Windows `.bat`- of `.cmd`-bestanden. Het childproces erft de omgeving en werkdirectory van de server.
+
+De F03-grenzen zijn maximaal 1 MiB gecombineerde stdout/stderr, 16 KiB requestbody en vier gelijktijdige uitvoeringen. Een volle capaciteit wordt direct afgewezen. De executor en process-wrap-platformwrappers zijn geïmplementeerd; HTTP-requestlimitering, procesboomtests met subprocessen en de uitvoeringsroute zijn nog niet gereed.
