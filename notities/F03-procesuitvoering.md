@@ -11,7 +11,7 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. Linux-controles en Unix-groepsopruiming zijn voorbereid maar niet op Linux uitgevoerd. F03 blijft In uitvoering tot Linux-verificatie en review/merge.
+F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. Daarna toont CI-run #20 geslaagde Ubuntu- en Windows-jobs. Linux-verificatie is daarmee aangetoond; F03 staat op Review tot review/merge zijn bevestigd.
 
 ## Hoe werkt de code?
 
@@ -33,7 +33,7 @@ Shutdown gebruikt `watch::Sender<bool>`: `false` is actief, `true` betekent afsl
 
 `AppState` bevat gedeelde `Arc`-verwijzingen naar registry en executor. `Clone` kopieert deze verwijzingen, niet de service. `FromRef<AppState>` laat de ontdekcontroller alleen de registry ontvangen. `async move` geeft de Ctrl+C-future een eigen serviceverwijzing. `state.clone()` voorkomt dat de router de enige state verbruikt voordat shutdown die opnieuw nodig heeft.
 
-**Stopbeleid:** expliciete annulering/shutdown is de normale route met afgewachte opruimpoging. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet, aangevuld met `ProcessGuard` dat op Unix de groepswrapper een stopsignaal laat sturen. Daarbij is geen normaal uitvoeringsresultaat of afgewachte opruimfout beschikbaar. Na `abort` wacht de test de taak af voordat capaciteit en PID worden gecontroleerd. Deze scenario's zijn getest op Windows; Linux en expliciet HTTP-clientdisconnectbeleid blijven open.
+**Stopbeleid:** expliciete annulering/shutdown is de normale route met afgewachte opruimpoging. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet, aangevuld met `ProcessGuard` dat op Unix de groepswrapper een stopsignaal laat sturen. Daarbij is geen normaal uitvoeringsresultaat of afgewachte opruimfout beschikbaar. Na `abort` wacht de test de taak af voordat capaciteit en PID worden gecontroleerd. Deze scenario's zijn op Windows lokaal en op Linux via CI gecontroleerd. Expliciet HTTP-clientdisconnectbeleid blijft buiten deze afgeronde F03-scenario's.
 
 ## HTTP-adapter
 
@@ -49,7 +49,7 @@ Alle vijf testmodules staan onder `src/tests/`. De productiebestanden koppelen z
 
 De testbinary start genegeerde helpers als aparte processen. De subprocess-helper schrijft een PID-bestand en start `ping` op Windows of `sleep` op Unix. Markers via `--skip` kiezen grote output of een direct child dat eerder terugkeert; drop van een `std::process::Child` beëindigt het subprocess niet automatisch. Oude PID-bestanden worden vooraf verwijderd; scenario's hebben verschillende namen met het bovenliggende test-PID. `join!` laat uitvoering en signaalgever voortgang maken totdat een geldig PID beschikbaar is.
 
-De zeven opruimscenario's en de TCP-tests delen nu `process_checks::assert_stopped`. Op Windows wordt de proceslijst async opgevraagd met 3 s timeout en `kill_on_drop(true)`; gedurende maximaal 5 s wordt elke 50 ms opnieuw gecontroleerd totdat het PID ontbreekt. Dat voorkomt een enkele timinggevoelige momentopname. Eventuele blokkerende OS-processtart krijgt hiermee geen harde tijdsgarantie. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbrekende processen en zombies gelden als beëindigd. Deze platformtak is lokaal niet gecompileerd of uitgevoerd.
+De zeven opruimscenario's en de TCP-tests delen nu `process_checks::assert_stopped`. Op Windows wordt de proceslijst async opgevraagd met 3 s timeout en `kill_on_drop(true)`; gedurende maximaal 5 s wordt elke 50 ms opnieuw gecontroleerd totdat het PID ontbreekt. Dat voorkomt een enkele timinggevoelige momentopname. Eventuele blokkerende OS-processtart krijgt hiermee geen harde tijdsgarantie. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbrekende processen en zombies gelden als beëindigd. Deze platformtak is lokaal niet uitgevoerd; de geslaagde Ubuntu-CI controleert hem daarna.
 
 ## Verificatie — actuele stand 2026-11-02
 
@@ -62,13 +62,13 @@ De zeven opruimscenario's en de TCP-tests delen nu `process_checks::assert_stopp
 | Echte TCP-concurrency | Vier bevestigde actieve procesbomen, vijfde request 503 binnen testbewaking; na vrijgave vier HTTP 200-responses en succesvolle nieuwe uitvoering |
 | Actieve HTTP-shutdown | Hetzelfde afsluitpad als Ctrl+C, geïnjecteerd signaal, client 503, server afgerond, child/subprocess gestopt en geen nieuwe TCP-verbinding |
 | Logging | Succes/niet-nul exit en onbekende tool gecontroleerd; argumentwaarden, clientwaarde en procesoutput ontbreken in testlogs |
-| Linux | Niet uitgevoerd: WSL niet geïnstalleerd; alleen Windows-target aanwezig. Ubuntu-CI moet platformacceptatie aantonen |
+| Ubuntu/Windows CI | Aangeleverde screenshot van GitHub Actions-run #20: beide platformjobs Success; exacte CI-testtotalen niet zichtbaar |
 
 De twee nieuwe HTTP-helpers verklaren de stijging van 2 naar 4 genegeerde functies. Ze worden expliciet als child gestart en zijn geen overgeslagen acceptatietests. De TCP-testclient gebruikt HTTP/1.0 met connection-close; alle requests lopen over echte sockets. PID-bestanden bevestigen dat processen gestart zijn vóór capaciteit/shutdown wordt beoordeeld. De tests controleren zowel direct child als subprocess.
 
 De OS-signaalbron zelf is niet tijdens actieve uitvoering geautomatiseerd aangeroepen: de integratietest gebruikt een kanaal om hetzelfde `server::serve`-afsluitpad te activeren. Eerder is echte Ctrl+C zonder actieve tools handmatig gecontroleerd. Op 2026-10-30 is tevens een echte POST naar `git_version` vastgelegd (succes, exitcode 0, 61 ms).
 
-De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests en build uit. Er is een jobtimeout van 15 minuten toegevoegd; de workflow is niet gestart of gepubliceerd. Geen Git-commando's, commit, push of merge uitgevoerd.
+De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests en build uit. Er is een jobtimeout van 15 minuten toegevoegd; de aangeleverde push-run #20 is op beide platforms geslaagd. Er zijn bij deze documentatie-update geen Git-commando's uitgevoerd. Review/merge zijn nog niet bevestigd.
 
 ## Problemen en oplossingen
 
@@ -77,7 +77,7 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 - State zonder `.clone()` aan de router doorgeven gaf E0382 bij later shutdowngebruik. Gedeelde verwijzingen klonen behoudt beide eigenaars.
 - Blokkerend `tasklist` en één momentopname zijn vervangen door async begrensd pollen. `from_utf8_lossy` voorkomt fouten door procesnamen met niet-UTF-8-bytes.
 - Testcode maakte productiebestanden lang. Verplaatsing naar `src/tests/` houdt code gescheiden met behoud van private toegang en helperpaden.
-- Windows-formatter-/lintmeldingen zijn opgelost: overbodige haakjes, ongebruikte lint-expectation en samen te voegen voorwaarden. De zombie-lint bij de helper met vroegtijdige parent-exit heeft een expliciete `expect` met reden: het bewust achterlaten is precies het scenario dat de test moet opvangen. Linux-opruimsemantiek blijft ongeverifieerd.
+- Windows-formatter-/lintmeldingen zijn opgelost: overbodige haakjes, ongebruikte lint-expectation en samen te voegen voorwaarden. De zombie-lint bij de helper met vroegtijdige parent-exit heeft een expliciete `expect` met reden: het bewust achterlaten is precies het scenario dat de test moet opvangen. De geconfigureerde Linux-opruimscenario's zijn daarna via Ubuntu-CI geslaagd.
 
 ## Werksessies
 
@@ -152,6 +152,15 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 - Formatter toegepast; Clippy met warnings als errors, volledige tests en build geslaagd op Windows. Laatste resultaat: 59 geslaagd, 4 genegeerde helpers. Ubuntu/Windows-workflow nagelezen en jobtimeout toegevoegd.
 - Overdracht: voer Ubuntu-CI uit zodra repositorywijzigingen via de normale werkwijze beschikbaar zijn. Platformfouten oplossen en resultaten vastleggen voordat F03 naar Review/Klaar kan.
 
+### 2026-11-02 — CI-platformbewijs en overdracht naar review
+
+- Bewijs: aangeleverde GitHub Actions-screenshot van run #20, getriggerd door een push op `feature/F03-procesuitvoering`. Runstatus Success; `Checks (ubuntu-latest)` en `Checks (windows-latest)` zijn groen.
+- Zichtbare duur: Ubuntu 51 s, Windows 1 m 45 s, totale run 1 m 48 s. Geen exacte testtotalen uit de screenshot afgeleid.
+- De lokale workflow voert formatter, Clippy met warnings als errors, tests en build uit. Door de geslaagde Ubuntu-job zijn de Linux-specifieke status-/procesboomtests en compilatie via CI aangetoond.
+- Niet-blokkerende annotaties over Node.js 20 bij actions zijn zichtbaar. De volledige annotatietekst is niet aangeleverd; action-onderhoud staat los van een mislukte test, want beide jobs zijn geslaagd.
+- Linux-todo en platformacceptatie afgevinkt. Status naar Review; geen bewijs van review of merge, dus nog niet Klaar.
+- Alleen algemene documentatie aangepast. Geen Rust-/workflowwijzigingen, tests of Git-commando's uitgevoerd.
+
 ## Vervolg
 
-Alle uitvoerbare Windows-taken zijn gecontroleerd. Resterend: Linux via de bestaande CI-matrix compileren, linten en uitvoeren, zo nodig Unix-procesopruiming corrigeren en de resultaten documenteren. F03 blijft In uitvoering tot platformacceptatie; daarna review en merge volgens de projectwerkwijze. Geen Git-commando's uitvoeren zonder nieuwe expliciete opdracht.
+Neem de documentatie-update mee op de featurebranch, controleer de CI van de laatste branchstand en rond review/merge naar develop af. Markeer F03 pas Klaar wanneer de merge is bevestigd; daarna volgt F04. Beoordeel Node.js-annotaties bij de actions eventueel als afzonderlijk onderhoudspunt. Geen Git-commando's uitvoeren zonder nieuwe expliciete opdracht.

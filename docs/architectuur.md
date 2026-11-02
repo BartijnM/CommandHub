@@ -1,6 +1,6 @@
 # Architectuur
 
-Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux en MCP-integratie blijven open.
+Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux is via de geslaagde Ubuntu-CI gecontroleerd; MCP-integratie volgt in F05.
 
 ## Beoogde gegevensstroom
 
@@ -18,7 +18,7 @@ Bij het starten: configuratie laden → configuratie valideren → registry bouw
 | Registry | Gevalideerde tooldefinities op naam beschikbaar maken |
 | Config loader | JSON lezen en controleren; ongeldige configuratie stopt startup |
 | Validation | Parameters en uitvoeringsbeleid controleren |
-| Process executor | Proces, uitvoer, tijdslimiet, capaciteit, expliciete annulering en opruimen beheren; subprocessopruiming en shutdown zijn in Windows-tests gecontroleerd; Linux blijft open |
+| Process executor | Proces, uitvoer, tijdslimiet, capaciteit, expliciete annulering en opruimen beheren; subprocessopruiming en shutdown zijn in Windows-tests gecontroleerd; Linux is via CI gecontroleerd |
 | Logging | Context, uitkomst en duur vastleggen zonder gevoelige inhoud |
 
 ## Structuur groeit met de features
@@ -35,7 +35,7 @@ De server maakt één `AppState` met `Arc<ToolRegistry>` en `Arc<ExecutionServic
 
 `try_acquire` controleert de shutdownstatus en houdt de leesbewaker vast tijdens capaciteitsreservering. `begin_shutdown` bewaart `true` via `send_replace`, ook zonder ontvangers. Nieuwe uitvoeringen krijgen daarna `Cancelled`. `shutdown().await` signaleert shutdown en wacht op alle vier permits. Dat bewijst afronding van de uitvoeringsfutures en hun opruimpogingen, maar verzamelt geen opruimfouten en is op zichzelf geen processtatuscontrole.
 
-`main.rs` geeft de Ctrl+C-future aan `server::serve`. Die signaleert eerst `begin_shutdown`, laat Axum graceful afsluiten en wacht daarna op `shutdown().await` voordat een serverfout wordt doorgegeven. De signaalbron kan in TCP-tests door een kanaal worden vervangen; productie en test gebruiken hetzelfde serverafsluitpad. Normaal stoppen verloopt via expliciete annulering of shutdown. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet. Omdat die Tokio-vlag op Unix alleen de directe child stopt, bewaart `ProcessGuard` de wrapper en vraagt bij drop een groepssignaal via `start_kill` aan. Op Unix probeert `stop_child` de groep ook te beëindigen nadat de leider is afgerond; ESRCH betekent dat de groep al verdwenen is. Bij drop kan geen normaal uitvoeringsresultaat of afgewachte opruimfout worden teruggegeven. Dit vangnet is getest op Windows, nog niet op Linux.
+`main.rs` geeft de Ctrl+C-future aan `server::serve`. Die signaleert eerst `begin_shutdown`, laat Axum graceful afsluiten en wacht daarna op `shutdown().await` voordat een serverfout wordt doorgegeven. De signaalbron kan in TCP-tests door een kanaal worden vervangen; productie en test gebruiken hetzelfde serverafsluitpad. Normaal stoppen verloopt via expliciete annulering of shutdown. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet. Omdat die Tokio-vlag op Unix alleen de directe child stopt, bewaart `ProcessGuard` de wrapper en vraagt bij drop een groepssignaal via `start_kill` aan. Op Unix probeert `stop_child` de groep ook te beëindigen nadat de leider is afgerond; ESRCH betekent dat de groep al verdwenen is. Bij drop kan geen normaal uitvoeringsresultaat of afgewachte opruimfout worden teruggegeven. Dit vangnet wordt door de tests op beide CI-platforms gecontroleerd; run #20 toont geslaagde Ubuntu- en Windows-jobs.
 
 ## HTTP-adapter en tests
 
@@ -49,7 +49,7 @@ Maak onderscheid tussen ongeldige invoer, onbekende tool, capaciteitsgebrek, sta
 
 ## Platformbeleid
 
-Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Windows controleert het verdwijnen via async `tasklist`. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbreken en zombie/exitstatus betekenen beëindigd, niet noodzakelijk al gereaped. Alleen Windows is uitgevoerd. De voorbereide Unix-groepsopruiming en dropbewaker moeten nog op Ubuntu worden geverifieerd.
+Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Windows controleert het verdwijnen via async `tasklist`. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbreken en zombie/exitstatus betekenen beëindigd, niet noodzakelijk al gereaped. Windows is lokaal uitgevoerd; de Unix-groepsopruiming en dropbewaker zijn daarna via de geslaagde Ubuntu-CI gecontroleerd. De bron voor het CI-resultaat is de aangeleverde screenshot van run #20.
 
 ## Aanvullende verificatie en logging
 

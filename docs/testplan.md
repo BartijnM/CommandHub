@@ -1,17 +1,17 @@
 # Testplan
 
-Status bijgewerkt: 2026-11-02. Formatter, Clippy, build en de volledige suite slagen op Windows: **59 passed, 0 failed, 4 ignored**. Logging, echte TCP-concurrency en actieve server-shutdown zijn gecontroleerd. Linux-controles zijn voorbereid maar niet op Linux uitgevoerd; Linux-CI is de resterende platformacceptatie.
+Status bijgewerkt: 2026-11-02. Formatter, Clippy, build en de volledige suite slagen op Windows: **59 passed, 0 failed, 4 ignored**. Logging, echte TCP-concurrency en actieve server-shutdown zijn gecontroleerd. Aanvullend toont de aangeleverde screenshot van CI-run #20 succes op Ubuntu en Windows. Daarmee is de platformacceptatie via CI aangetoond; review en merge blijven open.
 
 | Eisen | Aanwezig bewijs en resterende controles |
 | --- | --- |
 | R01–R03 | Configuratievalidatie en laadfouten; ontdekking via HTTP; eerdere handmatige herstartcontrole zonder rebuild |
-| R04–R06 | Toolselectie, succes, niet-nul exit, startfout, output, timeout, annulering en shutdown. Windows-PID-controles na stoproutes, future-drop en taakafbreking. Linux blijft open |
+| R04–R06 | Toolselectie, succes, niet-nul exit, startfout, output, timeout, annulering en shutdown. Windows-PID-controles na stoproutes, future-drop en taakafbreking. Linux-CI geslaagd |
 | R07 | Gedeeld outputbudget, child-output boven 1 MiB, capaciteitsgrens/vrijgave. HTTP-body exact 16 KiB toegestaan en groter afgewezen. HTTP 503 bij vier vastgehouden permits én bij vier echte actieve TCP-uitvoeringen; capaciteitsherstel na hun succesvolle afloop getest |
 | R08–R10 | F04: dynamische parameters, typen, onbekende velden, optie-injectie en padbeleid |
 | R11/R16 | F00: MCP Inspector CLI; protocol-/Origin-/Host-controles bij F05 verder verifiëren |
 | R12 | Windows-routetests voor succes, niet-nul exit als 200, 400/404/413/500/502/503/504 en shutdownafwijzing; echte POST naar geconfigureerde tool geslaagd |
 | R13 | Vaste foutcodes en geen OS-details in JSON getest. Loggingwrapper en geïsoleerde loggingtests controleren geselecteerde metadata en het ontbreken van client-/argumentwaarden en procesoutput |
-| R14/R15 | Kern is transportonafhankelijk; HTTP-adapter gebruikt gedeelde state. Dezelfde kernscenario's en PID-opruiming op Linux blijven open |
+| R14/R15 | Kern is transportonafhankelijk; HTTP-adapter gebruikt gedeelde state. Dezelfde kernscenario's en PID-opruiming worden op Linux door de geslaagde Ubuntu-CI gecontroleerd |
 | R17 | README bevat start- en POST-voorbeeld; complete demo en schone-checkoutcontrole volgen bij oplevering |
 
 ## Testindeling
@@ -28,7 +28,7 @@ De gedeelde helper `process_checks::assert_stopped` gebruikt op Windows async `t
 
 Tests bewaken ook capaciteitsvrijgave. Shutdown weigert nieuwe reserveringen en wacht op alle permits. Een afzonderlijke test houdt één permit vast om te bewijzen dat shutdown wacht. Future-drop en Tokio-`abort` zijn getest; na `abort` wordt de taak afgewacht voordat capaciteit en PID worden beoordeeld. Normaal stoppen gebruikt expliciete annulering/shutdown; drop/abort is een vangnet zonder teruggegeven uitvoerings-/opruimresultaat.
 
-Linux heeft nu een `/proc`-statuscontrole, inclusief onderscheid van zombieprocessen. Unix-groepssignalen en future-dropbewaking zijn voorbereid op basis van de lokale wrapperbron. Deze code is niet op Linux gecompileerd of uitgevoerd: WSL ontbreekt en alleen de Windows-target is geïnstalleerd. De bestaande Ubuntu/Windows-CI-matrix voert alle Cargo-controles uit en heeft een jobtimeout van 15 minuten.
+Linux heeft nu een `/proc`-statuscontrole, inclusief onderscheid van zombieprocessen. Unix-groepssignalen en future-dropbewaking zijn voorbereid op basis van de lokale wrapperbron. Deze code is lokaal niet op Linux uitgevoerd: WSL ontbreekt en alleen de Windows-target is geïnstalleerd. De aangeleverde screenshot bevestigt daarna een geslaagde Ubuntu-CI-job. De bestaande Ubuntu/Windows-CI-matrix voert alle Cargo-controles uit en heeft een jobtimeout van 15 minuten.
 
 ## HTTP-controles
 
@@ -54,9 +54,9 @@ cargo test --locked
 | 2026-11-02, Windows | Formatter, Clippy (`-D warnings`), build | Alle geslaagd |
 | 2026-11-02, Windows | `cargo test --locked` | 59 passed, 0 failed, 4 ignored, 5,72 s |
 | 2026-11-02, Windows | Echte TCP-concurrency en actieve shutdown | Geslaagd, inclusief processtatuscontroles |
-| 2026-11-02, Linux | Platformacceptatie | Niet uitgevoerd; wacht op Ubuntu-CI |
+| 2026-11-02, Ubuntu/Windows CI | GitHub Actions-run #20 op featurebranch | Beide platformjobs Success; screenshot als bewijs, exacte CI-testtotalen niet zichtbaar |
 
-De eindcontroles van 2026-11-02 zijn daadwerkelijk uitgevoerd op Windows. Linux blijft open; er is geen CI-run gestart en geen Git-commando uitgevoerd.
+De eindcontroles van 2026-11-02 zijn daadwerkelijk uitgevoerd op Windows. Linux is daarna via CI gecontroleerd; de screenshot van run #20 is vastgelegd. Bij deze documentatie-update zijn geen tests of Git-commando's uitgevoerd.
 
 ## Demo
 
@@ -66,3 +66,4 @@ De eindcontroles van 2026-11-02 zijn daadwerkelijk uitgevoerd op Windows. Linux 
 4. Invoerfouten, timeout, outputlimiet en volle capaciteit tonen.
 5. Logging, concurrency en het gecontroleerde shutdownpad tijdens uitvoering tonen.
 6. MCP-demo bij F05; complete demo en herstart zonder rebuild bij oplevering.
+De CI-screenshot toont niet-blokkerende Node.js 20-verouderingsannotaties. De volledige annotatietekst en de afzonderlijke testlogs zijn niet aangeleverd; daaruit worden geen aanvullende aantallen of details afgeleid.
