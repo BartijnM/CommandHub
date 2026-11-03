@@ -1,6 +1,6 @@
 # Testplan
 
-Status: 2026-11-03. De huidige Windows-suite bevat 64 geslaagde tests en 4 genegeerde proceshelpers. De Windows-statuscontrole is vervangen; de aangeleverde CI-screenshot bevestigt de reviewstand op Ubuntu en Windows (commit 105e69b).
+Status: 2026-11-03. De laatste geverifieerde Windows-suite vóór F07 bevatte 64 geslaagde tests en 4 genegeerde proceshelpers. F07 voegt macOS-tests toe; de aangeleverde screenshot toont de nieuwe jobs op macOS, Ubuntu en Windows geslaagd. Exacte testtotalen zijn niet zichtbaar. De Windows-statuscontrole is vervangen; de aangeleverde CI-screenshot bevestigt de reviewstand op Ubuntu en Windows (commit 105e69b).
 
 | Eisen | Aanwezig bewijs en resterende controles |
 | --- | --- |
@@ -13,6 +13,12 @@ Status: 2026-11-03. De huidige Windows-suite bevat 64 geslaagde tests en 4 geneg
 | R13 | Vaste foutcodes en geen OS-details in JSON; geïsoleerde loggingtests bewaken het ontbreken van argumentwaarden en procesoutput |
 | R14/R15 | Kern zonder HTTP-afhankelijkheid; Windows-suite slaagt. Historische CI-run #22 controleerde Ubuntu/Windows na ESRCH-correctie. De reviewstand van commit 105e69b is eveneens op Ubuntu en Windows via CI geslaagd |
 | R17 | README-start-/POST-voorbeeld; volledige demo en schone-checkoutcontrole bij F06 |
+
+## Aanvullende macOS-verificatie (F07)
+
+Dezelfde volledige suite draait nu ook op macos-latest in GitHub Actions. De bestaande procesboom- en TCP-scenario’s gebruiken daar de nieuwe proc_pidinfo-controle. Toegevoegd zijn drie pure classificatietests (actief/zombie, verdwenen PID en echte fouten), een macOS-only levenscyclustest, validatie van tools.macos.json op alle platforms en een macOS-only uitvoering van echo_ready uit dat bestand. De overige voorbeeldtools zijn niet afzonderlijk getest.
+
+De eigenaar laat Clippy, tests en build via Actions uitvoeren. Deze wijziging heeft lokaal alleen formatterings- en manifestcontrole gehad. De aangeleverde screenshot bevestigt nu alle drie jobs: macOS 56 s, Ubuntu 44 s en Windows 1 m 54 s. Daarmee zijn de F07-platformcriteria aangetoond; review/merge blijft open. Het eerdere bewijs voor 105e69b geldt uitsluitend voor de refactor vóór F07.
 
 ## Testindeling
 
@@ -34,7 +40,7 @@ De actieve shutdowntest injecteert een kanaalsignaal in hetzelfde serverpad als 
 
 ## Controles en historie
 
-Voer cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en cargo test --locked uit. De CI-matrix voert ook cargo build --locked uit op Ubuntu en Windows.
+Voer cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en cargo test --locked uit. De CI-matrix voert ook cargo build --locked uit op Ubuntu, Windows en macOS.
 
 - Voor de review: 62 geslaagde Windows-tests, 4 helpers; latere runs faalden wisselend op externe tasklist-aanroepen en HTTP-tijdslimieten.
 - Na de correcties: gerichte configuratiesuite 14 geslaagd; processtatussuite 4 geslaagd; volledige parallelle suite 64 geslaagd, 4 helpers.
@@ -46,6 +52,6 @@ De [F03-notitie](../notities/F03-procesuitvoering.md) bevat de actuele eindcontr
 
 ## Demo bij oplevering
 
-Toon configuratie laden, ontdekking, parameterloze uitvoering, niet-nul exit, invoerfouten, outputlimiet, timeout, capaciteit, logging en shutdown. Voeg bij F04/F05 dynamische parameters en MCP toe; rond bij F06 de volledige demo op beide platforms af.
+Toon configuratie laden, ontdekking, parameterloze uitvoering, niet-nul exit, invoerfouten, outputlimiet, timeout, capaciteit, logging en shutdown. Voeg bij F04/F05 dynamische parameters en MCP toe; rond bij F06 de volledige demo op alle drie platforms af.
 
 CI-bewijs refactor: aangeleverde screenshot voor 105e69b op refactor/na-feature-3 toont Ubuntu Success (42 s), Windows Success (1 m 47 s) en run Success (1 m 50 s). Exacte CI-testtotalen zijn onbekend. De documentatie-update zelf is nog niet gepusht; review/merge blijft open.

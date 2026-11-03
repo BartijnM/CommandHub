@@ -25,8 +25,8 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 ## Todo
 
-- [ ] Voorbeeldconfiguraties voor Windows en Linux afronden.
-- [ ] Schone installatie en volledige keten op beide platforms testen.
+- [ ] Voorbeeldconfiguraties voor Windows, Linux en macOS afronden; bouw voort op F07.
+- [ ] Schone installatie en volledige keten op alle drie platforms testen.
 - [ ] README, technische documentatie en notities actualiseren.
 - [ ] Demo van configuratie, ontdekking, uitvoering, fouten, logging en timeout voorbereiden.
 - [ ] Requirementdekking en resterende beperkingen nalopen.

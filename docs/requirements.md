@@ -17,12 +17,12 @@ Concept voor de eerste oplevering. Prioriteit bepaalt de scope, niet de bouwvolg
 | R11 | MCP via HTTP aanbieden en met echte MCP-client testen | Must | F00/F05 |
 | R12 | HTTP-routes voor ontdekken en uitvoeren beschikbaar maken | Must | F02/F03/F04 |
 | R13 | Gestructureerde logging en consistente foutcategorieën | Must | Alle |
-| R14 | Windows en Linux ondersteunen met platformgeschikte tools | Must | F03/F06 |
+| R14 | Windows, Linux en macOS ondersteunen met platformgeschikte tools | Must | F03/F06/F07 |
 | R15 | Gedeelde kern voor HTTP en MCP; modules hebben eigen verantwoordelijkheid | Must | Alle |
 | R16 | Veilige lokale binding en protocolspecifieke HTTP-controles | Must | F00/F05 |
 | R17 | README, architectuur, security, voorbeelden en demo opleveren | Must | Alle/F06 |
 | R18 | API-key-authenticatie voor een expliciet ontworpen remote gebruiksscenario | Should | Later |
-| R19 | CI op Windows en Linux | Should | F01/F06 |
+| R19 | CI op Windows, Linux en macOS | Should | F01/F06/F07 |
 | R20 | YAML en hot-reload | Could | Later |
 | R21 | Dashboard, database, jobqueue, WebSockets en distributed execution | Won't | Buiten eerste versie |
 

@@ -4,13 +4,15 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-De hoofdapplicatie biedt `GET /status`, `GET /tools` en parameterloze uitvoering via `POST /tools/{toolname}`. F02 is gemerged; F03 staat op Review. De review van 2026-11-03 voegt validatie van lege namen/commands toe, deelt testhelpers en gebruikt Windows-proceshandles voor statuscontrole. Op Windows slagen formatter, Clippy en 64 tests; 4 genegeerde functies zijn proceshelpers. Een offline build in target/review-build slaagt eveneens, omdat de standaardbinary nog door de draaiende server wordt gebruikt. De aangeleverde CI-screenshot van commit 105e69b op refactor/na-feature-3 bevestigt ook de reviewwijzigingen op Ubuntu en Windows. Review/merge is nog niet bevestigd. Zie [voortgang](docs/voortgang.md), [F03-notitie](notities/F03-procesuitvoering.md) en [F00-notitie](notities/F00-mcp-proef.md).
+De hoofdapplicatie biedt GET /status, GET /tools en parameterloze POST /tools/{toolname}. De refactor na F03 is via CI op Ubuntu en Windows bevestigd voor commit 105e69b; de laatste lokale suite vóór F07 telde 64 geslaagde tests en 4 proceshelpers.
+
+Actief is [F07 — macOS-ondersteuning](docs/features/F07-macos-ondersteuning.md), vóór F04: de bestaande Unix-executor wordt hergebruikt, macOS-procescontroles en een voorbeeldconfiguratie zijn toegevoegd en CI omvat nu ook macos-latest. De aangeleverde screenshot bevestigt geslaagde CI-jobs op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). F07 staat op Review; review/merge is nog niet bevestigd. Zie [voortgang](docs/voortgang.md) en de [F07-notitie](notities/F07-macos-ondersteuning.md). Dynamische parameters en MCP-integratie volgen in F04/F05.
 
 ## Installeren en gebruiken
 
 Zie de instructies hieronder voor installatie en Cargo-commando's. De featurevolgorde en branchwerkwijze staan in [de roadmap](docs/roadmap.md).
 
-Benodigd: recente stabiele Rust-toolchain met ondersteuning voor editie 2024, Cargo en op Windows de MSVC-buildtools. Git is nodig voor versiebeheer.
+Benodigd: recente stabiele Rust-toolchain met ondersteuning voor editie 2024, Cargo en een platformgeschikte linker. Gebruik op Windows de MSVC-buildtools en op macOS de Xcode Command Line Tools. Git is ook nodig voor de Git-voorbeeldtool en de bestaande tests. De macOS-verificatie is via GitHub Actions geslaagd.
 
 Voer vanuit de projecthoofdmap uit:
 
@@ -32,6 +34,21 @@ Voer met de server actief in een tweede PowerShell-terminal de geconfigureerde p
 ```powershell
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3000/tools/git_version" -ContentType "application/json" -Body '{}' | ConvertTo-Json
 ```
+
+Op macOS kies je de aparte configuratie vanuit de projectmap:
+
+```sh
+export COMMANDHUB_CONFIG=config/tools.macos.json
+cargo run --locked
+```
+
+Voer met de server actief in een tweede terminal de native voorbeeldtool uit:
+
+```sh
+curl -X POST http://127.0.0.1:3000/tools/echo_ready -H 'Content-Type: application/json' -d '{}'
+```
+
+De standaardconfiguratie bevat een Windows-pingvoorbeeld. Kies op macOS expliciet de macOS-configuratie; automatische platformselectie is niet toegevoegd.
 
 De response bevat `success`, `stdout`, `stderr`, `exitCode` en `duration` in milliseconden. F03 accepteert alleen een leeg JSON-object; dynamische parameters volgen in F04. De requestbody mag maximaal 16 KiB zijn. Zie [het API-contract](docs/api-en-configuratie.md) voor foutresponses.
 

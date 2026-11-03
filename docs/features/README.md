@@ -8,6 +8,7 @@ De volledige volgorde staat in [de roadmap](../roadmap.md).
 | F01 | [Projectbasis](F01-projectbasis.md) |
 | F02 | [Configuratie en ontdekken](F02-toolconfiguratie.md) |
 | F03 | [Procesuitvoering](F03-procesuitvoering.md) |
+| F07 | [macOS-ondersteuning](F07-macos-ondersteuning.md) |
 | F04 | [Dynamische parameters](F04-parameters.md) |
 | F05 | [MCP-integratie](F05-mcp-integratie.md) |
 | F06 | [Oplevering](F06-oplevering.md) |

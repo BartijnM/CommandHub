@@ -211,3 +211,7 @@ De aangeleverde screenshot toont een geslaagde push-run voor commit `105e69b` op
 - Twee Node.js 20-verouderingswaarschuwingen bij actions/checkout@v4 en een Ubuntu-labelmelding zijn zichtbaar; de jobs zijn geslaagd. Workflowonderhoud blijft een afzonderlijk punt.
 - Hiermee is de eerder open Linux-/CI-controle van de refactor bevestigd. Review/merge is niet zichtbaar en blijft te bevestigen. Deze documentatie-update volgt na de getoonde codecommit; controleer na push de CI van de laatste branchstand.
 - Alleen documentatie aangepast op basis van het aangeleverde bewijs; geen tests opnieuw uitgevoerd en geen Git-commando’s uitgevoerd.
+
+### 2026-11-03 — Overdracht naar F07
+
+De eigenaar is na de refactor terug op develop gegaan en heeft daarna feature/macos-ondersteuning aangemaakt. De volgende actieve uitbreiding is [F07](F07-macos-ondersteuning.md), vóór F04. Die gebruikt dezelfde Unix-executor; macOS-verificatie moet nog via Actions gebeuren. De eerdere CI-resultaten in deze notitie blijven historie van F03/de refactor.

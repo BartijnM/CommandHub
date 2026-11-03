@@ -95,3 +95,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 ## Reviewcorrecties — 2026-11-03
 
 De review verwerkt lege configuratiewaarden, enkele toollookup, Engelse testnamen en gedeelde testhelpers. Windows-proceschecks gebruiken nu handles in plaats van tasklist; geen verhoogde timeout. De Windows-suite slaagt met 64 tests en 4 proceshelpers. De eerdere CI-run #22 is historisch bewijs; Linux-controle van deze reviewstand is via de aangeleverde CI-screenshot voor commit 105e69b bevestigd. De eigenaar meldt F03 afgerond, maar review/merge is niet afzonderlijk gecontroleerd. De featurestatus blijft daarom Review. Details en eindcontrole staan in de featurenotitie.
+
+## Platformuitbreiding vóór F04
+
+De aparte [F07-macOS-uitbreiding](F07-macos-ondersteuning.md) hergebruikt deze uitvoeringskern. De eigen checklist en het geslaagde macOS-CI-bewijs staan bij F07; het eerdere Ubuntu/Windows-bewijs wordt daarmee niet als macOS-bewijs gepresenteerd.
