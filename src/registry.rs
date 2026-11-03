@@ -18,4 +18,8 @@ impl ToolRegistry {
     pub fn tools(&self) -> &[ToolDefinition] {
         &self.tools
     }
+
+    pub fn find(&self, name: &str) -> Option<&ToolDefinition> {
+        self.tools.iter().find(|tool| tool.name == name)
+    }
 }

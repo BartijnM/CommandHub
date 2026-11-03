@@ -1,6 +1,6 @@
 # Architectuur
 
-Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05.
+Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05.
 
 ## Beoogde gegevensstroom
 
@@ -29,7 +29,7 @@ Models voor HTTP/MCP zijn transportmodellen. Gedeelde kernresultaten en fouttype
 
 ## State en concurrency
 
-De server maakt één `AppState` met `Arc<ToolRegistry>` en `Arc<ExecutionService>`. Klonen van die state kopieert gedeelde verwijzingen, geen registries of executors. `FromRef<AppState> for Arc<ToolRegistry>` laat de ontdekcontroller alleen de registry opvragen. De uitvoercontroller gebruikt de volledige state. Eén gedeelde executor bewaakt serverbreed vier uitvoeringsplekken en wijst volle capaciteit direct af.
+De server maakt één `AppState` met `Arc<ToolRegistry>` en `Arc<ExecutionService>`. Klonen van die state kopieert gedeelde verwijzingen, geen registries of executors. `FromRef<AppState> for Arc<ToolRegistry>` laat de ontdekcontroller alleen de registry opvragen. De uitvoercontroller gebruikt de volledige state. ToolRegistry::find leent de tooldefinitie; dezelfde lookup levert zowel de veilige loggingnaam als de uitvoeringsdefinitie. Eén gedeelde executor bewaakt serverbreed vier uitvoeringsplekken en wijst volle capaciteit direct af.
 
 `execute_parameterless` delegeert naar de annuleerbare methode. Die wacht met `tokio::select!` op uitvoering met timeout, een expliciet `oneshot`-bericht of een wijziging van het shutdown-`watch`-kanaal. Alleen een expliciet bericht annuleert via `oneshot`; sluiten zonder bericht niet. De shutdownontvanger wordt vóór processtart aangemaakt om een wijziging tijdens toelating niet te missen.
 
@@ -41,7 +41,7 @@ De server maakt één `AppState` met `Arc<ToolRegistry>` en `Arc<ExecutionServic
 
 De uitvoercontroller vangt JSON-extractiefouten op, accepteert uitsluitend een leeg object en kiest daarna de tool uit de registry. `DefaultBodyLimit` begrenst deze POST-route op 16 KiB vóór JSON-deserialisatie. `ExecutionResponse::from` vertaalt het kernresultaat naar JSON met `exitCode` en milliseconden. De kern kent geen HTTP-statuscodes; de controller bepaalt foutmapping en vaste teksten zonder OS-details.
 
-Tests staan fysiek in `src/tests/`, maar blijven via `#[cfg(test)]` en `#[path = "..."]` submodules van hun oorspronkelijke module. Daardoor blijven private toegang, `super`-imports en helperselecties zoals `execution::tests::subprocess_helper_bij_timeout` geldig. Dit zijn geen zelfstandige integratiecrates onder een projectmap `tests/`.
+Tests staan fysiek in `src/tests/`, maar blijven via `#[cfg(test)]` en `#[path = "..."]` submodules van hun oorspronkelijke module. Alle test- en helperfuncties hebben Engelse namen. De subprocessscenario’s delen helpers voor configuratie, PID-bestanden, startbevestiging en capaciteitscontrole; de routetests delen POST-opbouw en JSON-uitlezen. Daardoor blijven private toegang, `super`-imports en helperselecties zoals `execution::tests::subprocess_timeout_helper` geldig. Dit zijn geen zelfstandige integratiecrates onder een projectmap `tests/`.
 
 ## Fouten
 
@@ -49,7 +49,7 @@ Maak onderscheid tussen ongeldige invoer, onbekende tool, capaciteitsgebrek, sta
 
 ## Platformbeleid
 
-Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Windows controleert het verdwijnen via async `tasklist`. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbreken en zombie/exitstatus betekenen beëindigd, niet noodzakelijk al gereaped. Windows is lokaal uitgevoerd; de Unix-groepsopruiming en dropbewaker zijn daarna via de geslaagde Ubuntu-CI gecontroleerd. De bron voor het CI-resultaat is de aangeleverde screenshot van run #20.
+Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Windows controleert het stoppen rechtstreeks via OpenProcess en WaitForSingleObject met timeout 0. De Windows-only dev-dependency windows-sys levert de API; OwnedHandle sluit het handle automatisch. Er wordt geen tasklist-proces gestart. Ontbreken of een gesignaleerd proceshandle betekent gestopt; overige API-fouten blijven fouten. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbreken en zombie/exitstatus betekenen beëindigd, niet noodzakelijk al gereaped. Windows is lokaal uitgevoerd; de Unix-groepsopruiming en dropbewaker zijn daarna via de geslaagde Ubuntu-CI gecontroleerd. De bron voor het CI-resultaat is de aangeleverde screenshot van run #20.
 
 ## Aanvullende verificatie en logging
 

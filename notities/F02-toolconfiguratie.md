@@ -22,7 +22,7 @@ De gevalideerde configuratie wordt verplaatst naar de immutable [ToolRegistry](.
 ## Keuzes en alternatieven
 
 - Start met `string`-parameters en een `required`-boolean; complexere typen zijn nog niet nodig voor de eerste scope.
-- Vervang placeholders alleen wanneer ze een volledig argument innemen. Zo blijven executable en argumenten gescheiden en wordt geen shellcommandoregel opgebouwd.
+- F02 valideert dat placeholders een volledig argument innemen. Daadwerkelijke vervanging volgt in F04; daarbij blijven executable en argumenten gescheiden.
 - De beheerder bepaalt `command` en vaste argumenten. `command` mag een absoluut pad zijn of een naam die via de server-`PATH` wordt gevonden; clientinvoer kan geen executable instellen.
 - Wijs onbekende configuratievelden af om configuratiefouten vroeg zichtbaar te maken.
 - Een tool mag `timeout` weglaten; dan geldt de standaard van 10.000 ms (10 seconden). Een ingestelde timeout moet tussen 1 en 60.000 ms (60 seconden) liggen.
@@ -89,3 +89,9 @@ F02 is gemerged en staat op Klaar; de merge is op 2026-10-26 bevestigd. De volge
 
 - Bevestigd: F02 is als gemerged gemeld; documentatiestatus bijgewerkt naar Klaar.
 - Vervolg: F03 is gestart; de uitvoeringsafspraken staan in het [F03-featureplan](../docs/features/F03-procesuitvoering.md).
+
+### 2026-11-03 — Configuratievalidatie na review
+
+- Lege toolnamen, parameternamen en commands (ook alleen witruimte) worden nu afgewezen. trim() wordt alleen voor controle gebruikt; waarden worden niet stilzwijgend aangepast.
+- Gerichte configuratiesuite: 14 geslaagde tests op Windows, inclusief de nieuwe regressietest.
+- De F02-checklist beschrijft nu placeholdercontrole, geen al geïmplementeerde F04-vervanging; de dubbele controlecheckbox is verwijderd. Geen Git-commando’s uitgevoerd.

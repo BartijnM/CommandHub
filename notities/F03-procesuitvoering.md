@@ -11,17 +11,17 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Logging, echte TCP-concurrency en shutdown met actieve HTTP-procesboom zijn afgerond en op Windows gecontroleerd. Op 2026-11-02 slagen formatter, Clippy, build en 59 tests; 4 genegeerde functies zijn expliciete proceshelpers. CI-run #20 slaagde op beide platforms, maar run #21 vond een Linux-statusleesrace. De ESRCH-correctie en regressietests zijn lokaal gecontroleerd; CI-run #22 bevestigt daarna succes op beide platforms. F03 staat terug op Review tot review/merge.
+F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Na de reviewcorrecties van 2026-11-03 slagen op Windows 64 tests; 4 genegeerde functies zijn expliciete proceshelpers. Formatter en Clippy slagen eveneens. CI-run #22 bevestigde eerder Ubuntu en Windows na de ESRCH-correctie. De huidige reviewwijzigingen zijn via CI op Ubuntu en Windows gecontroleerd voor commit 105e69b; review/merge blijven te bevestigen.
 
 ## Hoe werkt de code?
 
-`src/execution.rs` bevat `ExecutionResult`, `ExecutionError` en `ExecutionService`. Toolselectie weigert onbekende tools en tooldefinities met parameters/placeholders. De lifetime bij de gevonden definitie betekent dat die uit de registry geleend blijft; er wordt geen tool gekopieerd.
+`src/execution.rs` bevat `ExecutionResult`, `ExecutionError` en `ExecutionService`. Toolselectie weigert onbekende tools en tooldefinities met parameters/placeholders. ToolRegistry::find zoekt eenmaal op naam; logging en uitvoering gebruiken dezelfde geleende definitie. De referentie kopieert de tool niet en mag niet langer leven dan de registry.
 
 `Arc<Semaphore>` deelt vier capaciteits-permits. `try_acquire_owned` wijst volle capaciteit direct af. Een `OwnedSemaphorePermit` geeft de plek terug bij drop. De command-opbouw houdt executable en argumenten gescheiden, sluit stdin en pipet stdout/stderr. Omgeving en werkdirectory worden van de server geërfd.
 
 `read_capped` leest blokken van 8192 bytes. Een gedeeld bytebudget begrenst stdout en stderr samen op 1 MiB. De outputstructuur bewaart de bijbehorende permits zolang de bytes aanwezig zijn. `try_join!` leest beide streams tegelijk. De uitvoeringsfuture wacht daarna op het proces; `timeout` bewaakt de geconfigureerde duur.
 
-`process-wrap` 10.0.1 met `tokio1` gebruikt Unix `ProcessGroup`, Windows `JobObject` en `KillOnDrop`. `Box<dyn ChildWrapper>` biedt een gemeenschappelijke interface voor pipes, wachten en beëindigen. `stop_child` gebruikt `try_wait`: alleen bij ontbrekende exitstatus wordt `kill` afgewacht. Een opruimfout kan via `?` de oorspronkelijke uitvoeringsfout vervangen.
+`process-wrap` 10.0.1 met `tokio1` gebruikt Unix `ProcessGroup`, Windows `JobObject` en `KillOnDrop`. `Box<dyn ChildWrapper>` biedt een gemeenschappelijke interface voor pipes, wachten en beëindigen. `stop_child` verschilt per platform: Windows wacht kill alleen af wanneer het directe child nog loopt; het Job Object beheert de subprocessen. Unix stuurt ook na afloop van de leider een groepssignaal en wacht daarna de child af. ESRCH betekent dat de groep al verdwenen is. Een opruimfout kan via `?` de oorspronkelijke uitvoeringsfout vervangen.
 
 ## Annulering, shutdown en eigendom
 
@@ -31,7 +31,7 @@ Shutdown gebruikt `watch::Sender<bool>`: `false` is actief, `true` betekent afsl
 
 `shutdown().await` vraagt alle vier permits tegelijk aan en wacht zo op afronding van bestaande uitvoeringsfutures. Hij verzamelt geen opruimfouten en bewijst zonder PID-controle niet dat elk proces weg is. `main.rs` geeft de Ctrl+C-future aan `server::serve`. Dat signaleert shutdown, laat Axum graceful afsluiten en wacht op de uitvoeringsservice, ook vóór het doorgeven van een serverfout. TCP-tests injecteren een kanaalsignaal in hetzelfde serverpad.
 
-`AppState` bevat gedeelde `Arc`-verwijzingen naar registry en executor. `Clone` kopieert deze verwijzingen, niet de service. `FromRef<AppState>` laat de ontdekcontroller alleen de registry ontvangen. `async move` geeft de Ctrl+C-future een eigen serviceverwijzing. `state.clone()` voorkomt dat de router de enige state verbruikt voordat shutdown die opnieuw nodig heeft.
+`AppState` bevat gedeelde `Arc`-verwijzingen naar registry en executor. `Clone` kopieert deze verwijzingen, niet de service. `FromRef<AppState>` laat de ontdekcontroller alleen de registry ontvangen. `server::serve` kloont de serviceverwijzing voor zijn `async move`-shutdownblok. De Ctrl+C-future in main bevat zelf geen serviceverwijzing. `state.clone()` behoudt state voor de latere afgewachte shutdown.
 
 **Stopbeleid:** expliciete annulering/shutdown is de normale route met afgewachte opruimpoging. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet, aangevuld met `ProcessGuard` dat op Unix de groepswrapper een stopsignaal laat sturen. Daarbij is geen normaal uitvoeringsresultaat of afgewachte opruimfout beschikbaar. Na `abort` wacht de test de taak af voordat capaciteit en PID worden gecontroleerd. Deze scenario's zijn op Windows lokaal en op Linux via CI gecontroleerd. Expliciet HTTP-clientdisconnectbeleid blijft buiten deze afgeronde F03-scenario's.
 
@@ -45,13 +45,13 @@ Foutresponses gebruiken vaste `code` en `message` met `&'static str`; interne OS
 
 ## Testindeling en procescontrole
 
-Alle vijf testmodules staan onder `src/tests/`. De productiebestanden koppelen ze via `#[cfg(test)]`, `#[path]` en `mod tests;`. Voor modules in `controllers/` en `models/` begint het pad met `../tests/`. De logische modules blijven hetzelfde: `super`-imports en de helperselectie `execution::tests::subprocess_helper_bij_timeout` wijzigen niet. Het is geen projectmap met zelfstandige integratiecrates.
+De vijf oorspronkelijke testmodules staan onder `src/tests/`; daar zijn HTTP-integratietests en gedeelde procescontroles bij gekomen. De productiebestanden koppelen ze via `#[cfg(test)]`, `#[path]` en `mod tests;`. Voor modules in `controllers/` en `models/` begint het pad met `../tests/`. De logische modules blijven hetzelfde: `super`-imports en de helperselectie `execution::tests::subprocess_timeout_helper` wijzigen niet. Het is geen projectmap met zelfstandige integratiecrates.
 
 De testbinary start genegeerde helpers als aparte processen. De subprocess-helper schrijft een PID-bestand en start `ping` op Windows of `sleep` op Unix. Markers via `--skip` kiezen grote output of een direct child dat eerder terugkeert; drop van een `std::process::Child` beëindigt het subprocess niet automatisch. Oude PID-bestanden worden vooraf verwijderd; scenario's hebben verschillende namen met het bovenliggende test-PID. `join!` laat uitvoering en signaalgever voortgang maken totdat een geldig PID beschikbaar is.
 
-De zeven opruimscenario's en de TCP-tests delen nu `process_checks::assert_stopped`. Op Windows wordt de proceslijst async opgevraagd met 3 s timeout en `kill_on_drop(true)`; gedurende maximaal 5 s wordt elke 50 ms opnieuw gecontroleerd totdat het PID ontbreekt. Dat voorkomt een enkele timinggevoelige momentopname. Eventuele blokkerende OS-processtart krijgt hiermee geen harde tijdsgarantie. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbrekende processen en zombies gelden als beëindigd. Deze platformtak is lokaal niet uitgevoerd; de geslaagde Ubuntu-CI controleert hem daarna.
+De zeven opruimscenario’s en de TCP-tests delen `process_checks::assert_stopped`. Windows gebruikt sinds de review OpenProcess en WaitForSingleObject met timeout 0; er wordt geen extern statusproces gestart. OwnedHandle sluit het handle ook bij fouten. Maximaal 5 s wordt elke 50 ms gecontroleerd op beëindiging. API-/toegangsfouten blijven fouten. De Windows-only dev-dependency windows-sys is al transitief aanwezig en wordt nu rechtstreeks voor tests gebruikt. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbrekende processen en zombies gelden als beëindigd. Deze platformtak is lokaal niet uitgevoerd; de geslaagde Ubuntu-CI controleert hem daarna.
 
-## Verificatie — actuele stand 2026-11-02
+## Historische verificatie — stand 2026-11-02
 
 | Controle | Resultaat |
 | --- | --- |
@@ -181,4 +181,33 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 
 ## Vervolg
 
-Neem de documentatie-update mee op de featurebranch en controleer de CI van de laatste branchstand. Rond review/merge naar develop af; markeer F03 pas Klaar na bevestigde merge en pak daarna F04 op. Geen Git-commando's uitvoeren zonder nieuwe expliciete opdracht.
+Commit en push de documentatie-update, controleer de laatste CI en bevestig daarna review en merge naar develop; de gebruikersmelding dat F03 af is, is geen afzonderlijk gecontroleerd mergebewijs. Daarna volgt F04. De assistent voert geen Git-commando’s uit.
+
+### 2026-11-03 — Review en opruiming na F03
+
+- Opdracht: alle reviewpunten verwerken; geen Git-commando’s.
+- Geconstateerd: eerste Windows-run 62 passed en 4 ignored; later parallel 10 timingfouten, serieel 2 TCP-fouten op tasklist. De exacte oorzaak van de wisselende externe statusaanroepen is niet vastgesteld.
+- Gewijzigd: Windows-processtatus rechtstreeks via OpenProcess/WaitForSingleObject met timeout 0. Geen externe statusprocessen en geen ruimere testtimeout. API-/toegangsfouten blijven fouten; procesbeëindiging wordt maximaal 5 s gecontroleerd.
+- Rust: de kleine unsafe-blokken bevatten alleen Windows-FFI-aanroepen en het overnemen van een geldig handle. OwnedHandle sluit het handle automatisch, ook bij vroeg terugkeren. windows-sys 0.61.2 is uitsluitend een Windows-dev-dependency; de lockfile is offline bijgewerkt.
+- Rust: ToolRegistry::find geeft een geleende tool terug; logging en uitvoering gebruiken dezelfde lookup. cancellation is daadwerkelijk gebruikt en heeft daarom geen underscoreprefix. Een async-blok maakt een future; select! pollt die in dezelfde taak.
+- Refactor: zeven subprocessdefinities en herhaalde PID-/start-/capaciteitscontroles delen helpers. Alle permits blijven tijdens de capaciteitsassertie tegelijk gereserveerd. Routertests delen POST-opbouw en JSON-uitlezen; hun inhoudelijke assertions blijven behouden.
+- Naamgeving: 51 test-/helpernamen zijn eerder in deze review naar Engels omgezet, inclusief de exacte child- en loggingselecties.
+- Configuratie: lege namen en commands (ook alleen witruimte) worden afgewezen. Geen automatische normalisatie of uitbreiding naar F04.
+- Documentatie: actuele beschrijvingen, F02-placeholdercriterium en dubbele checkbox, plan van aanpak, testplan, voortgang en helpervoorbeelden gecorrigeerd. Historische testresultaten blijven herkenbaar als historie.
+- Gerichte tests: 14 configuratietests en 4 processtatustests geslaagd op Windows. Eerste volledige suite na refactor: 64 passed, 0 failed, 4 ignored, 3,24 s. Formatter/Clippy geslaagd.
+- Bronnen voor de Windows-API: [OpenProcess](https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-openprocess) en [WaitForSingleObject](https://learn.microsoft.com/en-us/windows/win32/api/synchapi/nf-synchapi-waitforsingleobject).
+- Beperking: Linux en nieuwe CI zijn niet uitgevoerd. Het oude run-#22-bewijs geldt voor de eerdere stand. Actuele externe links/GitHub-mergestatus zijn niet opnieuw gecontroleerd. Geen Git-commando’s uitgevoerd.
+
+Eindcontrole (2026-11-03): cargo fmt --check en cargo clippy --all-targets --locked -- -D warnings slagen. cargo test --locked: 64 passed, 0 failed, 4 ignored, 3,00 s; ook de eerdere parallelle run na correctie slaagde (3,24 s). De gewone cargo build --locked kon target/debug/commandhub.exe niet vervangen (toegang geweigerd); proces 15952 draaide vanaf dat pad. De bestaande server is niet gestopt. De alternatieve build cargo build --locked --offline --target-dir target/review-build is daarna geslaagd (1 m 57 s). De nieuwe executable staat in target/review-build/debug/commandhub.exe; de draaiende server gebruikt nog de eerdere binary.
+
+## CI-bevestiging refactor — 2026-11-03
+
+De aangeleverde screenshot toont een geslaagde push-run voor commit `105e69b` op `refactor/na-feature-3`:
+
+- Runstatus: Success; totale duur 1 m 50 s.
+- Checks (ubuntu-latest): Success, 42 s.
+- Checks (windows-latest): Success, 1 m 47 s.
+- De lokale workflow voert formatter, Clippy met warnings als errors, tests en build uit. Exacte CI-testtotalen zijn niet zichtbaar en worden niet uit de screenshot afgeleid.
+- Twee Node.js 20-verouderingswaarschuwingen bij actions/checkout@v4 en een Ubuntu-labelmelding zijn zichtbaar; de jobs zijn geslaagd. Workflowonderhoud blijft een afzonderlijk punt.
+- Hiermee is de eerder open Linux-/CI-controle van de refactor bevestigd. Review/merge is niet zichtbaar en blijft te bevestigen. Deze documentatie-update volgt na de getoonde codecommit; controleer na push de CI van de laatste branchstand.
+- Alleen documentatie aangepast op basis van het aangeleverde bewijs; geen tests opnieuw uitgevoerd en geen Git-commando’s uitgevoerd.

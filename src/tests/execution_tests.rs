@@ -3,6 +3,85 @@ use tokio::io::AsyncWriteExt;
 use super::*;
 use crate::config::{ConfigFile, ParameterDefinition, ParameterType};
 
+fn find_parameterless_tool<'a>(
+    registry: &'a ToolRegistry,
+    name: &str,
+) -> Result<&'a ToolDefinition, ExecutionError> {
+    let tool = registry.find(name).ok_or(ExecutionError::UnknownTool)?;
+    validate_parameterless_tool(tool)?;
+    Ok(tool)
+}
+
+fn remove_pid_file(path: &std::path::Path) {
+    match std::fs::remove_file(path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+        Err(error) => panic!("PID-bestand verwijderen mislukt: {error}"),
+    }
+}
+
+fn read_subprocess_pid(path: &std::path::Path) -> u32 {
+    let text = std::fs::read_to_string(path).expect("helper moet een PID opslaan");
+    let pid = text.parse().expect("PID moet numeriek zijn");
+    assert!(pid > 0, "PID moet positief zijn");
+    remove_pid_file(path);
+    pid
+}
+
+async fn wait_for_subprocess(path: &std::path::Path) {
+    loop {
+        match std::fs::read_to_string(path) {
+            Ok(text) if text.parse::<u32>().is_ok_and(|pid| pid > 0) => return,
+            Ok(_) => {}
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => panic!("PID-bestand lezen mislukt: {error}"),
+        }
+        tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+}
+
+fn assert_capacity_available(service: &ExecutionService) {
+    // Bewaar alle permits tegelijk: steeds dezelfde plek reserveren bewijst geen volle capaciteit.
+    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
+        .map(|_| {
+            service
+                .try_acquire()
+                .expect("alle capaciteit moet beschikbaar zijn")
+        })
+        .collect();
+}
+
+fn subprocess_tool(
+    name: &str,
+    description: &str,
+    pid_file: &std::path::Path,
+    timeout: u64,
+    marker: Option<&str>,
+) -> ToolDefinition {
+    let mut arguments = vec![
+        "--exact".to_owned(),
+        "execution::tests::subprocess_timeout_helper".to_owned(),
+        "--ignored".to_owned(),
+        "--nocapture".to_owned(),
+        "--skip".to_owned(),
+        format!("commandhub-pid-file={}", pid_file.display()),
+    ];
+    if let Some(marker) = marker {
+        arguments.extend(["--skip".to_owned(), marker.to_owned()]);
+    }
+    ToolDefinition {
+        name: name.to_owned(),
+        description: description.to_owned(),
+        command: std::env::current_exe()
+            .expect("testbinary moet bestaan")
+            .to_string_lossy()
+            .into_owned(),
+        arguments,
+        parameters: Vec::new(),
+        timeout: Some(timeout),
+    }
+}
+
 #[derive(Clone)]
 struct LogBuffer {
     bytes: Arc<std::sync::Mutex<Vec<u8>>>,
@@ -71,7 +150,7 @@ fn test_registry(parameters: Vec<ParameterDefinition>) -> ToolRegistry {
 #[cfg(any(windows, unix))]
 #[tokio::test]
 // Deze test is bedoeld om te controleren of de platformwrapper correct werkt. Het start een proces met de wrapper en wacht op een succesvolle afloop.
-async fn start_met_platformwrapper_en_wacht_op_succes() {
+async fn starts_with_platform_wrapper_and_waits_for_success() {
     let registry = test_registry(Vec::new());
     let tool = find_parameterless_tool(&registry, "git_versie")
         .expect("de ingestelde parameterloze tool moet bestaan");
@@ -95,7 +174,7 @@ async fn start_met_platformwrapper_en_wacht_op_succes() {
     clippy::zombie_processes,
     reason = "Deze helper laat bewust een subprocess achter om procesboomopruiming te testen"
 )]
-fn subprocess_helper_bij_timeout() {
+fn subprocess_timeout_helper() {
     #[cfg(windows)]
     let mut subprocess = std::process::Command::new("ping")
         .args(["-n", "30", "127.0.0.1"])
@@ -145,35 +224,20 @@ fn subprocess_helper_bij_timeout() {
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn stopt_subproces_bij_timeout() {
-    let testprogramma =
-        std::env::current_exe().expect("het pad naar het huidige testprogramma moet bestaan");
-
+async fn stops_subprocess_on_timeout() {
     let pid_file =
         std::env::temp_dir().join(format!("commandhub-subprocess-{}.pid", std::process::id()));
 
-    match std::fs::remove_file(&pid_file) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => panic!("oud PID-bestand verwijderen mislukt: {error}"),
-    }
+    remove_pid_file(&pid_file);
 
     let config = ConfigFile {
-        tools: vec![ToolDefinition {
-            name: "procesboom_timeout".to_owned(),
-            description: "Test opruiming van een subprocess bij timeout".to_owned(),
-            command: testprogramma.to_string_lossy().into_owned(),
-            arguments: vec![
-                "--exact".to_owned(),
-                "execution::tests::subprocess_helper_bij_timeout".to_owned(),
-                "--ignored".to_owned(),
-                "--nocapture".to_owned(),
-                "--skip".to_owned(),
-                format!("commandhub-pid-file={}", pid_file.display()),
-            ],
-            parameters: Vec::new(),
-            timeout: Some(1_500),
-        }],
+        tools: vec![subprocess_tool(
+            "procesboom_timeout",
+            "Test opruiming van een subprocess bij timeout",
+            &pid_file,
+            1_500,
+            None,
+        )],
     };
     let registry = ToolRegistry::new(config);
     let service = ExecutionService::new();
@@ -187,67 +251,31 @@ async fn stopt_subproces_bij_timeout() {
 
     assert!(matches!(resultaat, Err(ExecutionError::TimedOut)));
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na de procesboom-timeout weer vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 
-    let pid_text = std::fs::read_to_string(&pid_file)
-        .expect("de helper moet het subprocess-ID hebben opgeslagen");
-
-    let subprocess_id = pid_text
-        .parse::<u32>()
-        .expect("het PID-bestand moet een geldig proces-ID bevatten");
-
-    std::fs::remove_file(&pid_file)
-        .expect("het PID-bestand moet na het uitlezen verwijderd kunnen worden");
-
-    assert!(
-        subprocess_id > 0,
-        "het subprocess-ID moet groter dan nul zijn"
-    );
+    let subprocess_id = read_subprocess_pid(&pid_file);
 
     crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn stopt_subproces_bij_outputoverschrijding() {
-    let testprogramma =
-        std::env::current_exe().expect("het pad naar het huidige testprogramma moet bestaan");
-
+async fn stops_subprocess_on_output_limit() {
     let pid_file = std::env::temp_dir().join(format!(
         "commandhub-output-subprocess-{}.pid",
         std::process::id()
     ));
 
-    match std::fs::remove_file(&pid_file) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => panic!("oud PID-bestand verwijderen mislukt: {error}"),
-    }
+    remove_pid_file(&pid_file);
 
     let config = ConfigFile {
-        tools: vec![ToolDefinition {
-            name: "procesboom_output".to_owned(),
-            description: "Test opruiming van een subprocess bij outputoverschrijding".to_owned(),
-            command: testprogramma.to_string_lossy().into_owned(),
-            arguments: vec![
-                "--exact".to_owned(),
-                "execution::tests::subprocess_helper_bij_timeout".to_owned(),
-                "--ignored".to_owned(),
-                "--nocapture".to_owned(),
-                "--skip".to_owned(),
-                format!("commandhub-pid-file={}", pid_file.display()),
-                "--skip".to_owned(),
-                "commandhub-large-output".to_owned(),
-            ],
-            parameters: Vec::new(),
-            timeout: Some(10_000),
-        }],
+        tools: vec![subprocess_tool(
+            "procesboom_output",
+            "Test opruiming van een subprocess bij outputoverschrijding",
+            &pid_file,
+            10_000,
+            Some("commandhub-large-output"),
+        )],
     };
     let registry = ToolRegistry::new(config);
     let service = ExecutionService::new();
@@ -264,67 +292,31 @@ async fn stopt_subproces_bij_outputoverschrijding() {
         Err(ExecutionError::OutputLimitExceeded)
     ));
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na de procesboom-outputoverschrijding weer vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 
-    let pid_text = std::fs::read_to_string(&pid_file)
-        .expect("de helper moet het subprocess-ID hebben opgeslagen");
-
-    let subprocess_id = pid_text
-        .parse::<u32>()
-        .expect("het PID-bestand moet een geldig proces-ID bevatten");
-
-    std::fs::remove_file(&pid_file)
-        .expect("het PID-bestand moet na het uitlezen verwijderd kunnen worden");
-
-    assert!(
-        subprocess_id > 0,
-        "het subprocess-ID moet groter dan nul zijn"
-    );
+    let subprocess_id = read_subprocess_pid(&pid_file);
 
     crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn stopt_subproces_als_parent_al_is_afgerond() {
-    let testprogramma =
-        std::env::current_exe().expect("het pad naar het huidige testprogramma moet bestaan");
-
+async fn stops_subprocess_after_parent_exit() {
     let pid_file = std::env::temp_dir().join(format!(
         "commandhub-parent-exit-subprocess-{}.pid",
         std::process::id()
     ));
 
-    match std::fs::remove_file(&pid_file) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => panic!("oud PID-bestand verwijderen mislukt: {error}"),
-    }
+    remove_pid_file(&pid_file);
 
     let config = ConfigFile {
-        tools: vec![ToolDefinition {
-            name: "procesboom_parent_exit".to_owned(),
-            description: "Test opruiming nadat het directe child is afgerond".to_owned(),
-            command: testprogramma.to_string_lossy().into_owned(),
-            arguments: vec![
-                "--exact".to_owned(),
-                "execution::tests::subprocess_helper_bij_timeout".to_owned(),
-                "--ignored".to_owned(),
-                "--nocapture".to_owned(),
-                "--skip".to_owned(),
-                format!("commandhub-pid-file={}", pid_file.display()),
-                "--skip".to_owned(),
-                "commandhub-parent-exit".to_owned(),
-            ],
-            parameters: Vec::new(),
-            timeout: Some(1_500),
-        }],
+        tools: vec![subprocess_tool(
+            "procesboom_parent_exit",
+            "Test opruiming nadat het directe child is afgerond",
+            &pid_file,
+            1_500,
+            Some("commandhub-parent-exit"),
+        )],
     };
     let registry = ToolRegistry::new(config);
     let service = ExecutionService::new();
@@ -338,65 +330,31 @@ async fn stopt_subproces_als_parent_al_is_afgerond() {
 
     assert!(matches!(resultaat, Err(ExecutionError::TimedOut)));
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na de procesboom-timeout weer vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 
-    let pid_text = std::fs::read_to_string(&pid_file)
-        .expect("de helper moet het subprocess-ID hebben opgeslagen");
-
-    let subprocess_id = pid_text
-        .parse::<u32>()
-        .expect("het PID-bestand moet een geldig proces-ID bevatten");
-
-    std::fs::remove_file(&pid_file)
-        .expect("het PID-bestand moet na het uitlezen verwijderd kunnen worden");
-
-    assert!(
-        subprocess_id > 0,
-        "het subprocess-ID moet groter dan nul zijn"
-    );
+    let subprocess_id = read_subprocess_pid(&pid_file);
 
     crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn stopt_subproces_bij_annulering() {
-    let testprogramma =
-        std::env::current_exe().expect("het pad naar het huidige testprogramma moet bestaan");
-
+async fn stops_subprocess_on_cancellation() {
     let pid_file = std::env::temp_dir().join(format!(
         "commandhub-cancel-subprocess-{}.pid",
         std::process::id()
     ));
 
-    match std::fs::remove_file(&pid_file) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => panic!("oud PID-bestand verwijderen mislukt: {error}"),
-    }
+    remove_pid_file(&pid_file);
 
     let config = ConfigFile {
-        tools: vec![ToolDefinition {
-            name: "procesboom_cancel".to_owned(),
-            description: "Test procesboomopruiming bij annulering".to_owned(),
-            command: testprogramma.to_string_lossy().into_owned(),
-            arguments: vec![
-                "--exact".to_owned(),
-                "execution::tests::subprocess_helper_bij_timeout".to_owned(),
-                "--ignored".to_owned(),
-                "--nocapture".to_owned(),
-                "--skip".to_owned(),
-                format!("commandhub-pid-file={}", pid_file.display()),
-            ],
-            parameters: Vec::new(),
-            timeout: Some(10_000),
-        }],
+        tools: vec![subprocess_tool(
+            "procesboom_cancel",
+            "Test procesboomopruiming bij annulering",
+            &pid_file,
+            10_000,
+            None,
+        )],
     };
     let registry = ToolRegistry::new(config);
     let service = ExecutionService::new();
@@ -405,15 +363,7 @@ async fn stopt_subproces_bij_annulering() {
 
     let resultaat = tokio::time::timeout(Duration::from_secs(6), async {
         let annulering = async {
-            loop {
-                if let Ok(text) = std::fs::read_to_string(&pid_file)
-                    && text.parse::<u32>().is_ok()
-                {
-                    break;
-                }
-
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
+            wait_for_subprocess(&pid_file).await;
 
             sender
                 .send(())
@@ -436,80 +386,38 @@ async fn stopt_subproces_bij_annulering() {
 
     assert!(matches!(resultaat, Err(ExecutionError::Cancelled)));
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na de procesboom-annulering weer vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 
-    let pid_text = std::fs::read_to_string(&pid_file)
-        .expect("de helper moet het subprocess-ID hebben opgeslagen");
-
-    let subprocess_id = pid_text
-        .parse::<u32>()
-        .expect("het PID-bestand moet een geldig proces-ID bevatten");
-
-    std::fs::remove_file(&pid_file)
-        .expect("het PID-bestand moet na het uitlezen verwijderd kunnen worden");
-
-    assert!(
-        subprocess_id > 0,
-        "het subprocess-ID moet groter dan nul zijn"
-    );
+    let subprocess_id = read_subprocess_pid(&pid_file);
 
     crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn stopt_subproces_bij_shutdown() {
-    let testprogramma =
-        std::env::current_exe().expect("het pad naar het huidige testprogramma moet bestaan");
-
+async fn stops_subprocess_on_shutdown() {
     let pid_file = std::env::temp_dir().join(format!(
         "commandhub-shutdown-subprocess-{}.pid",
         std::process::id()
     ));
 
-    match std::fs::remove_file(&pid_file) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => panic!("oud PID-bestand verwijderen mislukt: {error}"),
-    }
+    remove_pid_file(&pid_file);
 
     let config = ConfigFile {
-        tools: vec![ToolDefinition {
-            name: "procesboom_shutdown".to_owned(),
-            description: "Test procesboomopruiming bij shutdown".to_owned(),
-            command: testprogramma.to_string_lossy().into_owned(),
-            arguments: vec![
-                "--exact".to_owned(),
-                "execution::tests::subprocess_helper_bij_timeout".to_owned(),
-                "--ignored".to_owned(),
-                "--nocapture".to_owned(),
-                "--skip".to_owned(),
-                format!("commandhub-pid-file={}", pid_file.display()),
-            ],
-            parameters: Vec::new(),
-            timeout: Some(10_000),
-        }],
+        tools: vec![subprocess_tool(
+            "procesboom_shutdown",
+            "Test procesboomopruiming bij shutdown",
+            &pid_file,
+            10_000,
+            None,
+        )],
     };
     let registry = ToolRegistry::new(config);
     let service = ExecutionService::new();
 
     let resultaat = tokio::time::timeout(Duration::from_secs(6), async {
         let shutdown = async {
-            loop {
-                if let Ok(text) = std::fs::read_to_string(&pid_file)
-                    && text.parse::<u32>().is_ok()
-                {
-                    break;
-                }
-
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
+            wait_for_subprocess(&pid_file).await;
 
             service.shutdown().await;
         };
@@ -531,57 +439,29 @@ async fn stopt_subproces_bij_shutdown() {
         MAX_CONCURRENT_EXECUTIONS
     );
 
-    let pid_text = std::fs::read_to_string(&pid_file)
-        .expect("de helper moet het subprocess-ID hebben opgeslagen");
-
-    let subprocess_id = pid_text
-        .parse::<u32>()
-        .expect("het PID-bestand moet een geldig proces-ID bevatten");
-
-    std::fs::remove_file(&pid_file)
-        .expect("het PID-bestand moet na het uitlezen verwijderd kunnen worden");
-
-    assert!(
-        subprocess_id > 0,
-        "het subprocess-ID moet groter dan nul zijn"
-    );
+    let subprocess_id = read_subprocess_pid(&pid_file);
 
     crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn stopt_subproces_bij_drop_van_uitvoeringsfuture() {
-    let testprogramma =
-        std::env::current_exe().expect("het pad naar het huidige testprogramma moet bestaan");
-
+async fn stops_subprocess_when_execution_future_is_dropped() {
     let pid_file = std::env::temp_dir().join(format!(
         "commandhub-drop-subprocess-{}.pid",
         std::process::id()
     ));
 
-    match std::fs::remove_file(&pid_file) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => panic!("oud PID-bestand verwijderen mislukt: {error}"),
-    }
+    remove_pid_file(&pid_file);
 
     let registry = ToolRegistry::new(ConfigFile {
-        tools: vec![ToolDefinition {
-            name: "procesboom_drop".to_owned(),
-            description: "Test procesboomopruiming bij droppen van de uitvoeringsfuture".to_owned(),
-            command: testprogramma.to_string_lossy().into_owned(),
-            arguments: vec![
-                "--exact".to_owned(),
-                "execution::tests::subprocess_helper_bij_timeout".to_owned(),
-                "--ignored".to_owned(),
-                "--nocapture".to_owned(),
-                "--skip".to_owned(),
-                format!("commandhub-pid-file={}", pid_file.display()),
-            ],
-            parameters: Vec::new(),
-            timeout: Some(10_000),
-        }],
+        tools: vec![subprocess_tool(
+            "procesboom_drop",
+            "Test procesboomopruiming bij droppen van de uitvoeringsfuture",
+            &pid_file,
+            10_000,
+            None,
+        )],
     });
     let service = ExecutionService::new();
 
@@ -590,15 +470,7 @@ async fn stopt_subproces_bij_drop_van_uitvoeringsfuture() {
         tokio::pin!(uitvoering);
 
         let subprocess_gestart = async {
-            loop {
-                if let Ok(text) = std::fs::read_to_string(&pid_file)
-                    && text.parse::<u32>().is_ok()
-                {
-                    break;
-                }
-
-                tokio::time::sleep(Duration::from_millis(10)).await;
-            }
+            wait_for_subprocess(&pid_file).await;
         };
 
         tokio::select! {
@@ -616,57 +488,29 @@ async fn stopt_subproces_bij_drop_van_uitvoeringsfuture() {
         MAX_CONCURRENT_EXECUTIONS
     );
 
-    let pid_text = std::fs::read_to_string(&pid_file)
-        .expect("de helper moet het subprocess-ID hebben opgeslagen");
-
-    let subprocess_id = pid_text
-        .parse::<u32>()
-        .expect("het PID-bestand moet een geldig proces-ID bevatten");
-
-    std::fs::remove_file(&pid_file)
-        .expect("het PID-bestand moet na het uitlezen verwijderd kunnen worden");
-
-    assert!(
-        subprocess_id > 0,
-        "het subprocess-ID moet groter dan nul zijn"
-    );
+    let subprocess_id = read_subprocess_pid(&pid_file);
 
     crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn stopt_subproces_bij_afbreken_van_taak() {
-    let testprogramma =
-        std::env::current_exe().expect("het pad naar het huidige testprogramma moet bestaan");
-
+async fn stops_subprocess_when_task_is_aborted() {
     let pid_file = std::env::temp_dir().join(format!(
         "commandhub-abort-subprocess-{}.pid",
         std::process::id()
     ));
 
-    match std::fs::remove_file(&pid_file) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => panic!("oud PID-bestand verwijderen mislukt: {error}"),
-    }
+    remove_pid_file(&pid_file);
 
     let registry = ToolRegistry::new(ConfigFile {
-        tools: vec![ToolDefinition {
-            name: "procesboom_abort".to_owned(),
-            description: "Test procesboomopruiming bij afbreken van de taak".to_owned(),
-            command: testprogramma.to_string_lossy().into_owned(),
-            arguments: vec![
-                "--exact".to_owned(),
-                "execution::tests::subprocess_helper_bij_timeout".to_owned(),
-                "--ignored".to_owned(),
-                "--nocapture".to_owned(),
-                "--skip".to_owned(),
-                format!("commandhub-pid-file={}", pid_file.display()),
-            ],
-            parameters: Vec::new(),
-            timeout: Some(10_000),
-        }],
+        tools: vec![subprocess_tool(
+            "procesboom_abort",
+            "Test procesboomopruiming bij afbreken van de taak",
+            &pid_file,
+            10_000,
+            None,
+        )],
     });
     let service = Arc::new(ExecutionService::new());
     let task_service = Arc::clone(&service);
@@ -678,15 +522,7 @@ async fn stopt_subproces_bij_afbreken_van_taak() {
     });
 
     let gestart = tokio::time::timeout(Duration::from_secs(6), async {
-        loop {
-            if let Ok(text) = std::fs::read_to_string(&pid_file)
-                && text.parse::<u32>().is_ok()
-            {
-                break;
-            }
-
-            tokio::time::sleep(Duration::from_millis(10)).await;
-        }
+        wait_for_subprocess(&pid_file).await;
     })
     .await;
 
@@ -708,27 +544,14 @@ async fn stopt_subproces_bij_afbreken_van_taak() {
         MAX_CONCURRENT_EXECUTIONS
     );
 
-    let pid_text = std::fs::read_to_string(&pid_file)
-        .expect("de helper moet het subprocess-ID hebben opgeslagen");
-
-    let subprocess_id = pid_text
-        .parse::<u32>()
-        .expect("het PID-bestand moet een geldig proces-ID bevatten");
-
-    std::fs::remove_file(&pid_file)
-        .expect("het PID-bestand moet na het uitlezen verwijderd kunnen worden");
-
-    assert!(
-        subprocess_id > 0,
-        "het subprocess-ID moet groter dan nul zijn"
-    );
+    let subprocess_id = read_subprocess_pid(&pid_file);
 
     crate::process_checks::assert_stopped(subprocess_id).await;
 }
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn annuleert_uitvoering_bij_expliciet_signaal() {
+async fn cancels_execution_on_explicit_signal() {
     #[cfg(windows)]
     let (command, arguments) = (
         "ping",
@@ -767,17 +590,11 @@ async fn annuleert_uitvoering_bij_expliciet_signaal() {
         "verwachtte annulering, kreeg: {resultaat:?}"
     );
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na annulering weer vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 }
 
 #[tokio::test]
-async fn voert_tool_uit_als_annuleringszender_wordt_gedropt() {
+async fn executes_tool_when_cancellation_sender_is_dropped() {
     let registry = test_registry(Vec::new());
     let service = ExecutionService::new();
     let (sender, receiver) = tokio::sync::oneshot::channel();
@@ -798,7 +615,7 @@ async fn voert_tool_uit_als_annuleringszender_wordt_gedropt() {
 }
 
 #[tokio::test]
-async fn stopt_geen_al_afgerond_proces() {
+async fn stopping_completed_process_succeeds() {
     let registry = test_registry(Vec::new());
     let tool = find_parameterless_tool(&registry, "git_versie")
         .expect("de ingestelde parameterloze tool moet bestaan");
@@ -820,7 +637,7 @@ async fn stopt_geen_al_afgerond_proces() {
 
 #[test]
 // Deze test controleert of de functie find_parameterless_tool correct een tool zonder parameters kan vinden.
-fn vindt_parameterloze_tool() {
+fn finds_parameterless_tool() {
     let registry = test_registry(Vec::new());
 
     let tool = find_parameterless_tool(&registry, "git_versie")
@@ -831,7 +648,7 @@ fn vindt_parameterloze_tool() {
 
 #[test]
 // Deze test controleert of de functie find_parameterless_tool correct een foutmelding geeft bij een onbekende tool.
-fn weigert_onbekende_tool() {
+fn rejects_unknown_tool() {
     let registry = test_registry(Vec::new());
 
     let resultaat = find_parameterless_tool(&registry, "onbekende_tool");
@@ -841,7 +658,7 @@ fn weigert_onbekende_tool() {
 
 #[test]
 // Deze test controleert of de functie find_parameterless_tool correct een foutmelding geeft bij een tool met parameters.
-fn weigert_tool_met_parameters() {
+fn rejects_tool_with_parameters() {
     let registry = test_registry(vec![ParameterDefinition {
         name: "pad".to_owned(),
         kind: ParameterType::String,
@@ -857,7 +674,7 @@ fn weigert_tool_met_parameters() {
 }
 
 #[tokio::test]
-async fn shutdown_wacht_tot_capaciteit_is_vrijgegeven() {
+async fn shutdown_waits_until_capacity_is_released() {
     let service = ExecutionService::new();
     let permit = service
         .try_acquire()
@@ -885,7 +702,7 @@ async fn shutdown_wacht_tot_capaciteit_is_vrijgegeven() {
 }
 
 #[test]
-fn weigert_nieuwe_uitvoering_na_begin_shutdown() {
+fn rejects_new_execution_after_shutdown_begins() {
     let service = ExecutionService::new();
 
     service.begin_shutdown();
@@ -903,7 +720,7 @@ fn weigert_nieuwe_uitvoering_na_begin_shutdown() {
 
 #[test]
 // Deze test controleert of de ExecutionService correct een foutmelding geeft wanneer de maximale uitvoercapaciteit is bereikt.
-fn weigert_extra_uitvoering_bij_volledige_capaciteit() {
+fn rejects_extra_execution_at_full_capacity() {
     let service = ExecutionService::new();
     let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
         .map(|_| {
@@ -921,7 +738,7 @@ fn weigert_extra_uitvoering_bij_volledige_capaciteit() {
 
 #[test]
 // Deze test controleert of de ExecutionService correct de capaciteit vrijgeeft wanneer het starten van een proces mislukt.
-fn geeft_capaciteit_vrij_als_starten_mislukt() {
+fn releases_capacity_when_process_start_fails() {
     let service = ExecutionService::new();
     let tool = ToolDefinition {
         name: "ongeldig".to_owned(),
@@ -937,18 +754,12 @@ fn geeft_capaciteit_vrij_als_starten_mislukt() {
         Err(ExecutionError::ProcessStartFailed(_))
     ));
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na de fout vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 }
 
 #[tokio::test]
 // Deze test controleert of de ExecutionService correct een proces start en wacht op een succesvolle afloop.
-async fn start_proces_en_wacht_op_succesvolle_afloop() {
+async fn starts_process_and_waits_for_success() {
     let service = ExecutionService::new();
     let registry = test_registry(Vec::new());
 
@@ -965,7 +776,7 @@ async fn start_proces_en_wacht_op_succesvolle_afloop() {
 
 #[tokio::test]
 // Deze test controleert of de ExecutionService correct een resultaat geeft bij een proces met een niet-succesvolle exitcode.
-async fn geeft_resultaat_bij_niet_succesvolle_exitcode() {
+async fn returns_result_for_unsuccessful_exit_code() {
     let config = ConfigFile {
         tools: vec![ToolDefinition {
             name: "git_fout".to_owned(),
@@ -992,7 +803,7 @@ async fn geeft_resultaat_bij_niet_succesvolle_exitcode() {
 #[cfg(any(windows, unix))]
 #[tokio::test]
 // Deze test controleert of de ExecutionService correct een timeout geeft bij een proces dat te lang duurt.
-async fn geeft_timeout_als_proces_te_lang_duurt() {
+async fn returns_timeout_when_process_takes_too_long() {
     #[cfg(windows)]
     let (command, arguments) = (
         "ping",
@@ -1022,18 +833,12 @@ async fn geeft_timeout_als_proces_te_lang_duurt() {
         "verwachtte een timeout, kreeg: {resultaat:?}"
     );
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na een timeout weer vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 }
 
 #[tokio::test]
 // Deze test controleert of de ExecutionService correct een foutmelding geeft bij een proces dat te veel uitvoer genereert.
-async fn stopt_proces_bij_outputoverschrijding() {
+async fn stops_process_on_output_limit() {
     let testprogramma = std::env::current_exe()
         .expect("het pad naar het huidige testprogramma moet beschikbaar zijn");
 
@@ -1044,7 +849,7 @@ async fn stopt_proces_bij_outputoverschrijding() {
             command: testprogramma.to_string_lossy().into_owned(),
             arguments: vec![
                 "--exact".to_owned(),
-                "execution::tests::schrijft_output_boven_de_limiet".to_owned(),
+                "execution::tests::writes_output_above_limit".to_owned(),
                 "--ignored".to_owned(),
                 "--nocapture".to_owned(),
             ],
@@ -1064,18 +869,12 @@ async fn stopt_proces_bij_outputoverschrijding() {
         "verwachtte een outputlimietfout, kreeg: {resultaat:?}"
     );
 
-    let _permits: Vec<_> = (0..MAX_CONCURRENT_EXECUTIONS)
-        .map(|_| {
-            service
-                .try_acquire()
-                .expect("capaciteit moet na outputoverschrijding vrij zijn")
-        })
-        .collect();
+    assert_capacity_available(&service);
 }
 
 #[tokio::test]
 // Deze test controleert of de read_capped functie correct uitvoer onder de limiet kan lezen.
-async fn leest_output_binnen_de_limiet() {
+async fn reads_output_within_limit() {
     let (mut schrijver, lezer) = tokio::io::duplex(16);
     schrijver
         .write_all(b"uitvoer")
@@ -1093,7 +892,7 @@ async fn leest_output_binnen_de_limiet() {
 
 #[tokio::test]
 // Deze test controleert of de read_capped functie correct een foutmelding geeft wanneer de gecombineerde uitvoer van stdout en stderr boven de limiet uitkomt.
-async fn begrenst_stdout_en_stderr_met_een_gedeeld_budget() {
+async fn limits_stdout_and_stderr_with_shared_budget() {
     let (mut stdout_writer, stdout_reader) = tokio::io::duplex(16);
     let (mut stderr_writer, stderr_reader) = tokio::io::duplex(16);
 
@@ -1122,7 +921,7 @@ async fn begrenst_stdout_en_stderr_met_een_gedeeld_budget() {
 
 #[tokio::test]
 // Deze test controleert of de read_capped functie correct een foutmelding geeft wanneer de uitvoer boven de limiet uitkomt.
-async fn weigert_output_boven_de_limiet() {
+async fn rejects_output_above_limit() {
     let (mut schrijver, lezer) = tokio::io::duplex(16);
     schrijver
         .write_all(b"12345")
@@ -1142,7 +941,7 @@ async fn weigert_output_boven_de_limiet() {
 #[test]
 #[ignore]
 // Deze test is bedoeld om te controleren of de ExecutionService correct een foutmelding geeft bij een proces dat te veel uitvoer genereert. Het wordt genegeerd omdat het een groot aantal bytes schrijft en daardoor de testuitvoer kan vervuilen.
-fn schrijft_output_boven_de_limiet() {
+fn writes_output_above_limit() {
     use std::io::Write;
 
     let bytes = vec![b'x'; MAX_OUTPUT_BYTES + 1];
@@ -1153,7 +952,7 @@ fn schrijft_output_boven_de_limiet() {
 }
 
 #[tokio::test]
-async fn volle_capaciteit_geeft_http_503() {
+async fn full_capacity_returns_http_503() {
     use axum::{
         body::{Body, to_bytes},
         http::{Request, StatusCode},
@@ -1210,8 +1009,8 @@ async fn volle_capaciteit_geeft_http_503() {
 }
 
 #[tokio::test]
-async fn logt_onbekende_tool_zonder_clientwaarde() {
-    if run_logging_test_in_isolation("execution::tests::logt_onbekende_tool_zonder_clientwaarde")
+async fn logs_unknown_tool_without_client_value() {
+    if run_logging_test_in_isolation("execution::tests::logs_unknown_tool_without_client_value")
         .await
     {
         return;
@@ -1258,9 +1057,9 @@ async fn logt_onbekende_tool_zonder_clientwaarde() {
 }
 
 #[tokio::test]
-async fn logt_resultaten_zonder_argumenten_of_procesoutput() {
+async fn logs_results_without_arguments_or_process_output() {
     if run_logging_test_in_isolation(
-        "execution::tests::logt_resultaten_zonder_argumenten_of_procesoutput",
+        "execution::tests::logs_results_without_arguments_or_process_output",
     )
     .await
     {

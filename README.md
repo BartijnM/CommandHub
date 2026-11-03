@@ -4,7 +4,7 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-De hoofdapplicatie biedt `GET /status`, `GET /tools` en parameterloze uitvoering via `POST /tools/{toolname}`. F02 is gemerged; F03 staat op Review. De ESRCH-race in de Linux-procescontrole is gecorrigeerd met drie regressietests. Op Windows slagen formatter, Clippy, build en 62 tests; 4 genegeerde functies zijn proceshelpers. GitHub Actions-run #22 bevestigt daarna succes op Ubuntu én Windows. Review en merge moeten nog worden bevestigd. Zie [voortgang](docs/voortgang.md), [F03-notitie](notities/F03-procesuitvoering.md) en [F00-notitie](notities/F00-mcp-proef.md).
+De hoofdapplicatie biedt `GET /status`, `GET /tools` en parameterloze uitvoering via `POST /tools/{toolname}`. F02 is gemerged; F03 staat op Review. De review van 2026-11-03 voegt validatie van lege namen/commands toe, deelt testhelpers en gebruikt Windows-proceshandles voor statuscontrole. Op Windows slagen formatter, Clippy en 64 tests; 4 genegeerde functies zijn proceshelpers. Een offline build in target/review-build slaagt eveneens, omdat de standaardbinary nog door de draaiende server wordt gebruikt. De aangeleverde CI-screenshot van commit 105e69b op refactor/na-feature-3 bevestigt ook de reviewwijzigingen op Ubuntu en Windows. Review/merge is nog niet bevestigd. Zie [voortgang](docs/voortgang.md), [F03-notitie](notities/F03-procesuitvoering.md) en [F00-notitie](notities/F00-mcp-proef.md).
 
 ## Installeren en gebruiken
 

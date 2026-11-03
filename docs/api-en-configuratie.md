@@ -68,6 +68,7 @@ De casus geeft richting en voorbeelden, maar legt niet alle randgevallen of limi
 - Ondersteun als parametertype alleen `string` en een `required`-boolean. Breid dit pas uit als een feature dat nodig maakt.
 - Een placeholder heeft de vorm `{naam}` en mag alleen een volledig argument innemen, bijvoorbeeld `"{path}"`. Plak geen vaste tekst en placeholder aan elkaar; zo blijft elk procesargument een afzonderlijk item.
 - `command` en de vaste argumenten komen uitsluitend uit beheerdersconfiguratie. `command` mag een absoluut pad of een executable-naam zijn die via de `PATH` van het serverproces wordt gevonden. Een HTTP- of MCP-client kan geen executable kiezen of de `PATH` aanpassen.
+- Wijs lege toolnamen, parameternamen en commands af, ook als ze alleen witruimte bevatten. Waarden worden gecontroleerd met trim(), maar niet automatisch aangepast.
 - Wijs onbekende configuratievelden af, zodat typefouten niet ongemerkt worden genegeerd. Wijs ook ontbrekende verplichte velden, ongeldige waarden, dubbele toolnamen en placeholders die niet bij een parameter horen af.
 - `timeout` is optioneel per tool en wordt uitgedrukt in milliseconden. Zonder deze instelling geldt een standaardtimeout van 10.000 ms (10 seconden). Een ingestelde timeout moet groter zijn dan 0 en mag maximaal 60.000 ms (60 seconden) zijn; grotere waarden worden afgewezen.
 - De configuratie blijft na startup onveranderlijk; een gewijzigde configuratie wordt actief na een herstart, niet via hot-reload.
@@ -89,6 +90,10 @@ De annuleerbare kernmethode ontvangt een `oneshot::Receiver<()>`. Een expliciet 
 De voorbeeld-REST-routes zijn geen volledige MCP-implementatie. Gebruik de officiële SDK en kies in F00 een passende protocolversie en HTTP-transport. Laat zowel REST als MCP dezelfde registry en uitvoeringskern gebruiken.
 
 F00 legt client, protocolversie, initialisatie/onderhandeling, toollisting, toolcalls, schema's en toepasselijke beveiligingsregels vast. De MCP-resultaatstructuur volgt het protocol en is niet simpelweg dezelfde body als REST.
-## Laatste aanvullende verificatie
+## Historische aanvullende verificatie — vóór ESRCH-correctie
 
 Op 2026-11-02 slagen 59 tests en alle Windows-Cargo-eindcontroles. Echte TCP-verzoeken bevestigen vier actieve uitvoeringen, afwijzing van het vijfde verzoek met 503 en herstel na afloop. Actieve server-shutdown via hetzelfde afsluitpad als Ctrl+C geeft 503 aan het lopende request, sluit de server en ruimt child en subprocess op. De integratietest injecteert het signaal; hij verstuurt geen OS-Ctrl+C. Logging bevat alleen geselecteerde metadata, geen argumentwaarden of procesoutput. Linux is lokaal niet uitgevoerd, maar daarna via de geslaagde Ubuntu-CI geverifieerd (run #20, aangeleverde screenshot).
+
+## Reviewstand — 2026-11-03
+
+Het HTTP-contract is ongewijzigd. Configuratie wijst nu ook lege namen en commands af. De huidige Windows-suite slaagt met 64 tests en 4 proceshelpers; de Windows-statushelper gebruikt handles. CI van deze refactor is op Ubuntu en Windows geslaagd voor commit 105e69b; oudere resultaten hierboven zijn historie. Zie de F03-notitie voor de eindcontrole.

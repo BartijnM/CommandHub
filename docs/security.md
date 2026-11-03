@@ -1,6 +1,6 @@
 # Securityontwerp
 
-Status: configuratievalidatie, parameterloze HTTP-uitvoering, geselecteerde uitvoeringslogging en server-shutdown zijn geïmplementeerd. Op 2026-11-02 slagen Windows-formatter, Clippy, build en 59 tests, inclusief echte TCP-concurrency en actieve procesboomopruiming. Run #20 slaagde op beide platforms; run #21 vond een Linux-statusleesrace. Die is gecorrigeerd en heeft regressietests; run #22 bevestigt daarna succes op Ubuntu én Windows.
+Status (2026-11-03): configuratievalidatie, parameterloze HTTP-uitvoering, uitvoeringslogging en shutdown zijn aanwezig. De huidige Windows-suite slaagt met 64 tests en 4 proceshelpers. De review voegt afwijzing van lege namen/commands en een Windows-controle via proceshandles toe. Run #22 bevestigde eerder Ubuntu en Windows na de ESRCH-correctie; de reviewwijzigingen zijn daarna op Ubuntu en Windows geslaagd in CI voor commit 105e69b.
 
 ## Vertrouwensgrenzen
 
@@ -8,7 +8,7 @@ De beheerder bepaalt configuratie en executables. Clientinvoer is onbetrouwbaar.
 
 ## Maatregelen per feature
 
-- F02: strikt configuratieschema, unieke namen, bekende placeholders, geldige limieten; geen configuratiewijziging via client.
+- F02: strikt configuratieschema, unieke niet-lege namen, niet-leeg command, bekende placeholders en geldige timeoutgrenzen; geen configuratiewijziging via client.
 - F03: executable en argumenten gescheiden; geen automatische shell-dispatch. Scripts zijn alleen toegestaan via een expliciet geconfigureerde interpreter met vaste scriptargumenten. Stdin sluiten. Het childproces erft de omgeving en werkdirectory van de server; de client kan deze niet wijzigen.
 - F03: timeout van maximaal 60 seconden (standaard 10 seconden), maximaal 1 MiB gecombineerde stdout/stderr en maximaal vier gelijktijdige uitvoeringen per gedeelde service-instantie zijn in de kern aanwezig. De POST-route heeft een bodylimiet van 16 KiB vóór JSON-deserialisatie; de exacte grens en overschrijding zijn getest. Bij volle capaciteit direct afwijzen. `process-wrap` verzorgt platformbeheer; gerichte Windows-tests en echte TCP-tests controleren het verdwijnen van child/subprocess na shutdown en vrijgave. Linux-hercontrole na ESRCH-correctie is geslaagd in run #22.
 - F03: een expliciet `oneshot`-bericht annuleert één uitvoering via de opruimroute; sluiten zonder bericht niet. Server-shutdown gebruikt een gedeelde `watch`-status, weigert nieuwe uitvoeringen en wacht op capaciteitsvrijgave. Ctrl+C is aangesloten. Future-drop/abort is een apart Windows-getest vangnet via `KillOnDrop`, zonder normaal teruggegeven opruimresultaat. Unix gebruikt daarnaast een groepsbewaker bij future-drop en groepsbeëindiging na afloop van de leider; run #20 controleerde deze tak; hercontrole na de racecorrectie slaagt in run #22. Expliciet clientdisconnectbeleid blijft open.
@@ -23,7 +23,7 @@ De beheerder bepaalt configuratie en executables. Clientinvoer is onbetrouwbaar.
 - Native executables en expliciet geconfigureerde interpreters zijn toegestaan; geen automatische `.bat`/`.cmd`- of shell-dispatch.
 - Executablepaden mogen absoluut zijn of via de geërfde server-`PATH` worden gevonden.
 - De timeout-, output-, request- en concurrentiegrenzen staan vast in het API-contract.
-- `process-wrap` 10.0.1 met `tokio1` gebruikt Unix `ProcessGroup`, Windows `JobObject` en `KillOnDrop`. Windows-procescontroles zijn async en begrensd: 3 s per `tasklist`, maximaal 5 s herhaald controleren. Dit is geen sandbox of garantie voor alle procesbomen of blokkerende OS-processtart.
+- `process-wrap` 10.0.1 met `tokio1` gebruikt Unix `ProcessGroup`, Windows `JobObject` en `KillOnDrop`. Windows-procescontroles gebruiken OpenProcess en een niet-blokkerende WaitForSingleObject-controle; OwnedHandle sluit het handle automatisch. De async test wacht maximaal 5 s met herhaalde controles; toegangs- en API-fouten blijven testfouten. Dit is geen sandbox of garantie voor alle procesbomen of blokkerende OS-processtart.
 - Linux-processtatus via `/proc` is voorbereid; een zombie geldt als gestopt, niet als reeds gereaped. De eerste Ubuntu-CI slaagde; na de ESRCH-fout uit run #21 is de helper gecorrigeerd en is hercontrole geslaagd in run #22. Dit toont de geconfigureerde scenario's aan, geen sandbox of garantie voor elke mogelijke procesboom.
 - Publieke hosting en authenticatie vallen buiten de eerste lokale demo.
 

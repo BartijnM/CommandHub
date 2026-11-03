@@ -25,7 +25,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 ## Schema-afspraken
 
-De server leest standaard `config/tools.json` relatief aan de huidige werkdirectory; `COMMANDHUB_CONFIG` kan dit pad overschrijven. De eerste versie ondersteunt `string`-parameters met een `required`-boolean. Placeholders zoals `{path}` zijn alleen toegestaan als volledig argument. `command` en vaste argumenten komen uit beheerdersconfiguratie; `command` mag een absoluut pad zijn of een executable-naam die via de server-`PATH` wordt gevonden. Clients kiezen geen executable. Onbekende velden, ontbrekende verplichte velden, ongeldige waarden, dubbele namen en onbekende placeholders worden afgewezen. Per-tool `timeout` is optioneel: de standaard is 10.000 ms (10 seconden), en een ingestelde waarde moet tussen 1 en 60.000 ms (60 seconden) liggen. Zie ook [het configuratievoorbeeld](../../config/README.md).
+De server leest standaard `config/tools.json` relatief aan de huidige werkdirectory; `COMMANDHUB_CONFIG` kan dit pad overschrijven. De eerste versie ondersteunt `string`-parameters met een `required`-boolean. Placeholders zoals `{path}` zijn alleen toegestaan als volledig argument. `command` en vaste argumenten komen uit beheerdersconfiguratie; `command` mag een absoluut pad zijn of een executable-naam die via de server-`PATH` wordt gevonden. Clients kiezen geen executable. Onbekende velden, ontbrekende verplichte velden, lege toolnamen/parameternamen/commands (ook alleen witruimte), ongeldige timeouts, dubbele namen en onbekende placeholders worden afgewezen. Per-tool `timeout` is optioneel: de standaard is 10.000 ms (10 seconden), en een ingestelde waarde moet tussen 1 en 60.000 ms (60 seconden) liggen. Zie ook [het configuratievoorbeeld](../../config/README.md).
 
 De keuze tussen absoluut pad en zoeken via `PATH` is gemaakt. De toegestane executabletypen zijn vastgelegd voor F03: native executables en expliciet geconfigureerde interpreters; geen automatische shell- of `.bat`/`.cmd`-dispatch. Het volledige contract en de scheiding met F03 staan in [API en configuratie](../api-en-configuratie.md).
 
@@ -45,7 +45,7 @@ De keuze tussen absoluut pad en zoeken via `PATH` is gemaakt. De toegestane exec
 - [x] Ongeldige configuratie verhindert serverstart met bruikbare diagnose.
 - [x] Nieuwe tool wordt na herstart zichtbaar zonder rebuild.
 - [x] Dubbele namen en onbekende placeholders worden afgewezen.
-- [x] Placeholders worden alleen als volledig argument vervangen; clients kunnen de executable niet kiezen.
+- [x] Configuratie staat placeholders alleen als volledig argument toe; clients kunnen de executable niet kiezen. Daadwerkelijke vervanging volgt in F04.
 
 ## Bewijs en koppelingen
 
@@ -57,7 +57,6 @@ De keuze tussen absoluut pad en zoeken via `PATH` is gemaakt. De toegestane exec
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd.
 - [x] Relevante controles geslaagd.
 - [x] Documentatie en notitie bijgewerkt.
 - [x] Voortgang bijgewerkt.

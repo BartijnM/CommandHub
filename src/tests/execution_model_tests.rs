@@ -6,7 +6,7 @@ use super::ExecutionResponse;
 use crate::execution::ExecutionResult;
 
 #[test]
-fn vertaalt_kernresultaat_naar_http_json() {
+fn converts_core_result_to_http_json() {
     let result = ExecutionResult {
         success: false,
         stdout: "uitvoer".to_owned(),

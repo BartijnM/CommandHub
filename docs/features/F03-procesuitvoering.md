@@ -48,7 +48,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - [x] Timeout, outputlimiet en concurrentielimiet implementeren; subprocessopruiming in gerichte Windows-tests controleren.
 - [x] `process-wrap` integreren voor Unix-procesgroepen en Windows Job Objects.
 - [x] `stop_child` alleen laten beëindigen bij ontbrekende exitstatus; regressietest voor een al afgerond proces uitvoeren op Windows.
-- [x] Testbinary als child een subprocess laten starten en het PID vastleggen; Windows-procescontrole delen via `windows_process_ids`.
+- [x] Testbinary als child een subprocess laten starten en het PID vastleggen; procescontrole delen via `process_checks::assert_stopped`.
 - [x] Subprocessopruiming en capaciteitsvrijgave bij timeout en outputoverschrijding op Windows testen.
 - [x] Windows-scenario testen waarin het directe child eerder dan het subprocess eindigt.
 - [x] Expliciete annulering met `oneshot` en `tokio::select!` implementeren; signaal, gesloten kanaal en subprocessopruiming met capaciteitsvrijgave op Windows testen.
@@ -58,7 +58,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - [x] Unix-groepsopruiming na een afgeronde leider en een groepsbewaker bij future-drop voorbereiden op basis van de lokale wrapperimplementatie.
 - [x] De `/proc`-race uit run #21 corrigeren: ENOENT/NotFound en ESRCH als beëindigd herkennen; overige lees-/formaatfouten behouden en deterministisch testen.
 - [x] Linux-code na ESRCH-correctie opnieuw via Ubuntu-CI controleren; run #22 toont Ubuntu en Windows Success.
-- [x] Windows-procescontrole async maken met 3 s timeout per `tasklist`, `kill_on_drop` en herhaald controleren tot maximaal 5 s met intervallen van 50 ms. Geen harde OS-processtartgarantie.
+- [x] Windows-procescontrole delen en begrenzen: sinds de review native proceshandles, maximaal 5 s herhaald controleren met intervallen van 50 ms. De eerdere tasklist-implementatie is vervangen; geen harde OS-processtartgarantie.
 - [x] POST /tools/{toolname} aansluiten met gedeelde state, uitsluitend `{}`, 16 KiB bodylimiet, resultaatmodel en vaste foutresponses; Windows-routetests en echte POST controleren.
 - [x] Gerichte tests voor succesvolle/niet-succesvolle exit, timeout, outputlimiet en capaciteitsvrijgave toevoegen.
 - [x] Reproduceerbare subprocess-helper met PID-bestand, optionele grote output en vroegtijdig afgerond child toevoegen; gecontroleerde annulering laten wachten op een leesbaar PID.
@@ -81,7 +81,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - GitHub issue: nog vast te leggen.
 - Branch: feature/F03-procesuitvoering.
 - Pull request/review en merge: nog te bevestigen; de aangeleverde screenshot toont een push-run, geen mergebewijs.
-- Actuele verificatie (2026-11-02): run #21 Ubuntu faalt in `stopt_subproces_bij_annulering` op ESRCH tijdens `/proc`-lezen; Windows groen. Na de lokale correctie slagen op Windows formatter, Clippy, build en 62 tests (4 proceshelpers genegeerd). Drie nieuwe regressietests bewaken verdwenen processen, statussen en het behouden van echte fouten. Daarna bevestigt de aangeleverde screenshot van run #22 Success op beide platforms (Ubuntu 45 s, Windows 2 m 51 s; totale run 2 m 55 s). Exacte CI-testtotalen zijn niet zichtbaar.
+- Historische verificatie (2026-11-02): run #21 Ubuntu faalt in `stopt_subproces_bij_annulering` op ESRCH tijdens `/proc`-lezen; Windows groen. Na de lokale correctie slagen op Windows formatter, Clippy, build en 62 tests (4 proceshelpers genegeerd). Drie nieuwe regressietests bewaken verdwenen processen, statussen en het behouden van echte fouten. Daarna bevestigt de aangeleverde screenshot van run #22 Success op beide platforms (Ubuntu 45 s, Windows 2 m 51 s; totale run 2 m 55 s). Exacte CI-testtotalen zijn niet zichtbaar.
 - [Featurenotitie](../../notities/F03-procesuitvoering.md).
 
 ## Afronden
@@ -91,3 +91,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - [x] Documentatie en notitie bijgewerkt tot de gecontroleerde stand van 2026-11-02.
 - [x] Voortgang bijgewerkt tot de gecontroleerde stand van 2026-11-02.
 - [ ] PR gemerged; pas daarna status Klaar.
+
+## Reviewcorrecties — 2026-11-03
+
+De review verwerkt lege configuratiewaarden, enkele toollookup, Engelse testnamen en gedeelde testhelpers. Windows-proceschecks gebruiken nu handles in plaats van tasklist; geen verhoogde timeout. De Windows-suite slaagt met 64 tests en 4 proceshelpers. De eerdere CI-run #22 is historisch bewijs; Linux-controle van deze reviewstand is via de aangeleverde CI-screenshot voor commit 105e69b bevestigd. De eigenaar meldt F03 afgerond, maar review/merge is niet afzonderlijk gecontroleerd. De featurestatus blijft daarom Review. Details en eindcontrole staan in de featurenotitie.
