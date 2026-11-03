@@ -11,7 +11,7 @@ tags:
 
 ## Wat en waarom?
 
-De eigenaar wil macOS ondersteunen vóór F04. De feature krijgt het nieuwe ID F07; F04–F06 worden niet hernummerd. De hoofdapp had al een Unix-uitvoeringspad, maar de testhelper weigerde andere platforms dan Windows en Linux. De nieuwe implementatie is nog niet door macOS-CI bevestigd.
+De eigenaar wil macOS ondersteunen vóór F04. De feature krijgt het nieuwe ID F07; F04–F06 worden niet hernummerd. De hoofdapp had al een Unix-uitvoeringspad, maar de testhelper weigerde andere platforms dan Windows en Linux. De aangeleverde screenshot bevestigt de implementatie inmiddels via geslaagde jobs op macOS, Ubuntu en Windows. Status: Review; review/merge is nog niet bevestigd.
 
 ## Ontwerp en Rust-uitleg
 
@@ -43,4 +43,20 @@ De C-API schrijft naar een buffer. `MaybeUninit<libc::proc_bsdinfo>` reserveert 
 
 ## Volgende stap
 
-De eigenaar commit en pusht de branch en deelt de Actions-resultaten van Ubuntu, Windows en macOS. Controleer de joblogs, los eventuele fouten op en leg de geverifieerde resultaten vast. Daarna review/merge; vervolgens F04. De actuele checklist staat uitsluitend in het featureplan.
+Commit en push de documentatie-update en controleer de CI van de laatste branchstand. Daarna PR-review en merge naar develop; vervolgens F04. De actuele checklist staat uitsluitend in het featureplan.
+
+## CI-bevestiging — 2026-11-03
+
+De eigenaar meldt dat F07 werkt en deelt een GitHub Actions-screenshot met drie groene checks:
+
+| Job | Resultaat | Zichtbare duur |
+| --- | --- | --- |
+| Checks (macos-latest) | Geslaagd | 56 s |
+| Checks (ubuntu-latest) | Geslaagd | 44 s |
+| Checks (windows-latest) | Geslaagd | 1 m 54 s |
+
+De huidige workflow voert op elk platform cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings, cargo test --locked en cargo build --locked uit. Daarmee zijn de platformacceptatiecriteria onderbouwd, inclusief de macOS-status-/uitvoeringstests en bestaande procesboomscenario’s. Exacte testtotalen, commit-ID, runnummer en totale runduur zijn niet zichtbaar in deze screenshot en worden niet ingevuld.
+
+Er staan drie waarschuwingen en twee notices bij de run. Zichtbaar zijn Node.js 20-verouderingsmeldingen bij actions/checkout@v4; de checks zijn groen. De notices zijn niet volledig zichtbaar en worden niet nader geïnterpreteerd. Action-onderhoud blijft een afzonderlijk punt.
+
+Alleen documentatie aangepast op basis van dit bewijs; geen tests opnieuw uitgevoerd en geen Git-commando’s uitgevoerd. Status naar Review. PR-review/merge is niet zichtbaar en blijft open. Deze documentatie-update volgt op de getoonde run; controleer na push de CI van de laatste branchstand.

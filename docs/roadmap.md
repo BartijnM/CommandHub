@@ -13,7 +13,7 @@ ID's zijn stabiel; de tabelvolgorde is de bouwvolgorde. Alle toekomstige feature
 | F05 | MCP via HTTP verbonden met dezelfde kern | F00, F04 | MCP-keten |
 | F06 | Windows/Linux/macOS-controles en reproduceerbare demo | F05 | Oplevering |
 
-F07 is op verzoek vóór F04 ingevoegd; bestaande feature-ID’s veranderen niet. De eerste macOS-CI staat nog open.
+F07 is op verzoek vóór F04 ingevoegd; bestaande feature-ID’s veranderen niet. De eerste macOS-CI is geslaagd, evenals Ubuntu en Windows; F07 staat op Review tot review/merge.
 
 F00 is een korte technische proef; schrijf de definitieve executor niet alvast. F01 heeft al een minimale codebasis in dit pakket, maar lokale verificatie en repository-inrichting blijven nodig.
 

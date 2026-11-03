@@ -1,6 +1,6 @@
 # Architectuur
 
-Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05. De macOS-uitbreiding F07 is voorbereid; macOS-CI moet de werking nog bevestigen.
+Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05. De macOS-uitbreiding F07 is via de aangeleverde CI-screenshot bevestigd, samen met Ubuntu en Windows.
 
 ## Beoogde gegevensstroom
 
@@ -55,7 +55,7 @@ Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever
 
 macOS gebruikt hetzelfde cfg(unix)-pad met ProcessGroup en de bestaande groepsbewaker. Alleen de teststatuscontrole is OS-specifiek: proc_pidinfo (PROC_PIDTBSDINFO) levert de processtatus rechtstreeks aan. De buffer wordt pas na een volledige API-return uitgelezen. ESRCH en zombie-status betekenen gestopt; API-/toegangsfouten en onbekende statussen blijven fouten. libc is hiervoor uitsluitend een macOS-dev-dependency. Er is geen /proc-bestand of extern statusprogramma nodig.
 
-De CI-matrix omvat nu ubuntu-latest, windows-latest en macos-latest met dezelfde controles. Die macOS-job is nog niet uitgevoerd. Het voorbeeld config/tools.macos.json wordt expliciet gekozen via COMMANDHUB_CONFIG. Zie [F07](features/F07-macos-ondersteuning.md).
+De CI-matrix omvat nu ubuntu-latest, windows-latest en macos-latest met dezelfde controles. De aangeleverde screenshot toont alle drie jobs geslaagd: macOS 56 s, Ubuntu 44 s en Windows 1 m 54 s. Exacte CI-testtotalen zijn niet zichtbaar. Het voorbeeld config/tools.macos.json wordt expliciet gekozen via COMMANDHUB_CONFIG. Zie [F07](features/F07-macos-ondersteuning.md).
 
 ## Aanvullende verificatie en logging
 

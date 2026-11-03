@@ -100,4 +100,4 @@ Het HTTP-contract is ongewijzigd. Configuratie wijst nu ook lege namen en comman
 
 ## macOS-configuratie (F07)
 
-Het HTTP-contract blijft gelijk. Kies op macOS config/tools.macos.json via COMMANDHUB_CONFIG; de standaardbestandskeuze verandert niet. Platformgeschikte vaste argumenten blijven door de beheerder bepaald. macOS-procescontrole en een macOS-CI-job zijn toegevoegd, maar nog niet uitgevoerd. Zie [F07](features/F07-macos-ondersteuning.md).
+Het HTTP-contract blijft gelijk. Kies op macOS config/tools.macos.json via COMMANDHUB_CONFIG; de standaardbestandskeuze verandert niet. Platformgeschikte vaste argumenten blijven door de beheerder bepaald. macOS-procescontrole en de macOS-CI-job zijn toegevoegd; de aangeleverde screenshot bevestigt geslaagde jobs op macOS, Ubuntu en Windows. Zie [F07](features/F07-macos-ondersteuning.md).

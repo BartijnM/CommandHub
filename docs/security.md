@@ -32,6 +32,6 @@ De beheerder bepaalt configuratie en executables. Clientinvoer is onbetrouwbaar.
 Test ongeldige argumenten, padoverschrijding, te grote uitvoer, vastlopend proces, parallelle calls en beëindiging. Documenteer resterende grenzen; claim geen sandbox zonder daadwerkelijke isolatie.
 De processtatushelper beschouwt uitsluitend NotFound/ENOENT en ESRCH als een verdwenen proces. Toegangsproblemen of ongeldige /proc-data worden niet als geslaagde beëindiging verborgen. Dit onderscheid is met regressietests gecontroleerd.
 
-## macOS-uitbreiding — nog te verifiëren
+## macOS-uitbreiding — CI bevestigd
 
-F07 hergebruikt Unix-procesgroepen en de bestaande uitvoeringsgrenzen. De macOS-testhelper gebruikt proc_pidinfo en beschouwt alleen ESRCH of een zombie als beëindigd; echte fouten blijven fouten. De FFI-buffer wordt alleen na een volledig resultaat uitgelezen. CI omvat macOS, maar de nieuwe platformtak is nog niet uitgevoerd. Dit is geen sandbox of uitbreiding naar publieke hosting.
+F07 hergebruikt Unix-procesgroepen en de bestaande uitvoeringsgrenzen. De macOS-testhelper gebruikt proc_pidinfo en beschouwt alleen ESRCH of een zombie als beëindigd; echte fouten blijven fouten. De FFI-buffer wordt alleen na een volledig resultaat uitgelezen. De aangeleverde screenshot bevestigt geslaagde jobs op macOS, Ubuntu en Windows. Dit verifieert de geconfigureerde testscenario’s; exacte CI-testtotalen zijn niet zichtbaar. Dit is geen sandbox of uitbreiding naar publieke hosting.

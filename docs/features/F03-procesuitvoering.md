@@ -98,4 +98,4 @@ De review verwerkt lege configuratiewaarden, enkele toollookup, Engelse testname
 
 ## Platformuitbreiding vóór F04
 
-De aparte [F07-macOS-uitbreiding](F07-macos-ondersteuning.md) hergebruikt deze uitvoeringskern. De eigen checklist en nog open macOS-CI staan bij F07; het eerdere Ubuntu/Windows-bewijs wordt daarmee niet als macOS-bewijs gepresenteerd.
+De aparte [F07-macOS-uitbreiding](F07-macos-ondersteuning.md) hergebruikt deze uitvoeringskern. De eigen checklist en het geslaagde macOS-CI-bewijs staan bij F07; het eerdere Ubuntu/Windows-bewijs wordt daarmee niet als macOS-bewijs gepresenteerd.

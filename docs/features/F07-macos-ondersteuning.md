@@ -1,7 +1,7 @@
 ---
 id: F07
 prioriteit: Must
-status: In uitvoering
+status: Review
 milestone: "Platformuitbreiding"
 ---
 
@@ -21,21 +21,21 @@ De bestaande Unix-executor gebruikt ook op macOS procesgroepen. Deze uitbreiding
 - [x] Voorbeeldconfiguratie en een macOS-uitvoeringstest met `/bin/echo` toevoegen.
 - [x] `macos-latest` opnemen in dezelfde CI-matrix als Ubuntu en Windows.
 - [x] Documentatie, voortgang en featurenotitie bijwerken.
-- [ ] CI van deze branch op alle drie platforms controleren; fouten oplossen en resultaten vastleggen.
+- [x] CI van deze branch op alle drie platforms controleren; aangeleverde screenshot toont drie geslaagde jobs; resultaten vastgelegd in de featurenotitie.
 
 ## Acceptatiecriteria
 
-- [ ] Formatter, Clippy, volledige testsuite en build slagen op macOS via GitHub Actions.
-- [ ] De bestaande procesboomtests slagen ook op macOS: timeout, outputlimiet, annulering, shutdown, future-drop, taakafbreking en een eerder afgerond direct child.
-- [ ] De macOS-statuscontrole herkent een actief en gestopt childproces; echte API-/toegangsfouten worden niet als beëindiging verborgen.
-- [ ] De macOS-voorbeeldconfiguratie valideert en `echo_ready` levert het verwachte resultaat op.
-- [ ] Ubuntu- en Windows-jobs blijven slagen.
+- [x] Formatter, Clippy, volledige testsuite en build slagen op macOS via GitHub Actions.
+- [x] De bestaande procesboomtests slagen ook op macOS: timeout, outputlimiet, annulering, shutdown, future-drop, taakafbreking en een eerder afgerond direct child.
+- [x] De macOS-statuscontrole herkent een actief en gestopt childproces; echte API-/toegangsfouten worden niet als beëindiging verborgen.
+- [x] De macOS-voorbeeldconfiguratie valideert en `echo_ready` levert het verwachte resultaat op.
+- [x] Ubuntu- en Windows-jobs blijven slagen.
 
 ## Verificatie en afronding
 
-Lokaal op Windows zijn alleen `cargo fmt --check` en `cargo metadata --locked --offline --no-deps --format-version 1` gecontroleerd. Geen tests, Clippy of build uitgevoerd: de eigenaar wil de verificatie via GitHub Actions doen. macOS is lokaal niet beschikbaar. De vinkjes hierboven beschrijven toegevoegde code en documentatie, geen geslaagde platformacceptatie.
+Lokaal op Windows zijn alleen `cargo fmt --check` en `cargo metadata --locked --offline --no-deps --format-version 1` gecontroleerd. Geen tests, Clippy of build uitgevoerd: de eigenaar wil de verificatie via GitHub Actions doen. macOS is lokaal niet beschikbaar. De later aangeleverde screenshot bevestigt de CI op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). De workflow bevat formatter, Clippy, tests en build. Exacte CI-testtotalen en commit-/run-ID zijn niet zichtbaar. De platformacceptatiecriteria zijn daarmee aangetoond; PR-review/merge blijft open.
 
-- [ ] CI-resultaten vastgelegd.
+- [x] CI-resultaten vastgelegd.
 - [ ] PR beoordeeld en gemerged naar develop; pas daarna status Klaar.
 
 [Featurenotitie](../../notities/F07-macos-ondersteuning.md).

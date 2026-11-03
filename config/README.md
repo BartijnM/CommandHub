@@ -54,4 +54,4 @@ De F03-grenzen zijn maximaal 1 MiB gecombineerde stdout/stderr, 16 KiB requestbo
 
 Gebruik [tools.macos.json](tools.macos.json) op macOS. Kies het bestand vanuit de projectmap met `export COMMANDHUB_CONFIG=config/tools.macos.json` en start daarna `cargo run --locked`. De standaard tools.json blijft het bestaande Windows-voorbeeld; er is geen automatische OS-selectie.
 
-De macOS-configuratie bevat git_version, echo_ready (/bin/echo met een vast argument), hostname, whoami en ping_localhost. macOS-ping gebruikt losse argumenten -c, 4 en 127.0.0.1; de Windows-configuratie gebruikt -n. De toegevoegde CI-test controleert configuratievalidatie en voert op macOS echo_ready uit. Die test is nog niet uitgevoerd; de andere voorbeeldtools zijn niet afzonderlijk geverifieerd.
+De macOS-configuratie bevat git_version, echo_ready (/bin/echo met een vast argument), hostname, whoami en ping_localhost. macOS-ping gebruikt losse argumenten -c, 4 en 127.0.0.1; de Windows-configuratie gebruikt -n. De toegevoegde CI-test controleert configuratievalidatie en voert op macOS echo_ready uit. De macOS-CI-job is geslaagd; de andere voorbeeldtools zijn niet afzonderlijk geverifieerd.
