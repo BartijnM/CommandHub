@@ -8,18 +8,40 @@
       "parameters": []
     },
     {
-      "name": "git_status",
-      "description": "Show the status of a Git repository",
-      "command": "git",
-      "arguments": ["-C", "{repository}", "status"],
-      "parameters": [
-        {
-          "name": "repository",
-          "type": "string",
-          "required": true
-        }
-      ],
-      "timeout": 5000
+      "name": "rust_version",
+      "description": "Toont de geïnstalleerde Rust-versie",
+      "command": "rustc",
+      "arguments": ["--version"],
+      "parameters": []
+    },
+    {
+      "name": "cargo_version",
+      "description": "Toont de geïnstalleerde Cargo-versie",
+      "command": "cargo",
+      "arguments": ["--version"],
+      "parameters": []
+    },
+    {
+      "name": "hostname",
+      "description": "Toont de computernaam",
+      "command": "hostname",
+      "arguments": [],
+      "parameters": []
+    },
+    {
+      "name": "whoami",
+      "description": "Toont de gebruiker waaronder CommandHub draait",
+      "command": "whoami",
+      "arguments": [],
+      "parameters": []
+    },
+    {
+      "name": "ping_localhost",
+      "description": "Ping localhost vier keer op Windows",
+      "command": "ping",
+      "arguments": ["-n", "4", "127.0.0.1"],
+      "parameters": [],
+      "timeout": 10000
     }
   ]
 }
