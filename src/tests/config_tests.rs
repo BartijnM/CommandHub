@@ -1,5 +1,30 @@
 use super::*;
 
+#[test]
+fn blank_tool_names_commands_and_parameter_names_are_rejected() {
+    for blank in ["", " ", "\t\n"] {
+        let config = ConfigFile {
+            tools: vec![test_tool(blank, None)],
+        };
+        assert!(
+            config.validate().is_err(),
+            "lege toolnaam moet worden afgewezen"
+        );
+        let mut tool = test_tool("test_tool", None);
+        tool.command = blank.to_owned();
+        assert!(
+            ConfigFile { tools: vec![tool] }.validate().is_err(),
+            "leeg command moet worden afgewezen"
+        );
+        let mut tool = test_tool("test_tool", None);
+        tool.parameters = vec![test_parameter(blank)];
+        assert!(
+            ConfigFile { tools: vec![tool] }.validate().is_err(),
+            "lege parameternaam moet worden afgewezen"
+        );
+    }
+}
+
 fn test_tool(name: &str, timeout: Option<u64>) -> ToolDefinition {
     ToolDefinition {
         name: name.to_owned(),

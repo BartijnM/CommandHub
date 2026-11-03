@@ -14,6 +14,22 @@ use crate::{
 
 use super::router;
 
+fn post_request(tool: &str, input: impl Into<Body>) -> Request<Body> {
+    Request::builder()
+        .method("POST")
+        .uri(format!("/tools/{tool}"))
+        .header("content-type", "application/json")
+        .body(input.into())
+        .expect("testrequest moet geldig zijn")
+}
+
+async fn response_json(response: axum::response::Response) -> serde_json::Value {
+    let body = to_bytes(response.into_body(), 1024 * 1024)
+        .await
+        .expect("response moet leesbaar zijn");
+    serde_json::from_slice(&body).expect("response moet JSON zijn")
+}
+
 fn test_registry() -> Arc<ToolRegistry> {
     let config = ConfigFile {
         tools: vec![ToolDefinition {
@@ -77,7 +93,7 @@ async fn tools_route_returns_tool_metadata_and_input_schema() {
 }
 
 #[tokio::test]
-async fn voert_parameterloze_tool_uit_via_http() {
+async fn executes_parameterless_tool_via_http() {
     let registry = Arc::new(ToolRegistry::new(ConfigFile {
         tools: vec![ToolDefinition {
             name: "git_versie".to_owned(),
@@ -95,25 +111,13 @@ async fn voert_parameterloze_tool_uit_via_http() {
     };
 
     let response = router(state)
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/git_versie")
-                .header("content-type", "application/json")
-                .body(Body::from("{}"))
-                .expect("het testrequest moet geldig zijn"),
-        )
+        .oneshot(post_request("git_versie", "{}"))
         .await
         .expect("de router moet een response geven");
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = to_bytes(response.into_body(), 16 * 1024)
-        .await
-        .expect("de response moet leesbaar zijn");
-
-    let result: serde_json::Value =
-        serde_json::from_slice(&body).expect("de response moet JSON zijn");
+    let result = response_json(response).await;
 
     assert_eq!(result["success"], json!(true));
     assert_eq!(result["exitCode"], json!(0));
@@ -128,7 +132,7 @@ async fn voert_parameterloze_tool_uit_via_http() {
 }
 
 #[tokio::test]
-async fn weigert_te_grote_requestbody_met_413() {
+async fn rejects_oversized_request_body_with_413() {
     let bodies = [
         format!("{{}}{}", " ".repeat(16 * 1024)),
         "x".repeat(16 * 1024 + 1),
@@ -141,25 +145,13 @@ async fn weigert_te_grote_requestbody_met_413() {
         };
 
         let response = router(state)
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri("/tools/onbekend")
-                    .header("content-type", "application/json")
-                    .body(Body::from(body))
-                    .expect("het testrequest moet geldig zijn"),
-            )
+            .oneshot(post_request("onbekend", body))
             .await
             .expect("de router moet een response geven");
 
         assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
 
-        let body = to_bytes(response.into_body(), 1024)
-            .await
-            .expect("de foutresponse moet leesbaar zijn");
-
-        let actual: serde_json::Value =
-            serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+        let actual = response_json(response).await;
 
         assert_eq!(
             actual,
@@ -172,7 +164,7 @@ async fn weigert_te_grote_requestbody_met_413() {
 }
 
 #[tokio::test]
-async fn accepteert_requestbody_van_precies_16_kib() {
+async fn accepts_request_body_of_exactly_16_kib() {
     let state = crate::app_state::AppState {
         registry: test_registry(),
         execution: Arc::new(crate::execution::ExecutionService::new()),
@@ -182,25 +174,13 @@ async fn accepteert_requestbody_van_precies_16_kib() {
     assert_eq!(input.len(), 16 * 1024);
 
     let response = router(state)
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/onbekend")
-                .header("content-type", "application/json")
-                .body(Body::from(input))
-                .expect("het testrequest moet geldig zijn"),
-        )
+        .oneshot(post_request("onbekend", input))
         .await
         .expect("de router moet een response geven");
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
-    let body = to_bytes(response.into_body(), 1024)
-        .await
-        .expect("de foutresponse moet leesbaar zijn");
-
-    let actual: serde_json::Value =
-        serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+    let actual = response_json(response).await;
 
     assert_eq!(
         actual,
@@ -212,7 +192,7 @@ async fn accepteert_requestbody_van_precies_16_kib() {
 }
 
 #[tokio::test]
-async fn weigert_ongeldige_invoer_via_http() {
+async fn rejects_invalid_input_via_http() {
     let cases = [
         ("{", Some("application/json"), "invalid_json"),
         ("{}", None, "invalid_json"),
@@ -252,19 +232,14 @@ async fn weigert_ongeldige_invoer_via_http() {
             "verwachtte 400 voor invoer {input} met contenttype {content_type:?}"
         );
 
-        let body = to_bytes(response.into_body(), 1024)
-            .await
-            .expect("de foutresponse moet leesbaar zijn");
-
-        let actual: serde_json::Value =
-            serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+        let actual = response_json(response).await;
 
         assert_eq!(actual["code"], json!(expected_code));
     }
 }
 
 #[tokio::test]
-async fn niet_nul_exitcode_geeft_http_200_met_success_false() {
+async fn nonzero_exit_code_returns_http_200_with_success_false() {
     let registry = Arc::new(ToolRegistry::new(ConfigFile {
         tools: vec![ToolDefinition {
             name: "git_fout".to_owned(),
@@ -282,25 +257,13 @@ async fn niet_nul_exitcode_geeft_http_200_met_success_false() {
     };
 
     let response = router(state)
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/git_fout")
-                .header("content-type", "application/json")
-                .body(Body::from("{}"))
-                .expect("het testrequest moet geldig zijn"),
-        )
+        .oneshot(post_request("git_fout", "{}"))
         .await
         .expect("de router moet een response geven");
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = to_bytes(response.into_body(), 16 * 1024)
-        .await
-        .expect("de response moet leesbaar zijn");
-
-    let result: serde_json::Value =
-        serde_json::from_slice(&body).expect("de response moet JSON zijn");
+    let result = response_json(response).await;
 
     assert_eq!(result["success"], json!(false));
     assert!(
@@ -319,7 +282,7 @@ async fn niet_nul_exitcode_geeft_http_200_met_success_false() {
 
 #[cfg(any(windows, unix))]
 #[tokio::test]
-async fn timeout_geeft_http_504() {
+async fn timeout_returns_http_504() {
     #[cfg(windows)]
     let (command, arguments) = (
         "ping",
@@ -347,14 +310,7 @@ async fn timeout_geeft_http_504() {
 
     let response = tokio::time::timeout(
         std::time::Duration::from_secs(5),
-        router(state).oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/langzaam")
-                .header("content-type", "application/json")
-                .body(Body::from("{}"))
-                .expect("het testrequest moet geldig zijn"),
-        ),
+        router(state).oneshot(post_request("langzaam", "{}")),
     )
     .await
     .expect("de HTTP-timeoutafhandeling moet tijdig afronden")
@@ -362,12 +318,7 @@ async fn timeout_geeft_http_504() {
 
     assert_eq!(response.status(), StatusCode::GATEWAY_TIMEOUT);
 
-    let body = to_bytes(response.into_body(), 1024)
-        .await
-        .expect("de foutresponse moet leesbaar zijn");
-
-    let actual: serde_json::Value =
-        serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+    let actual = response_json(response).await;
 
     assert_eq!(
         actual,
@@ -379,7 +330,7 @@ async fn timeout_geeft_http_504() {
 }
 
 #[tokio::test]
-async fn outputoverschrijding_geeft_http_502() {
+async fn output_limit_returns_http_502() {
     let testprogramma =
         std::env::current_exe().expect("het pad naar het testprogramma moet beschikbaar zijn");
 
@@ -390,7 +341,7 @@ async fn outputoverschrijding_geeft_http_502() {
             command: testprogramma.to_string_lossy().into_owned(),
             arguments: vec![
                 "--exact".to_owned(),
-                "execution::tests::schrijft_output_boven_de_limiet".to_owned(),
+                "execution::tests::writes_output_above_limit".to_owned(),
                 "--ignored".to_owned(),
                 "--nocapture".to_owned(),
             ],
@@ -406,14 +357,7 @@ async fn outputoverschrijding_geeft_http_502() {
 
     let response = tokio::time::timeout(
         std::time::Duration::from_secs(6),
-        router(state).oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/grote_output")
-                .header("content-type", "application/json")
-                .body(Body::from("{}"))
-                .expect("het testrequest moet geldig zijn"),
-        ),
+        router(state).oneshot(post_request("grote_output", "{}")),
     )
     .await
     .expect("de outputlimietafhandeling moet tijdig afronden")
@@ -421,12 +365,7 @@ async fn outputoverschrijding_geeft_http_502() {
 
     assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
 
-    let body = to_bytes(response.into_body(), 1024)
-        .await
-        .expect("de foutresponse moet leesbaar zijn");
-
-    let actual: serde_json::Value =
-        serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+    let actual = response_json(response).await;
 
     assert_eq!(
         actual,
@@ -438,7 +377,7 @@ async fn outputoverschrijding_geeft_http_502() {
 }
 
 #[tokio::test]
-async fn processtartfout_geeft_veilige_http_500() {
+async fn process_start_failure_returns_safe_http_500() {
     let registry = Arc::new(ToolRegistry::new(ConfigFile {
         tools: vec![ToolDefinition {
             name: "startfout".to_owned(),
@@ -456,25 +395,13 @@ async fn processtartfout_geeft_veilige_http_500() {
     };
 
     let response = router(state)
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/startfout")
-                .header("content-type", "application/json")
-                .body(Body::from("{}"))
-                .expect("het testrequest moet geldig zijn"),
-        )
+        .oneshot(post_request("startfout", "{}"))
         .await
         .expect("de router moet een response geven");
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 
-    let body = to_bytes(response.into_body(), 1024)
-        .await
-        .expect("de foutresponse moet leesbaar zijn");
-
-    let actual: serde_json::Value =
-        serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+    let actual = response_json(response).await;
 
     assert_eq!(
         actual,
@@ -486,32 +413,20 @@ async fn processtartfout_geeft_veilige_http_500() {
 }
 
 #[tokio::test]
-async fn weigert_tool_met_parameters_via_http() {
+async fn rejects_tool_with_parameters_via_http() {
     let state = crate::app_state::AppState {
         registry: test_registry(),
         execution: Arc::new(crate::execution::ExecutionService::new()),
     };
 
     let response = router(state)
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/list_files")
-                .header("content-type", "application/json")
-                .body(Body::from("{}"))
-                .expect("het testrequest moet geldig zijn"),
-        )
+        .oneshot(post_request("list_files", "{}"))
         .await
         .expect("de router moet een response geven");
 
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 
-    let body = to_bytes(response.into_body(), 1024)
-        .await
-        .expect("de foutresponse moet leesbaar zijn");
-
-    let actual: serde_json::Value =
-        serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+    let actual = response_json(response).await;
 
     assert_eq!(
         actual,
@@ -523,7 +438,7 @@ async fn weigert_tool_met_parameters_via_http() {
 }
 
 #[tokio::test]
-async fn weigert_http_uitvoering_na_begin_shutdown() {
+async fn rejects_http_execution_after_shutdown_begins() {
     let registry = Arc::new(ToolRegistry::new(ConfigFile {
         tools: vec![ToolDefinition {
             name: "git_versie".to_owned(),
@@ -545,25 +460,13 @@ async fn weigert_http_uitvoering_na_begin_shutdown() {
     };
 
     let response = router(state)
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/tools/git_versie")
-                .header("content-type", "application/json")
-                .body(Body::from("{}"))
-                .expect("het testrequest moet geldig zijn"),
-        )
+        .oneshot(post_request("git_versie", "{}"))
         .await
         .expect("de router moet een response geven");
 
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
 
-    let body = to_bytes(response.into_body(), 1024)
-        .await
-        .expect("de foutresponse moet leesbaar zijn");
-
-    let actual: serde_json::Value =
-        serde_json::from_slice(&body).expect("de foutresponse moet JSON zijn");
+    let actual = response_json(response).await;
 
     assert_eq!(
         actual,

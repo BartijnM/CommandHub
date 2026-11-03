@@ -1,75 +1,49 @@
 # Testplan
 
-Status bijgewerkt: 2026-11-02. Lokaal op Windows slagen formatter, Clippy, build en 62 tests (4 proceshelpers genegeerd). Na de ESRCH-race uit CI-run #21 is de processtatushelper gecorrigeerd en zijn drie regressietests toegevoegd. De aangeleverde screenshot van run #22 bevestigt geslaagde Ubuntu- en Windows-jobs. Platformacceptatie is weer aangetoond; review/merge blijven open.
+Status: 2026-11-03. De huidige Windows-suite bevat 64 geslaagde tests en 4 genegeerde proceshelpers. De Windows-statuscontrole is vervangen; Linux-verificatie van de huidige reviewstand staat open.
 
 | Eisen | Aanwezig bewijs en resterende controles |
 | --- | --- |
-| R01–R03 | Configuratievalidatie en laadfouten; ontdekking via HTTP; eerdere handmatige herstartcontrole zonder rebuild |
-| R04–R06 | Toolselectie, succes, niet-nul exit, startfout, output, timeout, annulering en shutdown. Windows-PID-controles na stoproutes, future-drop en taakafbreking. Linux-hercontrole na ESRCH-correctie geslaagd in #22 |
-| R07 | Gedeeld outputbudget, child-output boven 1 MiB, capaciteitsgrens/vrijgave. HTTP-body exact 16 KiB toegestaan en groter afgewezen. HTTP 503 bij vier vastgehouden permits én bij vier echte actieve TCP-uitvoeringen; capaciteitsherstel na hun succesvolle afloop getest |
-| R08–R10 | F04: dynamische parameters, typen, onbekende velden, optie-injectie en padbeleid |
-| R11/R16 | F00: MCP Inspector CLI; protocol-/Origin-/Host-controles bij F05 verder verifiëren |
-| R12 | Windows-routetests voor succes, niet-nul exit als 200, 400/404/413/500/502/503/504 en shutdownafwijzing; echte POST naar geconfigureerde tool geslaagd |
-| R13 | Vaste foutcodes en geen OS-details in JSON getest. Loggingwrapper en geïsoleerde loggingtests controleren geselecteerde metadata en het ontbreken van client-/argumentwaarden en procesoutput |
-| R14/R15 | Kern is transportonafhankelijk; HTTP-adapter gebruikt gedeelde state. Ubuntu-run #20 slaagde, maar na de race uit #21 moet de gecorrigeerde statuscontrole opnieuw worden uitgevoerd |
-| R17 | README bevat start- en POST-voorbeeld; complete demo en schone-checkoutcontrole volgen bij oplevering |
+| R01–R03 | Configuratie-, laadfout- en ontdekkingstests; lege namen/commands worden afgewezen. Herstart zonder rebuild is eerder handmatig gecontroleerd |
+| R04–R06 | Succes, niet-nul exit, startfout, output, timeout, annulering en shutdown; PID-controles bij stoproutes, future-drop en taakafbreking |
+| R07 | Gedeeld outputbudget, capaciteitsgrens/vrijgave, body exact 16 KiB en overschrijding; vier echte actieve TCP-uitvoeringen en vijfde 503, daarna capaciteitsherstel |
+| R08–R10 | F04: dynamische parameters, optie-injectie en padbeleid |
+| R11/R16 | Geïsoleerde F00-proef; protocol- en Host/Origin-controles bij F05 |
+| R12 | Routertests voor resultaat en fouten; echte TCP-tests voor capaciteit en actieve shutdown |
+| R13 | Vaste foutcodes en geen OS-details in JSON; geïsoleerde loggingtests bewaken het ontbreken van argumentwaarden en procesoutput |
+| R14/R15 | Kern zonder HTTP-afhankelijkheid; Windows-suite slaagt. Historische CI-run #22 controleerde Ubuntu/Windows na ESRCH-correctie. Nieuwe Linux-verificatie staat open |
+| R17 | README-start-/POST-voorbeeld; volledige demo en schone-checkoutcontrole bij F06 |
 
 ## Testindeling
 
-De oorspronkelijke vijf testbestanden staan in `src/tests/`: `config_tests.rs`, `execution_tests.rs`, `routes_tests.rs`, `execution_controller_tests.rs` en `execution_model_tests.rs`. De productiemodules koppelen ze met `#[cfg(test)]`, `#[path]` en `mod tests;`. De logische paden en toegang tot private code blijven gelijk. Deze indeling is geen zelfstandige integratiecrate onder `tests/` in de projecthoofdmap.
+Tests staan in src/tests/, maar zijn via cfg(test) en path submodules van hun oorspronkelijke module, met behoud van private toegang. Er zijn zeven bestanden: config_tests.rs, execution_tests.rs, routes_tests.rs, execution_controller_tests.rs, execution_model_tests.rs, http_execution_tests.rs en process_checks.rs.
 
-Daarnaast zijn `http_execution_tests.rs` voor echte loopback/TCP-tests en `process_checks.rs` voor gedeelde Windows/Linux-statuscontrole toegevoegd.
-
-De vier genegeerde helpers worden bewust via de testbinary als child gestart met `--exact`, `--ignored` en `--nocapture`. De helper voor subprocessen start `ping` op Windows of `sleep` op Unix en schrijft een PID-bestand. Elke test gebruikt een eigen naam en verwijdert oude bestanden vooraf. Markers via `--skip` kiezen grote output of vroegtijdig afgerond child. Annulering en shutdown wachten met `join!` op een leesbaar PID.
+Alle functies hebben Engelse namen. Exacte helperselecties zijn mee hernoemd. De vier genegeerde helpers worden met --exact en --ignored als child gestart. De subprocessscenario’s delen helpers voor toolopbouw, PID-bestanden, startbevestiging en gelijktijdig reserveren van alle permits. Routertests delen POST-opbouw en JSON-uitlezen; scenariospecifieke assertions blijven zichtbaar.
 
 ## Procesopruiming
 
-De gedeelde helper `process_checks::assert_stopped` gebruikt op Windows async `tasklist` met 3 s timeout en `kill_on_drop(true)`. Hij controleert herhaald met 50 ms tussenpozen en maximaal 5 s totale wachttijd. Zo wordt vertraagde beëindiging opgevangen. Dit is geen harde tijdsgarantie voor eventuele blokkerende OS-processtart.
+Windows gebruikt OpenProcess met alleen PROCESS_SYNCHRONIZE en WaitForSingleObject met timeout 0. OwnedHandle sluit het handle automatisch; een gesignaleerd proceshandle of ontbrekend positief PID geldt als gestopt. Andere API-/toegangsfouten blijven fouten. De regressietest controleert de eigen actieve PID, een ontbrekende PID en een echt gestart en beëindigd childproces. Er wordt geen tasklist gestart.
 
-Tests bewaken ook capaciteitsvrijgave. Shutdown weigert nieuwe reserveringen en wacht op alle permits. Een afzonderlijke test houdt één permit vast om te bewijzen dat shutdown wacht. Future-drop en Tokio-`abort` zijn getest; na `abort` wordt de taak afgewacht voordat capaciteit en PID worden beoordeeld. Normaal stoppen gebruikt expliciete annulering/shutdown; drop/abort is een vangnet zonder teruggegeven uitvoerings-/opruimresultaat.
+Linux leest /proc/<pid>/stat. NotFound/ENOENT en ESRCH betekenen verdwenen; Z/X betekenen beëindigd, niet noodzakelijk gereaped. Echte lees-/formaatfouten blijven fouten. Drie pure regressietests draaien ook op Windows. assert_stopped controleert maximaal 5 s met 50 ms tussenpozen. Dit is geen sandbox of harde garantie voor blokkerende OS-processtart.
 
-Linux heeft nu een `/proc`-statuscontrole, inclusief onderscheid van zombieprocessen. Unix-groepssignalen en future-dropbewaking zijn voorbereid op basis van de lokale wrapperbron. Deze code is lokaal niet op Linux uitgevoerd: WSL ontbreekt en alleen de Windows-target is geïnstalleerd. De aangeleverde screenshot bevestigt daarna een geslaagde Ubuntu-CI-job. De bestaande Ubuntu/Windows-CI-matrix voert alle Cargo-controles uit en heeft een jobtimeout van 15 minuten.
+## HTTP en shutdown
 
-## HTTP-controles
+Routertests gebruiken oneshot; TCP-tests starten echte loopbackservers op vrije poorten. PID-bestanden bevestigen processtart voordat capaciteit of shutdown wordt beoordeeld. De TCP-client gebruikt HTTP/1.0 met connection-close.
 
-De tests lopen rechtstreeks door de router via `oneshot`, zonder TCP-poort. Ze controleren succes, resultaat-JSON, niet-nul exit, ongeldige JSON/contenttype/invoer, onbekende tool, parameters afwijzen, exacte bodygrens en overschrijding, startfout, timeout, outputlimiet, capaciteit en shutdownafwijzing. De eerdere capaciteitstest in `execution_tests.rs` reserveert private permits. Aanvullend start `http_execution_tests.rs` een echte server met vier actieve toolrequests; PID-bestanden bewijzen dat alle procesbomen zijn gestart voordat het vijfde request 503 krijgt. Na vrijgave slagen de oorspronkelijke requests en een nieuwe uitvoering.
+De actieve shutdowntest injecteert een kanaalsignaal in hetzelfde serverpad als Ctrl+C. Hij controleert 503, afgesloten listener en gestopte processen. Een echt OS-Ctrl+C-signaal tijdens actieve uitvoering is niet opnieuw getest. Historisch is Ctrl+C zonder actieve tools handmatig gecontroleerd, evenals een echte POST naar git_version.
 
-Handmatig is een echte POST uitgevoerd naar `/tools/git_version` met JSON `{}`. Resultaat: succes, Git 2.55.0.windows.3 op stdout, lege stderr, exitcode 0, duration 61 ms. Statusroute en Ctrl+C zonder actieve tools zijn ook gecontroleerd. Het actieve afsluitpad wordt nu via echte TCP-integratie met een geïnjecteerd shutdownsignaal getest, inclusief clientresponse, gesloten server en beide PID's. De OS-Ctrl+C-signaalbron is in die actieve test niet zelf geactiveerd.
+## Controles en historie
 
-## Controles
+Voer cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en cargo test --locked uit. De CI-matrix voert ook cargo build --locked uit op Ubuntu en Windows.
 
-```powershell
-cargo fmt --check
-cargo clippy --all-targets --locked -- -D warnings
-cargo test --locked
-```
+- Voor de review: 62 geslaagde Windows-tests, 4 helpers; latere runs faalden wisselend op externe tasklist-aanroepen en HTTP-tijdslimieten.
+- Na de correcties: gerichte configuratiesuite 14 geslaagd; processtatussuite 4 geslaagd; volledige parallelle suite 64 geslaagd, 4 helpers.
+- Run #21: historische Ubuntu-fout door ESRCH tijdens /proc-lezen; drie regressietests toegevoegd.
+- Run #22: eerder aangeleverde screenshot met Ubuntu en Windows Success (45 s en 2 m 51 s). Exacte CI-testtotalen zijn onbekend.
+- De huidige refactor is lokaal op Windows gecontroleerd. Nieuwe Linux-/CI-uitvoering, actuele externe links en mergestatus zijn niet geverifieerd.
 
-## Meetresultaten
+De [F03-notitie](../notities/F03-procesuitvoering.md) bevat de actuele eindcontrole en eerdere werksessies.
 
-| Datum/platform | Controle | Resultaat |
-| --- | --- | --- |
-| 2026-10-30, Windows | `cargo test --locked` na testverplaatsing | Gerapporteerd: 55 passed, 0 failed, 2 ignored, 0 filtered out, 2,89 s |
-| 2026-10-30, Windows | Echte HTTP POST | `git_version`: succes, exitcode 0, duration 61 ms |
-| 2026-10-30, Windows | Status en Ctrl+C | Status werkt; terminalprompt keert terug, zonder actieve tools |
-| 2026-11-02, Windows | Formatter, Clippy (`-D warnings`), build | Alle geslaagd |
-| 2026-11-02, Windows | `cargo test --locked` | 59 passed, 0 failed, 4 ignored, 5,72 s |
-| 2026-11-02, Windows | Echte TCP-concurrency en actieve shutdown | Geslaagd, inclusief processtatuscontroles |
-| 2026-11-02, Ubuntu/Windows CI | GitHub Actions-run #20 op featurebranch | Beide platformjobs Success; screenshot als bewijs, exacte CI-testtotalen niet zichtbaar |
+## Demo bij oplevering
 
-De eindcontroles van 2026-11-02 zijn daadwerkelijk uitgevoerd op Windows. Linux is daarna via CI gecontroleerd; de screenshot van run #20 is vastgelegd. Bij deze documentatie-update zijn geen tests of Git-commando's uitgevoerd.
-
-## Demo
-
-1. Configuratie laden en tools ontdekken.
-2. Parameterloze tool uitvoeren via HTTP.
-3. Resultaat en niet-nul exit uitleggen.
-4. Invoerfouten, timeout, outputlimiet en volle capaciteit tonen.
-5. Logging, concurrency en het gecontroleerde shutdownpad tijdens uitvoering tonen.
-6. MCP-demo bij F05; complete demo en herstart zonder rebuild bij oplevering.
-De CI-screenshot toont niet-blokkerende Node.js 20-verouderingsannotaties. De volledige annotatietekst en de afzonderlijke testlogs zijn niet aangeleverd; daaruit worden geen aanvullende aantallen of details afgeleid.
-## Regressie: proces verdwijnt tijdens /proc-lezen
-
-Run #21: Ubuntu meldt 59 passed, 1 failed, 4 ignored; fout in `stopt_subproces_bij_annulering` door ESRCH. De statushelper accepteert nu zowel NotFound/ENOENT als ESRCH als verdwenen proces. Alleen deze afwezigheidsfouten worden zo behandeld; PermissionDenied en ongeldige stat-data blijven fouten. Drie deterministische tests controleren deze classificatie en actieve/zombie/exitstatus, ook op Windows. Die tests slagen, net als de lokale volledige suite (62 passed, 4 ignored) en formatter/Clippy/build. Daadwerkelijke Ubuntu-hercontrole na de correctie blijft open; een eerdere groene run is geen bewijs dat deze race niet meer optreedt.
-### Resultaat hercontrole — run #22
-
-De screenshot toont beide platformjobs groen: Ubuntu 45 s, Windows 2 m 51 s, totale run 2 m 55 s. Daarmee is de eerder open hercontrole na ESRCH-correctie uitgevoerd en geslaagd. De eerdere fout en lokale regressieresultaten blijven hierboven historisch vastgelegd; exacte CI-testtotalen zijn niet aangeleverd. Bij deze documentatie-update zijn geen tests opnieuw uitgevoerd.
+Toon configuratie laden, ontdekking, parameterloze uitvoering, niet-nul exit, invoerfouten, outputlimiet, timeout, capaciteit, logging en shutdown. Voeg bij F04/F05 dynamische parameters en MCP toe; rond bij F06 de volledige demo op beide platforms af.

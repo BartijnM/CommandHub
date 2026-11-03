@@ -1,44 +1,34 @@
 # Huidige voortgang
 
-Bijgewerkt: 2026-11-02.
+Bijgewerkt: 2026-11-03.
 
 ## Actief
 
-F00 staat klaar voor review. De aparte proefserver werkt via Streamable HTTP; MCP Inspector CLI heeft de vaste tool `hello` ontdekt en aangeroepen. F01 is lokaal gecontroleerd op Windows: formatter, Clippy, tests (0 tests), build en `GET /status` slagen. De GitHub Actions-workflow is inmiddels op Ubuntu en Windows geslaagd; zie het actuele F03-CI-bewijs hieronder.
-
-F02 is gemerged. De hoofdapp leest en valideert de JSON-configuratie bij startup, bouwt een immutable registry en serveert `GET /tools` met toolmetadata en inputschema's. De route laat command en vaste argumenten weg. Configuratie-laadfouten zijn gericht getest; handmatig is bevestigd dat ongeldige configuratie startup stopt met een bruikbare diagnose en dat een aangepaste tool na herstart zonder rebuild zichtbaar wordt. Formatter, Clippy en 14 tests slaagden op Windows. De standaardtimeout is 10 seconden (maximaal 60 seconden); standaardbestand is `config/tools.json`, overschrijfbaar met `COMMANDHUB_CONFIG`. Zie [F02-featureplan](features/F02-toolconfiguratie.md) en [F02-notitie](../notities/F02-toolconfiguratie.md).
-
-F03 staat terug op Review. De ESRCH-race uit run #21 is gecorrigeerd en heeft drie regressietests. Lokale Windows-controles slagen met 62 tests en 4 genegeerde proceshelpers. De aangeleverde screenshot van CI-run #22 bevestigt Success op zowel Ubuntu als Windows; de correctie is daarmee ook via Linux-CI gecontroleerd. Review en merge naar develop zijn nog te bevestigen. Zie [F03-featureplan](features/F03-procesuitvoering.md) en [F03-notitie](../notities/F03-procesuitvoering.md).
+De code tot en met F03 is nagekeken en de reviewpunten zijn verwerkt. F02 is gemerged volgens de eerder vastgelegde bevestiging. De eigenaar meldt F03 afgerond; de documenten stonden nog op Review. Zonder Git- of externe controle wordt geen nieuwe mergebevestiging afgeleid.
 
 ## Aanwezig
 
-Documentatieopzet, featureplannen, notities per feature, Axum-statusroute, configuratielader, registry, ontdekking en uitvoering via HTTP, gedeelde `AppState`, uitvoeringskern met `process-wrap`, shutdown en automatische tests onder `src/tests/`. Verder de CI-workflow en de geïsoleerde F00-proef onder `prototypes/f00-mcp-probe`. MCP-integratie ontbreekt nog in de hoofdapplicatie.
+De hoofdapplicatie laadt en valideert configuratie, bouwt een immutable registry en biedt GET /status, GET /tools en parameterloze POST /tools/{toolname}. De kern bewaakt timeout, gecombineerde output, capaciteit, annulering en shutdown. De geïsoleerde F00-proef staat los van de hoofdapp; F04-parameters en F05-MCP-integratie ontbreken nog.
 
-## Nog open
+## Reviewwijzigingen
 
-- F00: review en PR-merge. De proef onderzoekt `tool_not_found` en een extra argument; bredere fout- en transportsecuritytests horen bij F05 waar relevant.
-- F01: `Cargo.lock` committen en repository-/develop-/GitHub-Project-inrichting afronden. CI is inmiddels geslaagd op GitHub; Linux is lokaal niet uitgevoerd. Status blijft open tot review en merge.
-- F03: review/merge naar develop bevestigen na meenemen van de documentatie-update. Run #22 is op beide platforms geslaagd. Node.js-annotaties en de aangekondigde wijziging van het ubuntu-latest-label zijn afzonderlijke CI-onderhoudspunten, geen testfouten.
-
-## Volgende stap
-
-Neem deze documentatie-update mee op de featurebranch en controleer de CI van de laatste branchstand. Rond review/merge naar develop af en markeer F03 pas Klaar nadat de merge is bevestigd. Daarna volgt F04. De fout uit run #21 en de bevestigde correctie in run #22 blijven als verificatiegeschiedenis vastgelegd. Geen Git-commando's uitvoeren.
+- Alle test- en helperfuncties hebben Engelse namen; de exacte childselecties zijn mee hernoemd.
+- Configuratie wijst lege toolnamen, parameternamen en commands af, inclusief alleen witruimte.
+- ToolRegistry::find zoekt de tool eenmaal op; logging en uitvoering lenen dezelfde definitie.
+- De subprocessscenario’s delen configuratie-, PID-, start- en capaciteitshelpers. De routetests delen POST-opbouw en JSON-uitlezen.
+- Windows-procescontrole gebruikt OpenProcess en niet-blokkerende WaitForSingleObject via een Windows-only dev-dependency; OwnedHandle sluit het handle. Er wordt geen tasklist meer gestart. De controle blijft maximaal 5 s wachten op procesbeëindiging en verbergt geen toegangs-/API-fouten.
+- Documentatie is gecorrigeerd voor F02-placeholdercontrole, F03-functionaliteit, helpernamen, platformopruiming en async-eigendom. Oudere test- en CI-resultaten zijn historie.
 
 ## Verificatie
 
-Op Windows zijn voor F01 `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings`, `cargo test --locked`, `cargo build --locked` en een HTTP-request naar `/status` uitgevoerd; alles slaagde. De testbuild bevat 0 tests. De server stopte na Ctrl+C; de terminal gaf exitcode 1 voor de interrupt. De workflow `.github/workflows/ci.yml` is later in de F03-run op beide platforms geslaagd. Voor F00 zijn de Cargo-controles ook op de hoofdcrate en proefcrate geslaagd; beide test-runs vonden 0 tests. Linux is later via de geslaagde F03-CI geverifieerd. MCP Inspector CLI 2.11.0 meldde `tool_not_found` voor een onbekende tool; een extra argument aan parameterloze `hello` werd niet afgewezen. Zie [F00-notitie](../notities/F00-mcp-proef.md) en [ADR-002](beslissingen/ADR-002-mcp-proef.md). Deze historische F01/F00-controles betroffen Windows; het latere F03-platformbewijs staat hieronder.
+De review begon op Windows met 62 geslaagde tests en 4 proceshelpers. De latere parallelle run faalde op 10 tijdslimieten; serieel faalden nog 2 TCP-tests op tasklist. Eén losse tasklist-aanroep duurde 721 ms. De precieze oorzaak van die wisselende externe aanroepen is niet vastgesteld; de nieuwe processtatuscontrole verwijdert die afhankelijkheid.
 
-Actuele F03-verificatie (2026-11-02, Windows): `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings`, `cargo test --locked` en `cargo build --locked` zijn uitgevoerd en geslaagd. De laatste volledige test-run: **59 passed, 0 failed, 4 ignored, 0 filtered out**, 5,72 s. De vier genegeerde functies zijn twee bestaande helpers en twee nieuwe HTTP-proceshelpers; ze worden expliciet als child gestart.
+Na de correcties slagen de gerichte processtatussuite (4 tests) en configuratiesuite (14 tests), en de volledige parallelle suite met **64 passed, 0 failed, 4 ignored** (3,24 s). Formatter en Clippy slagen. De vier ignored functies worden door andere tests expliciet als child gestart; het zijn geen overgeslagen acceptatiescenario’s. Zie de [F03-notitie](../notities/F03-procesuitvoering.md) voor de eindcontrole.
 
-De TCP-tests starten een echte Axum-server op een vrije loopbackpoort. Vier requests starten elk een child en subprocess; PID-bestanden bevestigen dat alle vier nog actief zijn voordat het vijfde verzoek 503 krijgt. Na vrijgave slagen de vier requests en werkt een nieuwe uitvoering. Een tweede test signaleert shutdown tijdens actieve HTTP-uitvoering: de client krijgt 503, de server sluit, beide processen stoppen en een nieuwe verbinding wordt niet geaccepteerd. De test injecteert het shutdownsignaal; hij verstuurt geen echte OS-Ctrl+C naar de terminal. `main` gebruikt hetzelfde serverpad met `ctrl_c()`.
+Historisch: CI-run #21 vond een ESRCH-race tijdens /proc-lezen. Drie regressietests en de correctie zijn daarna lokaal gecontroleerd. De eerder aangeleverde screenshot van run #22 toont Ubuntu en Windows Success. Dat bewijst de toenmalige stand, niet de reviewwijzigingen van vandaag. Linux en nieuwe CI zijn deze sessie niet uitgevoerd; de lokale omgeving heeft alleen een Windows-target en geen beschikbare Linux/WSL-testomgeving volgens de eerdere controle.
 
-Logging van toolnaam uit de registry, uitkomst/foutcategorie en duur is handmatig en automatisch gecontroleerd. Loggingtests gebruiken aparte childprocessen om tijdelijke tracing-subscribers te isoleren. Argumentwaarden en stdout/stderr ontbreken in de gecontroleerde logs.
+## Nog open en volgende stap
 
-Historisch: op 2026-10-30 slaagden 55 tests en een echte POST naar `git_version` (succes, exitcode 0, 61 ms); Ctrl+C zonder actieve tools gaf de terminal terug. Linux is lokaal niet uitgevoerd wegens ontbrekende WSL/Linux-target. Aanvullend toont de aangeleverde screenshot van CI-run #20 twee geslaagde platformjobs (Ubuntu 51 s, Windows 1 m 45 s; totale run 1 m 48 s). De lokale workflow bevat formatter, Clippy, tests en build. Testtotalen per CI-job zijn niet zichtbaar; het lokale totaal van 59 wordt niet als Linux-totaal gepresenteerd. Er zijn geen Git-commando's, commits, pushes of merges uitgevoerd.
-De screenshot toont ook Node.js 20-verouderingsannotaties bij de actions. Beide jobs en de run zijn groen; de annotaties zijn geen bewijs van mislukte tests. Review/merge zijn niet zichtbaar en blijven open. Alleen documentatie is op basis van dit bewijs aangepast.
-### Aanvulling — CI-run #21 en ESRCH-correctie
+Laat de huidige stand via Linux/CI controleren. Bevestig review/merge van F03 voordat de administratieve status naar Klaar gaat. Daarna volgt F04. F00-review/merge en de eerdere F01-repository-/Project-openpunten zijn niet opnieuw gecontroleerd. Externe links en actuele GitHub-status zijn niet opnieuw geverifieerd. De assistent voert geen Git-commando’s, commits, pushes of merges uit.
 
-Het aangeleverde Ubuntu-log meldt 59 passed, 1 failed en 4 ignored. De fout is `No such process (os error 3)` tijdens lezen van `/proc/<pid>/stat`; geen assertion dat het subprocess nog draaide. De pure leesresultaat-/statusafhandeling is apart testbaar gemaakt en drie regressietests simuleren deze fout, actieve/zombie/exitstatus en echte toegangs-/formaatfouten. Actuele lokale Windows-controles: formatter, Clippy en build geslaagd; volledige suite 62 passed, 0 failed, 4 ignored, 5,78 s. Linux-hercontrole ontbreekt; geen Git-commando's uitgevoerd.
-### Actueel CI-bewijs na racecorrectie — run #22
-
-De aangeleverde screenshot toont `Success` voor `Checks (ubuntu-latest)` en `Checks (windows-latest)` op `feature/F03-procesuitvoering`. Ubuntu: 45 s; Windows: 2 m 51 s; totale run: 2 m 55 s. Exacte CI-testtotalen zijn niet zichtbaar. Hiermee is de hierboven als open beschreven hercontrole van de ESRCH-correctie afgerond. Status terug naar Review; review/merge nog niet bevestigd. Alleen documentatie aangepast, geen tests of Git-commando's uitgevoerd.
+Eindcontrole (2026-11-03): cargo fmt --check en cargo clippy --all-targets --locked -- -D warnings slagen. cargo test --locked: 64 passed, 0 failed, 4 ignored, 3,00 s; ook de eerdere parallelle run na correctie slaagde (3,24 s). De gewone cargo build --locked kon target/debug/commandhub.exe niet vervangen (toegang geweigerd); proces 15952 draaide vanaf dat pad. De bestaande server is niet gestopt. De alternatieve build cargo build --locked --offline --target-dir target/review-build is daarna geslaagd (1 m 57 s). De nieuwe executable staat in target/review-build/debug/commandhub.exe; de draaiende server gebruikt nog de eerdere binary.

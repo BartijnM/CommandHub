@@ -13,6 +13,15 @@ impl ConfigFile {
         let mut names = HashSet::new();
 
         for tool in &self.tools {
+            if tool.name.trim().is_empty() {
+                return Err("Toolnaam mag niet leeg zijn".to_owned());
+            }
+            if tool.command.trim().is_empty() {
+                return Err(format!(
+                    "Command voor tool '{}' mag niet leeg zijn",
+                    tool.name
+                ));
+            }
             if !names.insert(tool.name.as_str()) {
                 return Err(format!("Dubbele toolnaam: {}", tool.name));
             }
@@ -31,6 +40,12 @@ impl ConfigFile {
 
             // Controleer op dubbele parameter namen
             for parameter in &tool.parameters {
+                if parameter.name.trim().is_empty() {
+                    return Err(format!(
+                        "Parameternaam in tool '{}' mag niet leeg zijn",
+                        tool.name
+                    ));
+                }
                 if !parameter_names.insert(parameter.name.as_str()) {
                     return Err(format!("Dubbele parameter in tool '{}'", tool.name));
                 }

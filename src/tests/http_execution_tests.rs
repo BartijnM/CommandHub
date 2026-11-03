@@ -177,7 +177,7 @@ async fn post(address: SocketAddr, tool: &str) -> (u16, Value) {
 }
 
 #[tokio::test]
-async fn vijf_echte_http_requests_begrenzen_en_capaciteit_herstellen() {
+async fn five_real_http_requests_enforce_limit_and_restore_capacity() {
     let fixture = Fixture::new();
     let mut server = TestServer::start(fixture.state(4)).await;
     let mut requests = Vec::new();
@@ -216,7 +216,7 @@ async fn vijf_echte_http_requests_begrenzen_en_capaciteit_herstellen() {
 }
 
 #[tokio::test]
-async fn server_shutdown_stopt_actieve_http_procesboom() {
+async fn server_shutdown_stops_active_http_process_tree() {
     let fixture = Fixture::new();
     let state = fixture.state(1);
     let execution = state.execution.clone();

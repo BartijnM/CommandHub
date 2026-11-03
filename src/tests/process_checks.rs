@@ -31,29 +31,33 @@ fn linux_stat_process_running(result: std::io::Result<String>) -> std::io::Resul
 }
 
 #[cfg(windows)]
-async fn windows_process_running(process_id: u32) -> bool {
-    let mut command = tokio::process::Command::new("tasklist");
-    command.args(["/FO", "CSV", "/NH"]).kill_on_drop(true);
-    let output = tokio::time::timeout(Duration::from_secs(3), command.output())
-        .await
-        .expect("tasklist moet tijdig afronden")
-        .expect("tasklist moet starten");
-    assert!(output.status.success(), "tasklist moet succesvol eindigen");
-    let text = String::from_utf8_lossy(&output.stdout);
-    let ids: Vec<u32> = text
-        .lines()
-        .filter(|line| !line.trim().is_empty())
-        .map(|line| {
-            line.split("\",\"")
-                .nth(1)
-                .expect("procesregel moet een PID bevatten")
-                .trim_matches('"')
-                .parse()
-                .expect("PID moet numeriek zijn")
-        })
-        .collect();
-    assert!(!ids.is_empty(), "proceslijst mag niet leeg zijn");
-    ids.contains(&process_id)
+fn windows_process_running(process_id: u32) -> std::io::Result<bool> {
+    use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
+    use windows_sys::Win32::{
+        Foundation::{ERROR_INVALID_PARAMETER, WAIT_FAILED, WAIT_OBJECT_0, WAIT_TIMEOUT},
+        System::Threading::{OpenProcess, PROCESS_SYNCHRONIZE, WaitForSingleObject},
+    };
+
+    assert!(process_id > 0, "proces-ID moet geldig zijn");
+    // SAFETY: geldig positief PID; alleen het recht om processtatus af te wachten.
+    let raw = unsafe { OpenProcess(PROCESS_SYNCHRONIZE, 0, process_id) };
+    if raw.is_null() {
+        let error = std::io::Error::last_os_error();
+        return if error.raw_os_error() == Some(ERROR_INVALID_PARAMETER as i32) {
+            Ok(false)
+        } else {
+            Err(error)
+        };
+    }
+    // SAFETY: OpenProcess leverde een uniek owned handle; Drop sluit het ook bij fouten.
+    let handle = unsafe { OwnedHandle::from_raw_handle(raw) };
+    // SAFETY: het handle blijft geldig tijdens deze niet-blokkerende statuscontrole.
+    match unsafe { WaitForSingleObject(handle.as_raw_handle(), 0) } {
+        WAIT_OBJECT_0 => Ok(false),
+        WAIT_TIMEOUT => Ok(true),
+        WAIT_FAILED => Err(std::io::Error::last_os_error()),
+        _ => Err(std::io::Error::other("onverwachte Windows-processtatus")),
+    }
 }
 
 pub(crate) async fn assert_stopped(process_id: u32) {
@@ -61,7 +65,8 @@ pub(crate) async fn assert_stopped(process_id: u32) {
     tokio::time::timeout(Duration::from_secs(5), async {
         loop {
             #[cfg(windows)]
-            let running = windows_process_running(process_id).await;
+            let running = windows_process_running(process_id)
+                .expect("Windows-processtatus moet leesbaar zijn");
             #[cfg(target_os = "linux")]
             let running = linux_process_running(process_id);
             #[cfg(not(any(windows, target_os = "linux")))]
@@ -76,15 +81,35 @@ pub(crate) async fn assert_stopped(process_id: u32) {
     .unwrap_or_else(|_| panic!("proces {process_id} draait nog na vijf seconden"));
 }
 
+#[cfg(windows)]
+#[tokio::test]
+async fn windows_status_detects_running_and_stopped_process() {
+    assert!(windows_process_running(std::process::id()).unwrap());
+    assert!(!windows_process_running(u32::MAX).unwrap());
+    let mut child = tokio::process::Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "http_execution_tests::subprocess_leaf",
+            "--ignored",
+        ])
+        .kill_on_drop(true)
+        .spawn()
+        .expect("testproces moet starten");
+    let pid = child.id().unwrap();
+    assert!(windows_process_running(pid).unwrap());
+    child.kill().await.expect("testproces moet stoppen");
+    assert_stopped(pid).await;
+}
+
 #[cfg(target_os = "linux")]
 #[test]
-fn linux_status_herkent_actief_en_ontbrekend_proces() {
+fn linux_status_detects_running_and_missing_process() {
     assert!(linux_process_running(std::process::id()));
     assert!(!linux_process_running(u32::MAX));
 }
 
 #[test]
-fn linux_stat_herkent_verdwijnen_tijdens_lezen() {
+fn linux_stat_handles_process_disappearing_during_read() {
     for error in [
         std::io::Error::from(std::io::ErrorKind::NotFound),
         std::io::Error::from_raw_os_error(3),
@@ -96,7 +121,7 @@ fn linux_stat_herkent_verdwijnen_tijdens_lezen() {
 }
 
 #[test]
-fn linux_stat_onderscheidt_actief_zombie_en_exit() {
+fn linux_stat_distinguishes_running_zombie_and_exited_states() {
     // De procesnaam mag zelf spaties en haakjes bevatten.
     for (state, running) in [('R', true), ('S', true), ('Z', false), ('X', false)] {
         let stat = format!("123 (test (process)) {state} 1 2 3");
@@ -105,7 +130,7 @@ fn linux_stat_onderscheidt_actief_zombie_en_exit() {
 }
 
 #[test]
-fn linux_stat_verbergt_geen_toegangs_of_formaatfout() {
+fn linux_stat_preserves_access_and_format_errors() {
     let error = linux_stat_process_running(Err(std::io::ErrorKind::PermissionDenied.into()))
         .expect_err("geen toegang is geen bewijs van procesbeeindiging");
     assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);

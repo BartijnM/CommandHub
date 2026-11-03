@@ -6,7 +6,7 @@ use serde_json::json;
 use super::*;
 
 #[tokio::test]
-async fn onbekende_tool_geeft_404_met_json_fout() {
+async fn unknown_tool_returns_404_with_json_error() {
     let response = execution_error_response(ExecutionError::UnknownTool).into_response();
 
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
@@ -28,7 +28,7 @@ async fn onbekende_tool_geeft_404_met_json_fout() {
 }
 
 #[tokio::test]
-async fn processtartfout_lekt_geen_interne_details() {
+async fn process_start_failure_does_not_leak_internal_details() {
     let error =
         ExecutionError::ProcessStartFailed(io::Error::other("intern-pad-en-geheime-details"));
 
@@ -53,12 +53,12 @@ async fn processtartfout_lekt_geen_interne_details() {
 }
 
 #[test]
-fn accepteert_een_leeg_json_object() {
+fn accepts_empty_json_object() {
     assert!(validate_parameterless_input(&json!({})).is_ok());
 }
 
 #[test]
-fn weigert_velden_en_andere_json_typen() {
+fn rejects_fields_and_other_json_types() {
     let inputs = [
         json!({"command": "ongewenst"}),
         json!({"argument": "waarde"}),

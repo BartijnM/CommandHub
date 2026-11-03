@@ -155,16 +155,10 @@ impl ExecutionService {
     ) -> Result<ExecutionResult, ExecutionError> {
         let started_at = Instant::now();
 
-        let tool_name = registry
-            .tools()
-            .iter()
-            .find(|tool| tool.name == name)
-            .map(|tool| tool.name.as_str())
-            .unwrap_or("<unknown>");
+        let tool = registry.find(name);
+        let tool_name = tool.map(|tool| tool.name.as_str()).unwrap_or("<unknown>");
 
-        let result = self
-            .execute_parameterless_inner(registry, name, cancellation)
-            .await;
+        let result = self.execute_parameterless_inner(tool, cancellation).await;
 
         match &result {
             Ok(output) => {
@@ -191,12 +185,12 @@ impl ExecutionService {
 
     async fn execute_parameterless_inner(
         &self,
-        registry: &ToolRegistry,
-        name: &str,
-        _cancellation: oneshot::Receiver<()>,
+        tool: Option<&ToolDefinition>,
+        cancellation: oneshot::Receiver<()>,
     ) -> Result<ExecutionResult, ExecutionError> {
-        // Zoek de tooldefinitie op basis van de naam en controleer of deze geen parameters heeft.
-        let tool = find_parameterless_tool(registry, name)?;
+        // Controleer de al opgezochte tool voordat een proces wordt gestart.
+        let tool = tool.ok_or(ExecutionError::UnknownTool)?;
+        validate_parameterless_tool(tool)?;
         let started_at = Instant::now();
         let mut shutdown = self.shutdown.subscribe();
         let (child, _permit) = self.start_process(tool)?;
@@ -206,7 +200,7 @@ impl ExecutionService {
         let timeout = Duration::from_millis(tool.timeout.unwrap_or(10_000));
         let budget = Arc::new(Semaphore::new(MAX_OUTPUT_BYTES));
 
-        // Start een asynchrone taak om de uitvoer van het proces te lezen en te wachten op voltooiing.
+        // Deze future leest output en wacht op het proces; select! pollt hem in dezelfde taak.
         let uitvoering = async {
             let (stdout, stderr) = read_process_output(child.as_mut(), budget).await?;
             let status = child
@@ -220,7 +214,7 @@ impl ExecutionService {
         // Wacht op de uitvoering met een timeout. Als de uitvoering succesvol is, retourneer het resultaat. Als er een fout optreedt of de timeout wordt overschreden, stop het proces en retourneer de fout.
         let afloop = tokio::select! {
             resultaat = tokio::time::timeout(timeout, uitvoering) => resultaat,
-            Ok(()) = _cancellation => {
+            Ok(()) = cancellation => {
                 Ok(Err(ExecutionError::Cancelled))
             }
             Ok(()) = shutdown.changed() => {
@@ -251,18 +245,7 @@ impl ExecutionService {
     }
 }
 
-// Zoekt een parameterloze tool op basis van de naam in het opgegeven ToolRegistry. Als de tool niet bestaat of parameters heeft, wordt een fout geretourneerd.
-pub fn find_parameterless_tool<'a>(
-    registry: &'a ToolRegistry,
-    name: &str,
-) -> Result<&'a ToolDefinition, ExecutionError> {
-    // Zoek de tooldefinitie op basis van de naam in het ToolRegistry.
-    let tool = registry
-        .tools()
-        .iter()
-        .find(|tool| tool.name == name)
-        .ok_or(ExecutionError::UnknownTool)?;
-
+fn validate_parameterless_tool(tool: &ToolDefinition) -> Result<(), ExecutionError> {
     // Controleer of de tool parameters heeft of placeholders in de argumenten bevat. Als dat het geval is, retourneer een fout.
     let has_parameters = !tool.parameters.is_empty();
     let has_placeholders = tool
@@ -274,14 +257,14 @@ pub fn find_parameterless_tool<'a>(
         return Err(ExecutionError::ParametersNotSupported);
     }
 
-    Ok(tool)
+    Ok(())
 }
 
 // Creëert een Command-object op basis van de opgegeven ToolDefinition, inclusief het instellen van de commandoregel, argumenten en standaardinvoer/-uitvoer/-fout.
 fn create_command(tool: &ToolDefinition) -> Command {
     let mut command = Command::new(tool.command.as_str());
 
-    // Voeg de argumenten van de tool toe aan het
+    // Geef vaste argumenten afzonderlijk door; er wordt geen shellstring opgebouwd.
     command
         .args(tool.arguments.iter().map(String::as_str))
         .stdin(Stdio::null())

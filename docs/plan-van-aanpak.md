@@ -1,6 +1,6 @@
 # Plan van aanpak
 
-Status: concept vóór realisatie.
+Status: realisatie tot en met parameterloze HTTP-uitvoering (F03); dynamische parameters en MCP-integratie volgen in F04/F05.
 
 ## Doel
 
@@ -8,7 +8,7 @@ Ik bouw een generieke server waarmee een HTTP- of MCP-client vooraf geconfiguree
 
 ## Technologie
 
-Rust met Axum voor HTTP, Tokio voor async verwerking, Serde/serde_json voor JSON, tracing voor logging en de officiële Rust MCP SDK voor het protocol. De SDK-versie en features worden in F00 onderzocht en daarna vastgelegd.
+Rust met Axum voor HTTP, Tokio voor async verwerking, Serde/serde_json voor JSON, tracing voor logging en de officiële Rust MCP SDK voor het protocol. De geïsoleerde F00-proef gebruikt rmcp 3.6.0 en Streamable HTTP; protocolwaarneming en clientversie staan in ADR-002. Definitieve integratiekeuzes worden in F05 getoetst.
 
 Motivatie: ik heb al ervaring met Laravel en .NET en wil mij verdiepen in ownership, expliciete foutafhandeling, concurrency en procesbeheer. Zie ADR-001.
 
@@ -41,8 +41,8 @@ Code, README, ontwerp, configuratievoorbeelden, voorbeeldrequests en demonstrati
 ## Nog vast te stellen
 
 - Deadline en beschikbare ontwikkeltijd.
-- Verwachte MCP-protocolversie, transport en client.
-- Invulling van voorbeeld-REST-routes naast MCP.
-- Ondersteunde executabletypen en beheer van procesbomen per OS.
+- Definitieve MCP-integratie en transportbeveiliging voor F05; de F00-proef staat in ADR-002.
+- Parameter- en padbeleid voor F04; REST biedt al GET /status, GET /tools en parameterloze POST /tools/{toolname}.
+- Platformvoorbeelden en volledige ketencontrole bij F06; F03 gebruikt al Unix-procesgroepen en Windows Job Objects.
 - Naamgeving van documenten conform de opleidingsafspraken.
 
