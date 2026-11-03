@@ -96,4 +96,4 @@ Op 2026-11-02 slagen 59 tests en alle Windows-Cargo-eindcontroles. Echte TCP-ver
 
 ## Reviewstand — 2026-11-03
 
-Het HTTP-contract is ongewijzigd. Configuratie wijst nu ook lege namen en commands af. De huidige Windows-suite slaagt met 64 tests en 4 proceshelpers; de Windows-statushelper gebruikt handles. Linux/CI van deze refactor staat open; oudere resultaten hierboven zijn historie. Zie de F03-notitie voor de eindcontrole.
+Het HTTP-contract is ongewijzigd. Configuratie wijst nu ook lege namen en commands af. De huidige Windows-suite slaagt met 64 tests en 4 proceshelpers; de Windows-statushelper gebruikt handles. CI van deze refactor is op Ubuntu en Windows geslaagd voor commit 105e69b; oudere resultaten hierboven zijn historie. Zie de F03-notitie voor de eindcontrole.

@@ -1,6 +1,6 @@
 # Securityontwerp
 
-Status (2026-11-03): configuratievalidatie, parameterloze HTTP-uitvoering, uitvoeringslogging en shutdown zijn aanwezig. De huidige Windows-suite slaagt met 64 tests en 4 proceshelpers. De review voegt afwijzing van lege namen/commands en een Windows-controle via proceshandles toe. Run #22 bevestigde eerder Ubuntu en Windows na de ESRCH-correctie; de reviewwijzigingen zijn nog niet op Linux uitgevoerd.
+Status (2026-11-03): configuratievalidatie, parameterloze HTTP-uitvoering, uitvoeringslogging en shutdown zijn aanwezig. De huidige Windows-suite slaagt met 64 tests en 4 proceshelpers. De review voegt afwijzing van lege namen/commands en een Windows-controle via proceshandles toe. Run #22 bevestigde eerder Ubuntu en Windows na de ESRCH-correctie; de reviewwijzigingen zijn daarna op Ubuntu en Windows geslaagd in CI voor commit 105e69b.
 
 ## Vertrouwensgrenzen
 

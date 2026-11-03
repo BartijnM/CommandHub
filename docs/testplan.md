@@ -1,6 +1,6 @@
 # Testplan
 
-Status: 2026-11-03. De huidige Windows-suite bevat 64 geslaagde tests en 4 genegeerde proceshelpers. De Windows-statuscontrole is vervangen; Linux-verificatie van de huidige reviewstand staat open.
+Status: 2026-11-03. De huidige Windows-suite bevat 64 geslaagde tests en 4 genegeerde proceshelpers. De Windows-statuscontrole is vervangen; de aangeleverde CI-screenshot bevestigt de reviewstand op Ubuntu en Windows (commit 105e69b).
 
 | Eisen | Aanwezig bewijs en resterende controles |
 | --- | --- |
@@ -11,7 +11,7 @@ Status: 2026-11-03. De huidige Windows-suite bevat 64 geslaagde tests en 4 geneg
 | R11/R16 | Geïsoleerde F00-proef; protocol- en Host/Origin-controles bij F05 |
 | R12 | Routertests voor resultaat en fouten; echte TCP-tests voor capaciteit en actieve shutdown |
 | R13 | Vaste foutcodes en geen OS-details in JSON; geïsoleerde loggingtests bewaken het ontbreken van argumentwaarden en procesoutput |
-| R14/R15 | Kern zonder HTTP-afhankelijkheid; Windows-suite slaagt. Historische CI-run #22 controleerde Ubuntu/Windows na ESRCH-correctie. Nieuwe Linux-verificatie staat open |
+| R14/R15 | Kern zonder HTTP-afhankelijkheid; Windows-suite slaagt. Historische CI-run #22 controleerde Ubuntu/Windows na ESRCH-correctie. De reviewstand van commit 105e69b is eveneens op Ubuntu en Windows via CI geslaagd |
 | R17 | README-start-/POST-voorbeeld; volledige demo en schone-checkoutcontrole bij F06 |
 
 ## Testindeling
@@ -40,10 +40,12 @@ Voer cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en ca
 - Na de correcties: gerichte configuratiesuite 14 geslaagd; processtatussuite 4 geslaagd; volledige parallelle suite 64 geslaagd, 4 helpers.
 - Run #21: historische Ubuntu-fout door ESRCH tijdens /proc-lezen; drie regressietests toegevoegd.
 - Run #22: eerder aangeleverde screenshot met Ubuntu en Windows Success (45 s en 2 m 51 s). Exacte CI-testtotalen zijn onbekend.
-- De huidige refactor is lokaal op Windows gecontroleerd. Nieuwe Linux-/CI-uitvoering, actuele externe links en mergestatus zijn niet geverifieerd.
+- De huidige refactor is lokaal op Windows en via CI op Ubuntu/Windows gecontroleerd voor commit 105e69b. Actuele externe links en mergestatus zijn niet geverifieerd.
 
 De [F03-notitie](../notities/F03-procesuitvoering.md) bevat de actuele eindcontrole en eerdere werksessies.
 
 ## Demo bij oplevering
 
 Toon configuratie laden, ontdekking, parameterloze uitvoering, niet-nul exit, invoerfouten, outputlimiet, timeout, capaciteit, logging en shutdown. Voeg bij F04/F05 dynamische parameters en MCP toe; rond bij F06 de volledige demo op beide platforms af.
+
+CI-bewijs refactor: aangeleverde screenshot voor 105e69b op refactor/na-feature-3 toont Ubuntu Success (42 s), Windows Success (1 m 47 s) en run Success (1 m 50 s). Exacte CI-testtotalen zijn onbekend. De documentatie-update zelf is nog niet gepusht; review/merge blijft open.

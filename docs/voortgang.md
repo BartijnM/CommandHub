@@ -25,10 +25,22 @@ De review begon op Windows met 62 geslaagde tests en 4 proceshelpers. De latere 
 
 Na de correcties slagen de gerichte processtatussuite (4 tests) en configuratiesuite (14 tests), en de volledige parallelle suite met **64 passed, 0 failed, 4 ignored** (3,24 s). Formatter en Clippy slagen. De vier ignored functies worden door andere tests expliciet als child gestart; het zijn geen overgeslagen acceptatiescenario’s. Zie de [F03-notitie](../notities/F03-procesuitvoering.md) voor de eindcontrole.
 
-Historisch: CI-run #21 vond een ESRCH-race tijdens /proc-lezen. Drie regressietests en de correctie zijn daarna lokaal gecontroleerd. De eerder aangeleverde screenshot van run #22 toont Ubuntu en Windows Success. Dat bewijst de toenmalige stand, niet de reviewwijzigingen van vandaag. Linux en nieuwe CI zijn deze sessie niet uitgevoerd; de lokale omgeving heeft alleen een Windows-target en geen beschikbare Linux/WSL-testomgeving volgens de eerdere controle.
+Historisch: CI-run #21 vond een ESRCH-race tijdens /proc-lezen. Drie regressietests en de correctie zijn daarna lokaal gecontroleerd. De eerder aangeleverde screenshot van run #22 toont Ubuntu en Windows Success. Dat bewijst de toenmalige stand, niet de reviewwijzigingen van vandaag. Linux is niet lokaal uitgevoerd; de later aangeleverde screenshot bevestigt wel de nieuwe CI voor commit 105e69b; de lokale omgeving heeft alleen een Windows-target en geen beschikbare Linux/WSL-testomgeving volgens de eerdere controle.
 
 ## Nog open en volgende stap
 
-Laat de huidige stand via Linux/CI controleren. Bevestig review/merge van F03 voordat de administratieve status naar Klaar gaat. Daarna volgt F04. F00-review/merge en de eerdere F01-repository-/Project-openpunten zijn niet opnieuw gecontroleerd. Externe links en actuele GitHub-status zijn niet opnieuw geverifieerd. De assistent voert geen Git-commando’s, commits, pushes of merges uit.
+De CI-screenshot van commit 105e69b bevestigt de refactor op Ubuntu en Windows. Commit en push de documentatie-update, laat de laatste CI slagen en bevestig daarna review/merge voordat de administratieve status naar Klaar gaat. Daarna volgt F04. F00-review/merge en de eerdere F01-repository-/Project-openpunten zijn niet opnieuw gecontroleerd. Externe links en actuele GitHub-status zijn niet opnieuw geverifieerd. De assistent voert geen Git-commando’s, commits, pushes of merges uit.
 
 Eindcontrole (2026-11-03): cargo fmt --check en cargo clippy --all-targets --locked -- -D warnings slagen. cargo test --locked: 64 passed, 0 failed, 4 ignored, 3,00 s; ook de eerdere parallelle run na correctie slaagde (3,24 s). De gewone cargo build --locked kon target/debug/commandhub.exe niet vervangen (toegang geweigerd); proces 15952 draaide vanaf dat pad. De bestaande server is niet gestopt. De alternatieve build cargo build --locked --offline --target-dir target/review-build is daarna geslaagd (1 m 57 s). De nieuwe executable staat in target/review-build/debug/commandhub.exe; de draaiende server gebruikt nog de eerdere binary.
+
+## CI-bevestiging refactor — 2026-11-03
+
+De aangeleverde screenshot toont een geslaagde push-run voor commit `105e69b` op `refactor/na-feature-3`:
+
+- Runstatus: Success; totale duur 1 m 50 s.
+- Checks (ubuntu-latest): Success, 42 s.
+- Checks (windows-latest): Success, 1 m 47 s.
+- De lokale workflow voert formatter, Clippy met warnings als errors, tests en build uit. Exacte CI-testtotalen zijn niet zichtbaar en worden niet uit de screenshot afgeleid.
+- Twee Node.js 20-verouderingswaarschuwingen bij actions/checkout@v4 en een Ubuntu-labelmelding zijn zichtbaar; de jobs zijn geslaagd. Workflowonderhoud blijft een afzonderlijk punt.
+- Hiermee is de eerder open Linux-/CI-controle van de refactor bevestigd. Review/merge is niet zichtbaar en blijft te bevestigen. Deze documentatie-update volgt na de getoonde codecommit; controleer na push de CI van de laatste branchstand.
+- Alleen documentatie aangepast op basis van het aangeleverde bewijs; geen tests opnieuw uitgevoerd en geen Git-commando’s uitgevoerd.

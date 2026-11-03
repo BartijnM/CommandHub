@@ -1,6 +1,6 @@
 # Architectuur
 
-Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is op Windows gecontroleerd; nieuwe Linux-verificatie staat nog open. Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05.
+Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05.
 
 ## Beoogde gegevensstroom
 
