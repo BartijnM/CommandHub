@@ -30,6 +30,61 @@ fn linux_stat_process_running(result: std::io::Result<String>) -> std::io::Resul
     Ok(!matches!(state, 'Z' | 'X'))
 }
 
+#[cfg(target_os = "macos")]
+fn macos_process_running(process_id: u32) -> std::io::Result<bool> {
+    macos_status_process_running(macos_process_status(process_id))
+}
+
+#[cfg(target_os = "macos")]
+fn macos_process_status(process_id: u32) -> std::io::Result<u32> {
+    let pid = i32::try_from(process_id)
+        .ok()
+        .filter(|pid| *pid > 0)
+        .ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "ongeldig proces-ID")
+        })?;
+    let mut info = std::mem::MaybeUninit::<libc::proc_bsdinfo>::uninit();
+    let size = i32::try_from(std::mem::size_of::<libc::proc_bsdinfo>())
+        .expect("proc_bsdinfo moet in een C-int passen");
+    // SAFETY: de buffer is correct uitgelijnd en heeft de opgegeven grootte voor deze flavor.
+    // proc_pidinfo bewaart de pointer niet; uitlezen gebeurt pas na controle van de returnwaarde.
+    let bytes_read = unsafe {
+        libc::proc_pidinfo(
+            pid,
+            libc::PROC_PIDTBSDINFO,
+            0,
+            info.as_mut_ptr().cast(),
+            size,
+        )
+    };
+    if bytes_read <= 0 {
+        return Err(std::io::Error::last_os_error());
+    }
+    if bytes_read != size {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "onvolledige macOS-procesinformatie",
+        ));
+    }
+    // SAFETY: de API heeft de volledige proc_bsdinfo-buffer met procesinformatie gevuld.
+    Ok(unsafe { info.assume_init() }.pbi_status)
+}
+
+// Pure classificatie draait ook in Windows/Linux-tests. Darwin definieert ESRCH=3
+// en processtatussen SIDL=1, SRUN=2, SSLEEP=3, SSTOP=4 en SZOMB=5.
+fn macos_status_process_running(result: std::io::Result<u32>) -> std::io::Result<bool> {
+    match result {
+        Ok(1..=4) => Ok(true),
+        Ok(5) => Ok(false),
+        Ok(_) => Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidData,
+            "onbekende macOS-processtatus",
+        )),
+        Err(error) if error.raw_os_error() == Some(3) => Ok(false),
+        Err(error) => Err(error),
+    }
+}
+
 #[cfg(windows)]
 fn windows_process_running(process_id: u32) -> std::io::Result<bool> {
     use std::os::windows::io::{AsRawHandle, FromRawHandle, OwnedHandle};
@@ -69,7 +124,10 @@ pub(crate) async fn assert_stopped(process_id: u32) {
                 .expect("Windows-processtatus moet leesbaar zijn");
             #[cfg(target_os = "linux")]
             let running = linux_process_running(process_id);
-            #[cfg(not(any(windows, target_os = "linux")))]
+            #[cfg(target_os = "macos")]
+            let running =
+                macos_process_running(process_id).expect("macOS-processtatus moet leesbaar zijn");
+            #[cfg(not(any(windows, target_os = "linux", target_os = "macos")))]
             compile_error!("Voeg voor dit testplatform een processtatuscontrole toe");
             if !running {
                 return;
@@ -106,6 +164,49 @@ async fn windows_status_detects_running_and_stopped_process() {
 fn linux_status_detects_running_and_missing_process() {
     assert!(linux_process_running(std::process::id()));
     assert!(!linux_process_running(u32::MAX));
+}
+
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn macos_status_detects_running_and_stopped_process() {
+    assert!(macos_process_running(std::process::id()).unwrap());
+    assert!(macos_process_running(0).is_err());
+    assert!(macos_process_running(u32::MAX).is_err());
+    let mut child = tokio::process::Command::new("/bin/sleep")
+        .arg("30")
+        .kill_on_drop(true)
+        .spawn()
+        .expect("testproces moet starten");
+    let pid = child.id().expect("actief child moet een PID hebben");
+    assert!(macos_process_running(pid).unwrap());
+    child.kill().await.expect("testproces moet stoppen");
+    assert_stopped(pid).await;
+}
+
+#[test]
+fn macos_status_distinguishes_running_and_zombie_states() {
+    for state in 1..=4 {
+        assert!(macos_status_process_running(Ok(state)).unwrap());
+    }
+    assert!(!macos_status_process_running(Ok(5)).unwrap());
+}
+
+#[test]
+fn macos_status_handles_missing_process() {
+    assert!(!macos_status_process_running(Err(std::io::Error::from_raw_os_error(3))).unwrap());
+}
+
+#[test]
+fn macos_status_preserves_access_and_invalid_status_errors() {
+    let error = macos_status_process_running(Err(std::io::ErrorKind::PermissionDenied.into()))
+        .expect_err("geen toegang is geen bewijs van procesbeeindiging");
+    assert_eq!(error.kind(), std::io::ErrorKind::PermissionDenied);
+    for state in [0, 6, u32::MAX] {
+        assert_eq!(
+            macos_status_process_running(Ok(state)).unwrap_err().kind(),
+            std::io::ErrorKind::InvalidData
+        );
+    }
 }
 
 #[test]

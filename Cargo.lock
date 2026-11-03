@@ -98,6 +98,7 @@ name = "commandhub"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "libc",
  "process-wrap",
  "serde",
  "serde_json",

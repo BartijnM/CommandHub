@@ -3,6 +3,25 @@ use tokio::io::AsyncWriteExt;
 use super::*;
 use crate::config::{ConfigFile, ParameterDefinition, ParameterType};
 
+#[cfg(target_os = "macos")]
+#[tokio::test]
+async fn executes_native_tool_from_macos_example() {
+    let config: ConfigFile = serde_json::from_str(include_str!("../../config/tools.macos.json"))
+        .expect("macOS-configuratie moet leesbaar zijn");
+    config
+        .validate()
+        .expect("macOS-configuratie moet geldig zijn");
+    let registry = ToolRegistry::new(config);
+    let output = ExecutionService::new()
+        .execute_parameterless(&registry, "echo_ready")
+        .await
+        .expect("native macOS-tool moet starten");
+    assert!(output.success);
+    assert_eq!(output.exit_code, Some(0));
+    assert_eq!(output.stdout.trim(), "CommandHub macOS");
+    assert!(output.stderr.is_empty());
+}
+
 fn find_parameterless_tool<'a>(
     registry: &'a ToolRegistry,
     name: &str,

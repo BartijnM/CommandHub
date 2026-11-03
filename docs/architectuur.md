@@ -1,6 +1,6 @@
 # Architectuur
 
-Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05.
+Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05. De macOS-uitbreiding F07 is voorbereid; macOS-CI moet de werking nog bevestigen.
 
 ## Beoogde gegevensstroom
 
@@ -50,6 +50,12 @@ Maak onderscheid tussen ongeldige invoer, onbekende tool, capaciteitsgebrek, sta
 ## Platformbeleid
 
 Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Windows controleert het stoppen rechtstreeks via OpenProcess en WaitForSingleObject met timeout 0. De Windows-only dev-dependency windows-sys levert de API; OwnedHandle sluit het handle automatisch. Er wordt geen tasklist-proces gestart. Ontbreken of een gesignaleerd proceshandle betekent gestopt; overige API-fouten blijven fouten. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbreken en zombie/exitstatus betekenen beëindigd, niet noodzakelijk al gereaped. Windows is lokaal uitgevoerd; de Unix-groepsopruiming en dropbewaker zijn daarna via de geslaagde Ubuntu-CI gecontroleerd. De bron voor het CI-resultaat is de aangeleverde screenshot van run #20.
+
+### macOS-uitbreiding (F07)
+
+macOS gebruikt hetzelfde cfg(unix)-pad met ProcessGroup en de bestaande groepsbewaker. Alleen de teststatuscontrole is OS-specifiek: proc_pidinfo (PROC_PIDTBSDINFO) levert de processtatus rechtstreeks aan. De buffer wordt pas na een volledige API-return uitgelezen. ESRCH en zombie-status betekenen gestopt; API-/toegangsfouten en onbekende statussen blijven fouten. libc is hiervoor uitsluitend een macOS-dev-dependency. Er is geen /proc-bestand of extern statusprogramma nodig.
+
+De CI-matrix omvat nu ubuntu-latest, windows-latest en macos-latest met dezelfde controles. Die macOS-job is nog niet uitgevoerd. Het voorbeeld config/tools.macos.json wordt expliciet gekozen via COMMANDHUB_CONFIG. Zie [F07](features/F07-macos-ondersteuning.md).
 
 ## Aanvullende verificatie en logging
 

@@ -49,3 +49,9 @@ De client kan `command` of vaste argumenten niet wijzigen. F03 voert alleen tool
 F03 staat native executables en expliciet geconfigureerde interpreters toe. Voor een script configureert de beheerder de interpreter als `command` en het script als vast argument. De server start niet automatisch een shell en dispatcht niet impliciet naar Windows `.bat`- of `.cmd`-bestanden. Het childproces erft de omgeving en werkdirectory van de server.
 
 De F03-grenzen zijn maximaal 1 MiB gecombineerde stdout/stderr, 16 KiB requestbody en vier gelijktijdige uitvoeringen. Een volle capaciteit wordt direct afgewezen. De executor, process-wrap-platformwrappers, procesboomtests, HTTP-requestlimiet en POST-route zijn geïmplementeerd. POST /tools/{toolname} accepteert uitsluitend een leeg JSON-object. Dynamische parametervervanging volgt in F04. Lege toolnamen, parameternamen en commands (ook uitsluitend witruimte) worden bij startup afgewezen.
+
+## macOS (F07)
+
+Gebruik [tools.macos.json](tools.macos.json) op macOS. Kies het bestand vanuit de projectmap met `export COMMANDHUB_CONFIG=config/tools.macos.json` en start daarna `cargo run --locked`. De standaard tools.json blijft het bestaande Windows-voorbeeld; er is geen automatische OS-selectie.
+
+De macOS-configuratie bevat git_version, echo_ready (/bin/echo met een vast argument), hostname, whoami en ping_localhost. macOS-ping gebruikt losse argumenten -c, 4 en 127.0.0.1; de Windows-configuratie gebruikt -n. De toegevoegde CI-test controleert configuratievalidatie en voert op macOS echo_ready uit. Die test is nog niet uitgevoerd; de andere voorbeeldtools zijn niet afzonderlijk geverifieerd.

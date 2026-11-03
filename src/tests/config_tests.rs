@@ -1,6 +1,13 @@
 use super::*;
 
 #[test]
+fn macos_example_config_is_valid() {
+    let config: ConfigFile = serde_json::from_str(include_str!("../../config/tools.macos.json"))
+        .expect("macOS-voorbeeld moet geldige JSON zijn");
+    config.validate().expect("macOS-voorbeeld moet geldig zijn");
+}
+
+#[test]
 fn blank_tool_names_commands_and_parameter_names_are_rejected() {
     for blank in ["", " ", "\t\n"] {
         let config = ConfigFile {

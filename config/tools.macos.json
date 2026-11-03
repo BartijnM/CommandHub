@@ -1,0 +1,40 @@
+{
+  "tools": [
+    {
+      "name": "git_version",
+      "description": "Show the installed Git version",
+      "command": "git",
+      "arguments": ["--version"],
+      "parameters": []
+    },
+    {
+      "name": "echo_ready",
+      "description": "Confirm native tool execution on macOS",
+      "command": "/bin/echo",
+      "arguments": ["CommandHub macOS"],
+      "parameters": []
+    },
+    {
+      "name": "hostname",
+      "description": "Show the computer name",
+      "command": "hostname",
+      "arguments": [],
+      "parameters": []
+    },
+    {
+      "name": "whoami",
+      "description": "Show the user running CommandHub",
+      "command": "whoami",
+      "arguments": [],
+      "parameters": []
+    },
+    {
+      "name": "ping_localhost",
+      "description": "Ping localhost four times on macOS",
+      "command": "ping",
+      "arguments": ["-c", "4", "127.0.0.1"],
+      "parameters": [],
+      "timeout": 10000
+    }
+  ]
+}
