@@ -1,7 +1,7 @@
 ---
 id: F04
 prioriteit: Must
-status: Backlog
+status: In uitvoering
 milestone: "Gecontroleerde invoer"
 ---
 
@@ -25,12 +25,12 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 ## Todo
 
-- [ ] Ondersteunde parametertypen en validatieregels vastleggen.
-- [ ] Vereiste, onbekende en ongeldige parameters controleren.
-- [ ] Placeholders omzetten naar afzonderlijke argumenten.
+- [x] Ondersteunde parametertypen en validatieregels vastleggen.
+- [x] Vereiste, onbekende en ongeldige parameters controleren.
+- [x] Placeholders omzetten naar afzonderlijke argumenten.
 - [ ] Optie-injectie per toegestane tool voorkomen.
 - [ ] Padbeleid, canonicalisatie en symlinkgedrag implementeren.
-- [ ] Requestgrootte begrenzen en grensgevallen testen.
+- [x] Requestgrootte begrenzen en grensgevallen testen.
 
 ## Acceptatiecriteria
 
@@ -44,7 +44,9 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - GitHub issue: nog aan te maken.
 - Branch: feature/F04-parameters.
 - Pull request: nog niet aangemaakt.
-- Tests/handmatige verificatie: nog vast te leggen.
+- Lokale controles door de eigenaar als geslaagd gemeld op Windows; geen actuele eindtelling. Zie de featurenotitie voor bewijs en beperkingen.
+- Stand 2026-11-04: dynamische HTTP-keten aanwezig. Optiebeleidreview, HTTP-padtests, dynamische loggingtests, ontdekschema, eindcontroles en drieplatform-CI blijven open.
+- De acceptatiecriteria blijven open tot de aanvullende verificatie en review zijn afgerond.
 - [Featurenotitie](../../notities/F04-parameters.md).
 
 ## Afronden

@@ -12,6 +12,8 @@ impl ConfigFile {
     pub fn validate(&self) -> Result<(), String> {
         let mut names = HashSet::new();
 
+
+
         for tool in &self.tools {
             if tool.name.trim().is_empty() {
                 return Err("Toolnaam mag niet leeg zijn".to_owned());
@@ -39,20 +41,83 @@ impl ConfigFile {
             let mut parameter_names: HashSet<&str> = HashSet::new();
 
             // Controleer op dubbele parameter namen
-            for parameter in &tool.parameters {
+            for parameter in &tool.parameters {              
                 if parameter.name.trim().is_empty() {
                     return Err(format!(
                         "Parameternaam in tool '{}' mag niet leeg zijn",
                         tool.name
                     ));
                 }
+                if let Some(allowed_values) = &parameter.allowed_values {
+                    if allowed_values.is_empty() {
+                        return Err(format!(
+                            "Toegestane waarden voor parameter '{}' in tool '{}' mogen niet leeg zijn",
+                            parameter.name, tool.name
+                        ));
+                    }
+                    if allowed_values.iter().any(|value| value.contains('\0')) {
+                        return Err(format!(
+                            "Toegestane waarden voor parameter '{}' in tool '{}' mogen geen NUL-teken bevatten",
+                            parameter.name, tool.name
+                        ));
+                    }
+                }
+                if let Some(roots) = &parameter.allowed_roots {
+                    if roots.is_empty() {
+                        return Err("Toegestane roots mogen niet leeg zijn".to_owned());
+                    }
+
+                    for root in roots {
+                        if !root.is_absolute() {
+                            return Err("Toegestane root moet absoluut zijn".to_owned());
+                        }
+
+                        let canonical_root = root
+                            .canonicalize()
+                            .map_err(|_| "Toegestane root kan niet worden opgelost".to_owned())?;
+
+                        if !canonical_root.is_dir() {
+                            return Err("Toegestane root moet een directory zijn".to_owned());
+                        }
+                    }
+                }
                 if !parameter_names.insert(parameter.name.as_str()) {
                     return Err(format!("Dubbele parameter in tool '{}'", tool.name));
                 }
             }
 
+            let mut optional_argument_seen: bool = false;
+
             // Controleer of alle placeholders in de argumenten verwijzen naar bestaande parameters
             for argument in &tool.arguments {
+                let is_optional = tool.parameters.iter().any(|parameter| {
+                    !parameter.required
+                        && argument == &format!("{{{}}}", parameter.name)
+                });
+
+                if optional_argument_seen {
+                    return Err(format!(
+                        "Optionele argumenten moeten achteraan staan in tool '{}'",
+                        tool.name
+                    ));
+                }
+
+                if is_optional {
+                    let has_fixed_option = tool.arguments.iter().any(|argument| {
+                        !argument.starts_with('{')
+                            && (argument.starts_with('-') || argument.starts_with('/'))
+                    });
+
+                    if has_fixed_option {
+                        return Err(format!(
+                            "Optionele argumenten mogen niet worden gecombineerd met vaste opties in tool '{}'",
+                            tool.name
+                        ));
+                    }
+                }
+
+                optional_argument_seen |= is_optional;
+
                 if !argument.contains('{') && !argument.contains('}') {
                     continue;
                 }
@@ -101,9 +166,7 @@ impl ConfigFile {
 pub struct ToolDefinition {
     pub name: String,
     pub description: String,
-
     pub command: String,
-
     pub arguments: Vec<String>,
     pub parameters: Vec<ParameterDefinition>,
     pub timeout: Option<u64>,
@@ -117,6 +180,8 @@ pub struct ParameterDefinition {
     #[serde(rename = "type")]
     pub kind: ParameterType,
     pub required: bool,
+    pub allowed_values: Option<Vec<String>>,
+    pub allowed_roots: Option<Vec<std::path::PathBuf>>,
 }
 
 #[derive(Debug, Deserialize)]

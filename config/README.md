@@ -1,6 +1,6 @@
 # Configuratievoorbeelden
 
-Deze documentatie beschrijft het JSON-formaat voor F02. De applicatie leest en valideert dit configuratiebestand bij startup.
+Deze documentatie beschrijft het JSON-formaat, uitgebreid tijdens F04 (in uitvoering). De applicatie leest en valideert dit configuratiebestand bij startup.
 
 Bij startup leest de server standaard `config/tools.json`, relatief aan de huidige werkdirectory. De beheerder kan een andere bestandslocatie instellen met de omgevingsvariabele `COMMANDHUB_CONFIG`.
 
@@ -44,7 +44,7 @@ Een tool heeft een naam, beschrijving, executable (`command`), lijst losse argum
 
 `timeout` weglaten betekent 10 seconden. Een ingestelde timeout moet groter zijn dan 0 en maximaal 60 seconden zijn. De applicatie leest het voorbeeldformaat strikt in en wijst onbekende velden en ongeldige configuraties af. De voorbeelden tonen configuratie; procesuitvoering en bijbehorende beveiligingsgrenzen vallen buiten F02. De genoemde `ls`-opdracht is niet op elk platform beschikbaar; kies bij uitvoering een platformgeschikte executable.
 
-De client kan `command` of vaste argumenten niet wijzigen. F03 voert alleen tools zonder dynamische parameters uit; daarvoor bevat `parameters` een lege lijst en worden geen placeholders gebruikt. Parametervervanging volgt in F04.
+De client kan `command` of vaste argumenten niet wijzigen. De huidige F04-code ondersteunt dynamische parametervervanging; parameterloze tools blijven een lege parameterslijst gebruiken.
 
 F03 staat native executables en expliciet geconfigureerde interpreters toe. Voor een script configureert de beheerder de interpreter als `command` en het script als vast argument. De server start niet automatisch een shell en dispatcht niet impliciet naar Windows `.bat`- of `.cmd`-bestanden. Het childproces erft de omgeving en werkdirectory van de server.
 
@@ -55,3 +55,9 @@ De F03-grenzen zijn maximaal 1 MiB gecombineerde stdout/stderr, 16 KiB requestbo
 Gebruik [tools.macos.json](tools.macos.json) op macOS. Kies het bestand vanuit de projectmap met `export COMMANDHUB_CONFIG=config/tools.macos.json` en start daarna `cargo run --locked`. De standaard tools.json blijft het bestaande Windows-voorbeeld; er is geen automatische OS-selectie.
 
 De macOS-configuratie bevat git_version, echo_ready (/bin/echo met een vast argument), hostname, whoami en ping_localhost. macOS-ping gebruikt losse argumenten -c, 4 en 127.0.0.1; de Windows-configuratie gebruikt -n. De toegevoegde CI-test controleert configuratievalidatie en voert op macOS echo_ready uit. De macOS-CI-job is geslaagd; de andere voorbeeldtools zijn niet afzonderlijk geverifieerd.
+
+## F04-velden en beperkingen
+
+Parameterdefinities ondersteunen optioneel allowed_values (lijst strings) en allowed_roots (lijst absolute bestaande directorypaden). Zie [het API-contract](../docs/api-en-configuratie.md#f04-parametercontract--2026-11-04) voor de exacte validatieregels. De bovenstaande padvoorbeelden stammen uit F02 en bevatten nog geen roots; voeg voor werkelijk padbeleid expliciet allowed_roots met een bestaande beheerderslocatie toe. Zonder roots is de parameter gewone tekst. De meegeleverde tools.json en tools.macos.json bevatten nog geen nieuwe dynamische F04-voorbeeldtool.
+
+Een ontbrekende optionele placeholder wordt weggelaten. Maximaal één optionele placeholder, alleen als laatste argument en zonder vaste argumenten met prefix - of /, is toegestaan. De beheerder beoordeelt per executable de argumentbetekenis; prefixcontroles vormen geen volledige toolisolatie.

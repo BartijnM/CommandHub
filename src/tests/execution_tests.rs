@@ -174,7 +174,7 @@ async fn starts_with_platform_wrapper_and_waits_for_success() {
     let tool = find_parameterless_tool(&registry, "git_versie")
         .expect("de ingestelde parameterloze tool moet bestaan");
 
-    let mut command = create_wrapped_command(tool);
+    let mut command = create_wrapped_command(tool, &tool.arguments);
     let mut child = command
         .spawn()
         .expect("Het process met platformwrapper moet starten");
@@ -639,7 +639,7 @@ async fn stopping_completed_process_succeeds() {
     let tool = find_parameterless_tool(&registry, "git_versie")
         .expect("de ingestelde parameterloze tool moet bestaan");
 
-    let mut command = create_wrapped_command(tool);
+    let mut command = create_wrapped_command(tool, &tool.arguments);
     let mut child = command.spawn().expect("het proces moet starten");
 
     let status = child
@@ -682,6 +682,8 @@ fn rejects_tool_with_parameters() {
         name: "pad".to_owned(),
         kind: ParameterType::String,
         required: true,
+        allowed_values: None,
+        allowed_roots: None,
     }]);
 
     let resultaat = find_parameterless_tool(&registry, "git_versie");
@@ -769,7 +771,7 @@ fn releases_capacity_when_process_start_fails() {
     };
 
     assert!(matches!(
-        service.start_process(&tool),
+        service.start_process(&tool, &tool.arguments),
         Err(ExecutionError::ProcessStartFailed(_))
     ));
 
@@ -1158,4 +1160,175 @@ async fn logs_results_without_arguments_or_process_output() {
     assert!(!logs.contains("--version"));
     assert!(!logs.contains(success.stdout.trim()));
     assert!(!logs.contains(secret_marker));
+}
+
+fn parameterized_version_tool() -> ToolDefinition {
+    ToolDefinition {
+        name: "rust_version".to_owned(),
+        description: "Rust-versie met gecontroleerd argument".to_owned(),
+        command: "rustc".to_owned(),
+        arguments: vec!["{option}".to_owned()],
+        parameters: vec![ParameterDefinition {
+            name: "option".to_owned(),
+            kind: ParameterType::String,
+            required: true,
+            allowed_values: Some(vec!["--version".to_owned()]),
+            allowed_roots: None,
+        }],
+        timeout: Some(10_000),
+    }
+}
+
+#[tokio::test]
+async fn executes_tool_with_validated_parameter() {
+    let service = ExecutionService::new();
+    let tool = parameterized_version_tool();
+    let input = serde_json::json!({ "option": "--version" });
+    let (_sender, receiver) = oneshot::channel();
+
+    let output = service
+        .execute_with_parameters_inner(
+            Some(&tool),
+            input.as_object().unwrap(),
+            receiver,
+        )
+        .await
+        .expect("tool met geldige parameter moet uitvoeren");
+
+    assert!(output.success);
+    assert_eq!(output.exit_code, Some(0));
+    assert!(output.stdout.starts_with("rustc "));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn invalid_parameters_are_rejected_before_process_start() {
+    let service = ExecutionService::new();
+    let mut tool = parameterized_version_tool();
+    tool.command = "commandhub-nonexistent-executable".to_owned();
+
+    for input in [
+        serde_json::json!({}),
+        serde_json::json!({ "option": 42 }),
+        serde_json::json!({ "option": "--help" }),
+        serde_json::json!({ "option": "--version", "extra": true }),
+    ] {
+        let (_sender, receiver) = oneshot::channel();
+
+        let result = service
+            .execute_with_parameters_inner(
+                Some(&tool),
+                input.as_object().unwrap(),
+                receiver,
+            )
+            .await;
+
+        assert!(matches!(
+            result,
+            Err(ExecutionError::InvalidParameters(_))
+        ));
+        assert_capacity_available(&service);
+    }
+}
+
+#[tokio::test]
+async fn parameterized_execution_rejects_unknown_tool() {
+    let service = ExecutionService::new();
+    let (_sender, receiver) = oneshot::channel();
+
+    let result = service
+        .execute_with_parameters_inner(
+            None,
+            &serde_json::Map::new(),
+            receiver,
+        )
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::UnknownTool)));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn executes_parameterized_tool_through_registry() {
+    let service = ExecutionService::new();
+    let config = ConfigFile {
+        tools: vec![parameterized_version_tool()],
+    };
+    config.validate().expect("testconfiguratie moet geldig zijn");
+    let registry = ToolRegistry::new(config);
+    let input = serde_json::json!({ "option": "--version" });
+
+    let output = service
+        .execute_with_parameters(
+            &registry,
+            "rust_version",
+            input.as_object().unwrap(),
+        )
+        .await
+        .expect("geregistreerde tool moet uitvoeren");
+
+    assert!(output.success);
+    assert_eq!(output.exit_code, Some(0));
+    assert!(output.stdout.starts_with("rustc "));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn registry_execution_rejects_invalid_parameters() {
+    let service = ExecutionService::new();
+    let mut tool = parameterized_version_tool();
+    tool.command = "commandhub-nonexistent-executable".to_owned();
+    let registry = ToolRegistry::new(ConfigFile { tools: vec![tool] });
+    let input = serde_json::json!({ "option": "--help" });
+
+    let result = service
+        .execute_with_parameters(
+            &registry,
+            "rust_version",
+            input.as_object().unwrap(),
+        )
+        .await;
+
+    assert!(matches!(
+        result,
+        Err(ExecutionError::InvalidParameters(_))
+    ));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn registry_execution_rejects_unknown_tool() {
+    let service = ExecutionService::new();
+    let registry = ToolRegistry::new(ConfigFile { tools: Vec::new() });
+
+    let result = service
+        .execute_with_parameters(
+            &registry,
+            "unknown",
+            &serde_json::Map::new(),
+        )
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::UnknownTool)));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn parameterized_execution_is_rejected_after_shutdown() {
+    let service = ExecutionService::new();
+    let registry = ToolRegistry::new(ConfigFile {
+        tools: vec![parameterized_version_tool()],
+    });
+    let input = serde_json::json!({ "option": "--version" });
+    service.begin_shutdown();
+
+    let result = service
+        .execute_with_parameters(
+            &registry,
+            "rust_version",
+            input.as_object().unwrap(),
+        )
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::Cancelled)));
 }

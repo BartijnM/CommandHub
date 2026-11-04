@@ -6,6 +6,7 @@ mod models;
 mod registry;
 mod routes;
 mod server;
+mod validation;
 
 #[cfg(test)]
 #[path = "tests/http_execution_tests.rs"]

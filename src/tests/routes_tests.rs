@@ -41,6 +41,8 @@ fn test_registry() -> Arc<ToolRegistry> {
                 name: "path".to_owned(),
                 kind: ParameterType::String,
                 required: true,
+                allowed_values: None,
+                allowed_roots: None,
             }],
             timeout: None,
         }],
@@ -198,11 +200,6 @@ async fn rejects_invalid_input_via_http() {
         ("{}", None, "invalid_json"),
         ("[]", Some("application/json"), "invalid_input"),
         ("null", Some("application/json"), "invalid_input"),
-        (
-            r#"{"command":"ongewenst"}"#,
-            Some("application/json"),
-            "invalid_input",
-        ),
     ];
 
     for (input, content_type, expected_code) in cases {
@@ -413,7 +410,7 @@ async fn process_start_failure_returns_safe_http_500() {
 }
 
 #[tokio::test]
-async fn rejects_tool_with_parameters_via_http() {
+async fn rejects_missing_required_parameter_via_http() {
     let state = crate::app_state::AppState {
         registry: test_registry(),
         execution: Arc::new(crate::execution::ExecutionService::new()),
@@ -431,8 +428,8 @@ async fn rejects_tool_with_parameters_via_http() {
     assert_eq!(
         actual,
         json!({
-            "code": "parameters_not_supported",
-            "message": "Deze tool ondersteunt nog geen parameters"
+            "code": "invalid_parameters",
+            "message": "Verplichte parameter ontbreekt"
         })
     );
 }
@@ -475,4 +472,104 @@ async fn rejects_http_execution_after_shutdown_begins() {
             "message": "Uitvoering geannuleerd"
         })
     );
+}
+
+fn parameterized_http_state() -> crate::app_state::AppState {
+    let config = ConfigFile {
+        tools: vec![ToolDefinition {
+            name: "rust_version".to_owned(),
+            description: "Rust-versie met gecontroleerd argument".to_owned(),
+            command: "rustc".to_owned(),
+            arguments: vec!["{option}".to_owned()],
+            parameters: vec![ParameterDefinition {
+                name: "option".to_owned(),
+                kind: ParameterType::String,
+                required: true,
+                allowed_values: Some(vec!["--version".to_owned()]),
+                allowed_roots: None,
+            }],
+            timeout: Some(10_000),
+        }],
+    };
+    config.validate().expect("testconfiguratie moet geldig zijn");
+
+    crate::app_state::AppState {
+        registry: Arc::new(ToolRegistry::new(config)),
+        execution: Arc::new(crate::execution::ExecutionService::new()),
+    }
+}
+
+#[tokio::test]
+async fn executes_parameterized_tool_via_http() {
+    let response = router(parameterized_http_state())
+        .oneshot(post_request(
+            "rust_version",
+            r#"{"option":"--version"}"#,
+        ))
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let result = response_json(response).await;
+    assert_eq!(result["success"], json!(true));
+    assert_eq!(result["exitCode"], json!(0));
+    assert!(result["stdout"].as_str().unwrap().starts_with("rustc "));
+}
+
+#[tokio::test]
+async fn invalid_parameters_return_http_400() {
+    for (input, message) in [
+        (json!({}), "Verplichte parameter ontbreekt"),
+        (json!({ "option": 42 }), "Parameter moet een string zijn"),
+        (
+            json!({ "option": "--help" }),
+            "Parameterwaarde is niet toegestaan",
+        ),
+        (
+            json!({ "option": "--version", "command": "other" }),
+            "Onbekende parameter",
+        ),
+    ] {
+        let response = router(parameterized_http_state())
+            .oneshot(post_request("rust_version", input.to_string()))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response_json(response).await,
+            json!({
+                "code": "invalid_parameters",
+                "message": message
+            })
+        );
+    }
+}
+
+#[tokio::test]
+async fn parameterized_request_body_limit_is_enforced() {
+    let base = r#"{"option":"--version"}"#;
+
+    for (size, expected_status) in [
+        (16 * 1024, StatusCode::OK),
+        (16 * 1024 + 1, StatusCode::PAYLOAD_TOO_LARGE),
+    ] {
+        let body = format!("{base}{}", " ".repeat(size - base.len()));
+        assert_eq!(body.len(), size);
+
+        let response = router(parameterized_http_state())
+            .oneshot(post_request("rust_version", body))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), expected_status);
+
+        let result = response_json(response).await;
+        if expected_status == StatusCode::OK {
+            assert_eq!(result["success"], json!(true));
+        } else {
+            assert_eq!(result["code"], json!("request_too_large"));
+        }
+    }
 }

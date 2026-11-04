@@ -1,13 +1,13 @@
 # Testplan
 
-Status: 2026-11-03. De laatste geverifieerde Windows-suite vóór F07 bevatte 64 geslaagde tests en 4 genegeerde proceshelpers. F07 voegt macOS-tests toe; de aangeleverde screenshot toont de nieuwe jobs op macOS, Ubuntu en Windows geslaagd. Exacte testtotalen zijn niet zichtbaar. De Windows-statuscontrole is vervangen; de aangeleverde CI-screenshot bevestigt de reviewstand op Ubuntu en Windows (commit 105e69b).
+Historisch bewijs vóór F04: 2026-11-03. De laatste geverifieerde Windows-suite vóór F07 bevatte 64 geslaagde tests en 4 genegeerde proceshelpers. F07 voegt macOS-tests toe; de aangeleverde screenshot toont de nieuwe jobs op macOS, Ubuntu en Windows geslaagd. Exacte testtotalen zijn niet zichtbaar. De Windows-statuscontrole is vervangen; de aangeleverde CI-screenshot bevestigt de reviewstand op Ubuntu en Windows (commit 105e69b).
 
 | Eisen | Aanwezig bewijs en resterende controles |
 | --- | --- |
 | R01–R03 | Configuratie-, laadfout- en ontdekkingstests; lege namen/commands worden afgewezen. Herstart zonder rebuild is eerder handmatig gecontroleerd |
 | R04–R06 | Succes, niet-nul exit, startfout, output, timeout, annulering en shutdown; PID-controles bij stoproutes, future-drop en taakafbreking |
 | R07 | Gedeeld outputbudget, capaciteitsgrens/vrijgave, body exact 16 KiB en overschrijding; vier echte actieve TCP-uitvoeringen en vijfde 503, daarna capaciteitsherstel |
-| R08–R10 | F04: dynamische parameters, optie-injectie en padbeleid |
+| R08–R10 | F04: lokale configuratie-, validatie-, argument- en servicetests als geslaagd gemeld; HTTP-padtests, toolbeleidreview en Unix-symlink-CI nog open |
 | R11/R16 | Geïsoleerde F00-proef; protocol- en Host/Origin-controles bij F05 |
 | R12 | Routertests voor resultaat en fouten; echte TCP-tests voor capaciteit en actieve shutdown |
 | R13 | Vaste foutcodes en geen OS-details in JSON; geïsoleerde loggingtests bewaken het ontbreken van argumentwaarden en procesoutput |
@@ -55,3 +55,11 @@ De [F03-notitie](../notities/F03-procesuitvoering.md) bevat de actuele eindcontr
 Toon configuratie laden, ontdekking, parameterloze uitvoering, niet-nul exit, invoerfouten, outputlimiet, timeout, capaciteit, logging en shutdown. Voeg bij F04/F05 dynamische parameters en MCP toe; rond bij F06 de volledige demo op alle drie platforms af.
 
 CI-bewijs refactor: aangeleverde screenshot voor 105e69b op refactor/na-feature-3 toont Ubuntu Success (42 s), Windows Success (1 m 47 s) en run Success (1 m 50 s). Exacte CI-testtotalen zijn onbekend. De documentatie-update zelf is nog niet gepusht; review/merge blijft open.
+
+## F04-verificatie — 2026-11-04
+
+De eigenaar meldt lokale controles op Windows geslaagd: config::tests::, validation::tests::, execution::tests::, controllers::execution_controller::tests:: en routes::tests::. De volledige suite is tijdens de implementatie herhaald geslaagd gemeld. Eén tussenstand telde 107 tests; geen actueel eindtotaal aangeleverd. Na de laatste drie dynamische routetests is alleen de gerichte routes-suite bevestigd. De assistent heeft geen controles uitgevoerd.
+
+Nieuw bewijs omvat vereiste/optionele velden, typen, NUL/Unicode, toegestane waarden, prefixes, optionele argumentregels, canonicalisatie/roots/traversal, een echte rustc-call via service en router en bodies van exact 16 KiB en 16 KiB + 1. De routertests gebruiken geen TCP. De Unix-only symlinktest is op Windows niet uitgevoerd.
+
+Resterend: HTTP-padtests, dynamische logging zonder invoerwaarden/output, ontdekschema, laatste veiligheidsreview en aanvullende padgrenzen. Daarna cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en cargo test --locked en CI op drie platforms. Oudere CI-resultaten gelden niet voor F04.

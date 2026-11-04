@@ -53,31 +53,56 @@ async fn process_start_failure_does_not_leak_internal_details() {
 }
 
 #[test]
-fn accepts_empty_json_object() {
-    assert!(validate_parameterless_input(&json!({})).is_ok());
+fn input_object_accepts_empty_and_populated_objects() {
+    for input in [
+        json!({}),
+        json!({ "message": "Hallo" }),
+        json!({ "message": 42 }),
+    ] {
+        let fields = input_object(&input).expect("JSON-object moet worden geaccepteerd");
+
+        assert_eq!(fields, input.as_object().unwrap());
+    }
 }
 
 #[test]
-fn rejects_fields_and_other_json_types() {
-    let inputs = [
-        json!({"command": "ongewenst"}),
-        json!({"argument": "waarde"}),
+fn input_object_rejects_other_json_types() {
+    for input in [
         json!([]),
         json!(null),
         json!("tekst"),
         json!(42),
         json!(true),
-    ];
+    ] {
+        let (status, Json(error)) =
+            input_object(&input).expect_err("invoer moet een object zijn");
 
-    for input in inputs {
-        let (status, Json(error)) = validate_parameterless_input(&input)
-            .expect_err("alleen een leeg JSON-object mag worden geaccepteerd");
-
-        assert_eq!(
-            status,
-            StatusCode::BAD_REQUEST,
-            "onverwachte status voor invoer: {input}"
-        );
+        assert_eq!(status, StatusCode::BAD_REQUEST);
         assert_eq!(error.code, "invalid_input");
+        assert_eq!(error.message, "Verwacht een JSON-object");
     }
+}
+
+#[tokio::test]
+async fn invalid_parameters_return_400_with_json_error() {
+    let response = execution_error_response(ExecutionError::InvalidParameters(
+        "Parameterwaarde is niet toegestaan",
+    ))
+    .into_response();
+
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    let body = to_bytes(response.into_body(), 1024)
+        .await
+        .expect("foutresponse moet leesbaar zijn");
+    let actual: serde_json::Value =
+        serde_json::from_slice(&body).expect("foutresponse moet JSON zijn");
+
+    assert_eq!(
+        actual,
+        json!({
+            "code": "invalid_parameters",
+            "message": "Parameterwaarde is niet toegestaan"
+        })
+    );
 }

@@ -4,9 +4,9 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-De hoofdapplicatie biedt GET /status, GET /tools en parameterloze POST /tools/{toolname}. De refactor na F03 is via CI op Ubuntu en Windows bevestigd voor commit 105e69b; de laatste lokale suite vóór F07 telde 64 geslaagde tests en 4 proceshelpers.
+Actief is [F04 — Dynamische parameters en padbeleid](docs/features/F04-parameters.md). POST /tools/{toolname} gebruikt nu gedeelde parametervalidatie en argumentopbouw; parameterloze tools blijven met {} werken. Lokale configuratie-, validatie-, service- en HTTP-tests zijn door de eigenaar als geslaagd gemeld. De laatste routetests controleren echte rustc-uitvoering en de 16 KiB-bodygrens. F04 is nog niet afgerond: HTTP-padtests, loggingverificatie, ontdekschema, veiligheidsreview en eindcontroles/CI staan open. Zie [voortgang](docs/voortgang.md) en de [F04-notitie](notities/F04-parameters.md).
 
-Actief is [F07 — macOS-ondersteuning](docs/features/F07-macos-ondersteuning.md), vóór F04: de bestaande Unix-executor wordt hergebruikt, macOS-procescontroles en een voorbeeldconfiguratie zijn toegevoegd en CI omvat nu ook macos-latest. De aangeleverde screenshot bevestigt geslaagde CI-jobs op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). F07 staat op Review; review/merge is nog niet bevestigd. Zie [voortgang](docs/voortgang.md) en de [F07-notitie](notities/F07-macos-ondersteuning.md). Dynamische parameters en MCP-integratie volgen in F04/F05.
+De macOS-uitbreiding F07 voegde platformcontroles, een voorbeeldconfiguratie en macOS-CI toe. De eerdere groene CI op drie platforms geldt voor F07, niet als bewijs voor de huidige F04-wijzigingen. MCP-integratie volgt in F05.
 
 ## Installeren en gebruiken
 
@@ -50,7 +50,7 @@ curl -X POST http://127.0.0.1:3000/tools/echo_ready -H 'Content-Type: applicatio
 
 De standaardconfiguratie bevat een Windows-pingvoorbeeld. Kies op macOS expliciet de macOS-configuratie; automatische platformselectie is niet toegevoegd.
 
-De response bevat `success`, `stdout`, `stderr`, `exitCode` en `duration` in milliseconden. F03 accepteert alleen een leeg JSON-object; dynamische parameters volgen in F04. De requestbody mag maximaal 16 KiB zijn. Zie [het API-contract](docs/api-en-configuratie.md) voor foutresponses.
+De response bevat `success`, `stdout`, `stderr`, `exitCode` en `duration` in milliseconden. De route accepteert een JSON-object met de parameters van de gekozen tool; parameterloze tools verwachten een leeg object. De requestbody mag maximaal 16 KiB zijn. Zie [het API-contract](docs/api-en-configuratie.md) voor foutresponses.
 
 ## Documentatie
 

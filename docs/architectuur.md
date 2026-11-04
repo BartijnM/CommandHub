@@ -1,6 +1,6 @@
 # Architectuur
 
-Status: status, toolontdekking en parameterloze uitvoering via HTTP zijn aangesloten. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05. De macOS-uitbreiding F07 is via de aangeleverde CI-screenshot bevestigd, samen met Ubuntu en Windows.
+Status (2026-11-04): status, toolontdekking en dynamische uitvoering via HTTP zijn aangesloten. F04 is in uitvoering; lokale controles zijn door de eigenaar bevestigd, eindcontroles/CI nog niet. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05. De macOS-uitbreiding F07 is via de aangeleverde CI-screenshot bevestigd, samen met Ubuntu en Windows.
 
 ## Beoogde gegevensstroom
 
@@ -39,7 +39,7 @@ De server maakt één `AppState` met `Arc<ToolRegistry>` en `Arc<ExecutionServic
 
 ## HTTP-adapter en tests
 
-De uitvoercontroller vangt JSON-extractiefouten op, accepteert uitsluitend een leeg object en kiest daarna de tool uit de registry. `DefaultBodyLimit` begrenst deze POST-route op 16 KiB vóór JSON-deserialisatie. `ExecutionResponse::from` vertaalt het kernresultaat naar JSON met `exitCode` en milliseconden. De kern kent geen HTTP-statuscodes; de controller bepaalt foutmapping en vaste teksten zonder OS-details.
+De uitvoercontroller vangt JSON-extractiefouten op, leent via input_object een JSON-object en roept execute_with_parameters aan. execute_logged zoekt de tool op en deelt logging met het parameterloze pad. build_arguments in src/validation.rs valideert parameters en controleert gebruikte padplaceholders vóór execute_tool_inner een proces start. De kern gebruikt serde_json als invoermodel, maar geen HTTP-statuscodes. `DefaultBodyLimit` begrenst deze POST-route op 16 KiB vóór JSON-deserialisatie. `ExecutionResponse::from` vertaalt het kernresultaat naar JSON met `exitCode` en milliseconden. De kern kent geen HTTP-statuscodes; de controller bepaalt foutmapping en vaste teksten zonder OS-details.
 
 Tests staan fysiek in `src/tests/`, maar blijven via `#[cfg(test)]` en `#[path = "..."]` submodules van hun oorspronkelijke module. Alle test- en helperfuncties hebben Engelse namen. De subprocessscenario’s delen helpers voor configuratie, PID-bestanden, startbevestiging en capaciteitscontrole; de routetests delen POST-opbouw en JSON-uitlezen. Daardoor blijven private toegang, `super`-imports en helperselecties zoals `execution::tests::subprocess_timeout_helper` geldig. Dit zijn geen zelfstandige integratiecrates onder een projectmap `tests/`.
 
@@ -65,3 +65,7 @@ De CI-matrix omvat nu ubuntu-latest, windows-latest en macos-latest met dezelfde
 ## Linux-statusleesrace
 
 Een proces kan verdwijnen nadat de /proc-statfile is geopend maar voordat lezen klaar is. Naast NotFound/ENOENT kan dan ESRCH optreden. De gedeelde testhelper scheidt het lezen van de classificatie van `io::Result<String>`, zodat die race deterministisch getest kan worden. Afwezigheid betekent beëindigd; toegangs- en formaatfouten blijven fouten. De correctie is op Windows getest met gesimuleerde Linux-leesresultaten; CI-run #22 heeft de echte platformroute daarna op Ubuntu succesvol gecontroleerd.
+
+## F04-overdracht
+
+ParameterDefinition bevat optionele allowed_values en allowed_roots. De command-opbouw ontvangt een aparte &[String]; executable en argumenten blijven gescheiden. De gedeelde uitvoeringskern bewaart het bestaande procesbeheer. Configuratie beperkt optionele argumenten tot één laatste placeholder zonder vaste opties. Zie het API-contract en de F04-notitie voor padregels en resterende grenzen. Tests voor validation staan in src/tests/validation_tests.rs. De huidige ontdekcontroller moet nog worden uitgebreid met waardelijsten en afwijzing van extra velden in het schema.

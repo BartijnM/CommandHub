@@ -12,11 +12,11 @@ pub async fn execute_tool(
 > {
     let Json(input) = input.map_err(json_rejection_response)?;
 
-    validate_parameterless_input(&input)?;
+    let fields = input_object(&input)?;
 
     let result = state
         .execution
-        .execute_parameterless(&state.registry, &tool_name)
+        .execute_with_parameters(&state.registry, &tool_name, fields)
         .await
         .map_err(execution_error_response)?;
 
@@ -47,19 +47,21 @@ fn json_rejection_response(
     )
 }
 
-fn validate_parameterless_input(
+fn input_object(
     input: &serde_json::Value,
-) -> Result<(), (StatusCode, Json<ExecutionErrorResponse>)> {
-    match input {
-        serde_json::Value::Object(fields) if fields.is_empty() => Ok(()),
-        _ => Err((
+) -> Result<
+    &serde_json::Map<String, serde_json::Value>,
+    (StatusCode, Json<ExecutionErrorResponse>),
+> {
+    input.as_object().ok_or_else(|| {
+        (
             StatusCode::BAD_REQUEST,
             Json(ExecutionErrorResponse {
                 code: "invalid_input",
-                message: "Verwacht een leeg JSON-object voor een parameterloze tool",
+                message: "Verwacht een JSON-object",
             }),
-        )),
-    }
+        )
+    })
 }
 
 fn execution_error_response(error: ExecutionError) -> (StatusCode, Json<ExecutionErrorResponse>) {
@@ -69,6 +71,11 @@ fn execution_error_response(error: ExecutionError) -> (StatusCode, Json<Executio
             StatusCode::BAD_REQUEST,
             "parameters_not_supported",
             "Deze tool ondersteunt nog geen parameters",
+        ),
+        ExecutionError::InvalidParameters(message) => (
+            StatusCode::BAD_REQUEST,
+            "invalid_parameters",
+            message,
         ),
         ExecutionError::CapacityExceeded => (
             StatusCode::SERVICE_UNAVAILABLE,
