@@ -83,7 +83,7 @@ Toegevoegd/bevestigd sinds de eerdere tussenstand:
 - Clippy-correcties: goedkope vaste fout via ok_or, let chain voor allowed_values. Het dubbele productiepad is verwijderd. Bestaande timeout-, annulering-, shutdown-, drop- en procesboomtests lopen via dezelfde validatie als HTTP.
 - De oude test rejects_tool_with_parameters is verwijderd: dynamische parameters zijn nu juist toegestaan. Ontbrekende/verkeerde parameters hebben al gerichte vervangende tests. Dit verklaart één test minder vóór de nieuwe eindtests.
 - Nieuwe childhelper argument_echo_helper controleert werkelijk één dynamisch argument met spaties, quotes, Unicode en shelltekens. Dit voegt één ignored helper toe, geen overgeslagen acceptatietest.
-- config/tools.f04.json bevat rust_details, git_recent en git_diff_view. Alle drie zijn gevalideerd en werkelijk uitgevoerd in een test. Alleen vaste keuzelijsten worden geaccepteerd; git diff gebruikt --no-ext-diff en --no-textconv. Geen dynamische executable, Git-revisie of ongecontroleerde optie. Git-repository en omgeving zijn door de beheerder vertrouwd.
+- config/tools.json bevat rust_details, git_recent en git_diff_view. Alle drie zijn gevalideerd en werkelijk uitgevoerd in een test. Alleen vaste keuzelijsten worden geaccepteerd; git diff gebruikt --no-ext-diff en --no-textconv. Geen dynamische executable, Git-revisie of ongecontroleerde optie. Git-repository en omgeving zijn door de beheerder vertrouwd.
 - Tijdelijke padfixtures maken een eigen directory via create_dir met testnaam en proces-ID. Opruiming verwijdert uitsluitend die testdirectory; symlinks worden niet naar hun doelen gevolgd door remove_dir_all. De Unix-test blijft voor CI. Een eerdere crash kan een fixture achterlaten; create_dir faalt dan veilig in plaats van een bestaande directory te hergebruiken.
 
 ### Uitgevoerde Windows-eindcontroles
@@ -99,3 +99,9 @@ Deze controles zijn door de assistent daadwerkelijk uitgevoerd. De laatste vormc
 ### Bewuste beperkingen
 
 Bestaande paden zijn vereist; nieuw aan te maken bestanden zijn niet ondersteund. Geen afzonderlijke Windows-symlink/junctiontest. Niet-UTF-8-paden worden afgewezen. Roots worden per uitvoering opnieuw gecanonicaliseerd; beheerder moet roots, bovenliggende directories en repositoryconfiguratie beheren. Races tussen controle en gebruik zijn niet opgelost door canonicalisatie. Prefixfilters zijn geen algemene sandbox voor iedere tool; aangepaste tools vereisen beoordeling van hun argumentbetekenis. De voorbeeldtools gebruiken daarom expliciete keuzes. De limiet van één optioneel argument zonder vaste opties blijft bewust conservatief.
+
+## Correctie na verplaatsen van voorbeeldtools
+
+De eigenaar heeft de drie F04-tools naar config/tools.json verplaatst en het aparte bestand verwijderd. De include_str!-verwijzingen in de configuratie- en uitvoeringstests verwezen nog naar het verwijderde bestand, waardoor CI tijdens compilatie stopte. Beide tests lezen nu de standaardconfiguratie; de uitvoeringstest voert uitsluitend de drie genoemde platformonafhankelijke voorbeeldtools uit, niet het Windows-pingvoorbeeld. Documentatie en startinstructies volgen eveneens de standaardconfiguratie. Lokale verificatie volgt hieronder; Linux/macOS opnieuw via Actions.
+
+Verificatie van de correctie op Windows: cargo fmt toegepast en cargo fmt --check geslaagd; cargo clippy --all-targets --locked -- -D warnings geslaagd; cargo test --locked: 138 passed, 0 failed, 5 ignored, suite 2,25 s. Geen commit of push uitgevoerd.

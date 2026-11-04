@@ -8,7 +8,7 @@ Actief is [F04 — Dynamische parameters en padbeleid](docs/features/F04-paramet
 
 De macOS-uitbreiding F07 voegde platformcontroles, een voorbeeldconfiguratie en macOS-CI toe. De eerdere groene CI op drie platforms geldt voor F07, niet als bewijs voor de huidige F04-wijzigingen. MCP-integratie volgt in F05.
 
-Nieuwe dynamische tools staan in [config/tools.f04.json](config/tools.f04.json). Zie [de F04-testhandleiding](docs/F04-handmatig-testen.md) voor starten, aanroepen en foutgevallen.
+Nieuwe dynamische tools staan in [config/tools.json](config/tools.json). Zie [de F04-testhandleiding](docs/F04-handmatig-testen.md) voor starten, aanroepen en foutgevallen.
 
 ## Installeren en gebruiken
 

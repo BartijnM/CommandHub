@@ -46,7 +46,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - Pull request: nog niet aangemaakt.
 - Lokale Windows-eindcontrole door de assistent: formatter en Clippy geslaagd; 138 tests geslaagd, 5 expliciete proceshelpers genegeerd.
 - Padbeleid is lokaal geïmplementeerd en getest; de todo blijft open tot de Unix-symlinktest via CI is bevestigd.
-- Optiebeleid beoordeeld voor de drie beheerde voorbeeldtools in config/tools.f04.json: alleen expliciete keuzelijsten, geen client-executable. Aangepaste tools vragen eigen beoordeling; prefixfilters zijn geen algemene toolisolatie.
+- Optiebeleid beoordeeld voor de drie beheerde voorbeeldtools in config/tools.json: alleen expliciete keuzelijsten, geen client-executable. Aangepaste tools vragen eigen beoordeling; prefixfilters zijn geen algemene toolisolatie.
 - Acceptatiecriteria hierboven zijn lokaal aangetoond; definitieve platformacceptatie volgt via Actions op Windows/Linux/macOS. Status blijft Review tot CI en merge.
 - [Handmatige voorbeelden](../F04-handmatig-testen.md).
 - [Featurenotitie](../../notities/F04-parameters.md).

@@ -1474,8 +1474,7 @@ async fn dynamic_argument_preserves_spaces_quotes_and_shell_characters() {
 
 #[tokio::test]
 async fn f04_example_tools_execute_with_allowed_values() {
-    let config: ConfigFile =
-        serde_json::from_str(include_str!("../../config/tools.f04.json")).unwrap();
+    let config: ConfigFile = serde_json::from_str(include_str!("../../config/tools.json")).unwrap();
     config.validate().unwrap();
     let registry = ToolRegistry::new(config);
     let service = ExecutionService::new();

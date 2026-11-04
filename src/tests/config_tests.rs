@@ -537,7 +537,6 @@ fn nonexistent_allowed_root_is_rejected() {
 
 #[test]
 fn f04_example_config_is_valid() {
-    let config: ConfigFile =
-        serde_json::from_str(include_str!("../../config/tools.f04.json")).unwrap();
+    let config: ConfigFile = serde_json::from_str(include_str!("../../config/tools.json")).unwrap();
     config.validate().expect("F04-voorbeeld moet geldig zijn");
 }

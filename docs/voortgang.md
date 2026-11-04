@@ -22,7 +22,7 @@ Door de assistent daadwerkelijk uitgevoerd na toestemming van de eigenaar:
 - cargo clippy --all-targets --locked -- -D warnings: geslaagd.
 - cargo test --locked: 138 passed, 0 failed, 5 ignored; 2,83 s voor de suite.
 
-De vijf genegeerde functies zijn expliciete childproceshelpers; de nieuwe argument_echo_helper wordt door een actieve test gestart. De echte argumenttest bevestigt behoud van spaties, quotes, Unicode en shelltekens als één argument. Drie tools uit config/tools.f04.json zijn geconfigureerd, gevalideerd en werkelijk uitgevoerd in de tests. HTTP-tests bewijzen geldige/ongeldige padinvoer, resultaat/foutmapping en de exacte bodygrens. Dynamische logging is in een apart proces getest.
+De vijf genegeerde functies zijn expliciete childproceshelpers; de nieuwe argument_echo_helper wordt door een actieve test gestart. De echte argumenttest bevestigt behoud van spaties, quotes, Unicode en shelltekens als één argument. Drie tools uit config/tools.json zijn geconfigureerd, gevalideerd en werkelijk uitgevoerd in de tests. HTTP-tests bewijzen geldige/ongeldige padinvoer, resultaat/foutmapping en de exacte bodygrens. Dynamische logging is in een apart proces getest.
 
 ## Grenzen en volgende stap
 
@@ -31,3 +31,7 @@ Linux en macOS worden op verzoek als laatste via GitHub Actions gecontroleerd. D
 Padcontrole is geen sandbox: roots en symlinkdoelen worden per uitvoering opnieuw opgelost; wijzigingen tussen controle en gebruik blijven mogelijk. Beheerder beheert ook de roots en hun bovenliggende directories. Vrije strings vragen beoordeling per tool; prefixfilters blokkeren niet iedere mogelijke toolspecifieke instructie. De meegeleverde F04-tools gebruiken daarom uitsluitend vaste keuzes. Git-voorbeelden gebruiken de beheerde repository en omgeving van het serverproces.
 
 Volgende stap: eigenaar test de voorbeelden uit [de handleiding](F04-handmatig-testen.md), daarna CI op de featurebranch, resultaten beoordelen en PR naar develop. Pas na geslaagde platformverificatie en merge F04 als Klaar markeren. Geen nieuwe code of documentatie wijzigen zonder aanleiding na groene eindcontroles.
+
+## Correctie voorbeeldconfiguratie
+
+De drie dynamische voorbeelden staan nu in config/tools.json. Na verwijdering van het aparte bestand zijn beide compile-time testverwijzingen en alle documentatielinks/startinstructies aangepast. Windows: formatter en Clippy geslaagd, 138 tests geslaagd en 5 proceshelpers genegeerd (2,25 s). De getoonde CI-fout was een ontbrekend include_str!-bestand; Linux/macOS moeten na deze correctie opnieuw via Actions worden gecontroleerd.

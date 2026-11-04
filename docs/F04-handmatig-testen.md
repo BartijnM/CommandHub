@@ -1,13 +1,13 @@
 # F04 handmatig testen
 
-De configuratie [config/tools.f04.json](../config/tools.f04.json) bevat drie nieuwe tools. Ze wijzigen geen repositorybestanden en gebruiken expliciete keuzelijsten. Git en rustc moeten via PATH beschikbaar zijn. Start vanuit de projectmap zodat Git de bedoelde repository gebruikt.
+De configuratie [config/tools.json](../config/tools.json) bevat drie nieuwe tools. Ze wijzigen geen repositorybestanden en gebruiken expliciete keuzelijsten. Git en rustc moeten via PATH beschikbaar zijn. Start vanuit de projectmap zodat Git de bedoelde repository gebruikt.
 
 ## Server starten op Windows
 
-Stop een eventueel bestaande CommandHub-server en start met de aparte configuratie:
+Stop een eventueel bestaande CommandHub-server en start met de standaardconfiguratie:
 
 ```powershell
-$env:COMMANDHUB_CONFIG = "config/tools.f04.json"
+Remove-Item Env:COMMANDHUB_CONFIG -ErrorAction SilentlyContinue
 cargo run --locked
 ```
 
