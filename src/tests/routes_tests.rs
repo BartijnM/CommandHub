@@ -41,6 +41,8 @@ fn test_registry() -> Arc<ToolRegistry> {
                 name: "path".to_owned(),
                 kind: ParameterType::String,
                 required: true,
+                allowed_values: None,
+                allowed_roots: None,
             }],
             timeout: None,
         }],
@@ -78,6 +80,7 @@ async fn tools_route_returns_tool_metadata_and_input_schema() {
                 "description": "List files in a directory",
                 "inputSchema": {
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": {
                         "path": {
                             "type": "string"
@@ -198,11 +201,6 @@ async fn rejects_invalid_input_via_http() {
         ("{}", None, "invalid_json"),
         ("[]", Some("application/json"), "invalid_input"),
         ("null", Some("application/json"), "invalid_input"),
-        (
-            r#"{"command":"ongewenst"}"#,
-            Some("application/json"),
-            "invalid_input",
-        ),
     ];
 
     for (input, content_type, expected_code) in cases {
@@ -413,7 +411,7 @@ async fn process_start_failure_returns_safe_http_500() {
 }
 
 #[tokio::test]
-async fn rejects_tool_with_parameters_via_http() {
+async fn rejects_missing_required_parameter_via_http() {
     let state = crate::app_state::AppState {
         registry: test_registry(),
         execution: Arc::new(crate::execution::ExecutionService::new()),
@@ -431,8 +429,8 @@ async fn rejects_tool_with_parameters_via_http() {
     assert_eq!(
         actual,
         json!({
-            "code": "parameters_not_supported",
-            "message": "Deze tool ondersteunt nog geen parameters"
+            "code": "invalid_parameters",
+            "message": "Verplichte parameter ontbreekt"
         })
     );
 }
@@ -475,4 +473,282 @@ async fn rejects_http_execution_after_shutdown_begins() {
             "message": "Uitvoering geannuleerd"
         })
     );
+}
+
+fn parameterized_http_state() -> crate::app_state::AppState {
+    let config = ConfigFile {
+        tools: vec![ToolDefinition {
+            name: "rust_version".to_owned(),
+            description: "Rust-versie met gecontroleerd argument".to_owned(),
+            command: "rustc".to_owned(),
+            arguments: vec!["{option}".to_owned()],
+            parameters: vec![ParameterDefinition {
+                name: "option".to_owned(),
+                kind: ParameterType::String,
+                required: true,
+                allowed_values: Some(vec!["--version".to_owned()]),
+                allowed_roots: None,
+            }],
+            timeout: Some(10_000),
+        }],
+    };
+    config
+        .validate()
+        .expect("testconfiguratie moet geldig zijn");
+
+    crate::app_state::AppState {
+        registry: Arc::new(ToolRegistry::new(config)),
+        execution: Arc::new(crate::execution::ExecutionService::new()),
+    }
+}
+
+#[tokio::test]
+async fn executes_parameterized_tool_via_http() {
+    let response = router(parameterized_http_state())
+        .oneshot(post_request("rust_version", r#"{"option":"--version"}"#))
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let result = response_json(response).await;
+    assert_eq!(result["success"], json!(true));
+    assert_eq!(result["exitCode"], json!(0));
+    assert!(result["stdout"].as_str().unwrap().starts_with("rustc "));
+}
+
+#[tokio::test]
+async fn invalid_parameters_return_http_400() {
+    for (input, message) in [
+        (json!({}), "Verplichte parameter ontbreekt"),
+        (json!({ "option": 42 }), "Parameter moet een string zijn"),
+        (
+            json!({ "option": "--help" }),
+            "Parameterwaarde is niet toegestaan",
+        ),
+        (
+            json!({ "option": "--version", "command": "other" }),
+            "Onbekende parameter",
+        ),
+    ] {
+        let response = router(parameterized_http_state())
+            .oneshot(post_request("rust_version", input.to_string()))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response_json(response).await,
+            json!({
+                "code": "invalid_parameters",
+                "message": message
+            })
+        );
+    }
+}
+
+#[tokio::test]
+async fn parameterized_request_body_limit_is_enforced() {
+    let base = r#"{"option":"--version"}"#;
+
+    for (size, expected_status) in [
+        (16 * 1024, StatusCode::OK),
+        (16 * 1024 + 1, StatusCode::PAYLOAD_TOO_LARGE),
+    ] {
+        let body = format!("{base}{}", " ".repeat(size - base.len()));
+        assert_eq!(body.len(), size);
+
+        let response = router(parameterized_http_state())
+            .oneshot(post_request("rust_version", body))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), expected_status);
+
+        let result = response_json(response).await;
+        if expected_status == StatusCode::OK {
+            assert_eq!(result["success"], json!(true));
+        } else {
+            assert_eq!(result["code"], json!("request_too_large"));
+        }
+    }
+}
+
+fn path_http_state(root: std::path::PathBuf) -> crate::app_state::AppState {
+    let config = ConfigFile {
+        tools: vec![ToolDefinition {
+            name: "path_tool".to_owned(),
+            description: "Test padvalidatie via HTTP".to_owned(),
+            command: "commandhub-nonexistent-executable".to_owned(),
+            arguments: vec!["{path}".to_owned()],
+            parameters: vec![ParameterDefinition {
+                name: "path".to_owned(),
+                kind: ParameterType::String,
+                required: true,
+                allowed_values: None,
+                allowed_roots: Some(vec![root]),
+            }],
+            timeout: Some(10_000),
+        }],
+    };
+    config
+        .validate()
+        .expect("testconfiguratie moet geldig zijn");
+
+    crate::app_state::AppState {
+        registry: Arc::new(ToolRegistry::new(config)),
+        execution: Arc::new(crate::execution::ExecutionService::new()),
+    }
+}
+
+#[tokio::test]
+async fn invalid_paths_are_rejected_via_http() {
+    let project = std::env::current_dir().unwrap();
+    let root = project.join("src");
+
+    let cases = [
+        (
+            std::path::PathBuf::from("Cargo.toml"),
+            "Pad moet absoluut zijn",
+        ),
+        (
+            project.join("Cargo.toml"),
+            "Pad ligt buiten toegestane roots",
+        ),
+        (
+            root.join("..").join("Cargo.toml"),
+            "Pad ligt buiten toegestane roots",
+        ),
+        (
+            project.join("Cargo.toml").join("cannot-exist"),
+            "Pad kan niet worden opgelost",
+        ),
+    ];
+
+    for (path, message) in cases {
+        let input = json!({ "path": path });
+
+        let response = router(path_http_state(root.clone()))
+            .oneshot(post_request("path_tool", input.to_string()))
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(
+            response_json(response).await,
+            json!({
+                "code": "invalid_parameters",
+                "message": message
+            })
+        );
+    }
+}
+
+#[tokio::test]
+async fn valid_path_is_used_for_execution_via_http() {
+    let project = std::env::current_dir().unwrap();
+    let input_path = project.join("src").join("..");
+
+    let config = ConfigFile {
+        tools: vec![ToolDefinition {
+            name: "repository_root".to_owned(),
+            description: "Toon de root van de repository".to_owned(),
+            command: "git".to_owned(),
+            arguments: vec![
+                "-C".to_owned(),
+                "{path}".to_owned(),
+                "rev-parse".to_owned(),
+                "--show-toplevel".to_owned(),
+            ],
+            parameters: vec![ParameterDefinition {
+                name: "path".to_owned(),
+                kind: ParameterType::String,
+                required: true,
+                allowed_values: None,
+                allowed_roots: Some(vec![project.clone()]),
+            }],
+            timeout: Some(10_000),
+        }],
+    };
+    config
+        .validate()
+        .expect("testconfiguratie moet geldig zijn");
+
+    let state = crate::app_state::AppState {
+        registry: Arc::new(ToolRegistry::new(config)),
+        execution: Arc::new(crate::execution::ExecutionService::new()),
+    };
+    let input = json!({ "path": input_path });
+
+    let response = router(state)
+        .oneshot(post_request("repository_root", input.to_string()))
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let result = response_json(response).await;
+    assert_eq!(result["success"], json!(true));
+    assert_eq!(result["exitCode"], json!(0));
+
+    let reported_root = std::path::Path::new(result["stdout"].as_str().unwrap().trim())
+        .canonicalize()
+        .unwrap();
+
+    assert_eq!(reported_root, project.canonicalize().unwrap());
+}
+
+#[tokio::test]
+async fn tools_schema_includes_allowed_values() {
+    let response = router(parameterized_http_state())
+        .oneshot(
+            Request::builder()
+                .uri("/tools")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let result = response_json(response).await;
+    let schema = &result["tools"][0]["inputSchema"];
+
+    assert_eq!(schema["type"], json!("object"));
+    assert_eq!(schema["additionalProperties"], json!(false));
+    assert_eq!(schema["required"], json!(["option"]));
+    assert_eq!(
+        schema["properties"]["option"],
+        json!({
+            "type": "string",
+            "enum": ["--version"]
+        })
+    );
+}
+
+#[tokio::test]
+async fn tools_schema_omits_enum_for_unrestricted_string() {
+    let state = crate::app_state::AppState {
+        registry: test_registry(),
+        execution: Arc::new(crate::execution::ExecutionService::new()),
+    };
+
+    let response = router(state)
+        .oneshot(
+            Request::builder()
+                .uri("/tools")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let result = response_json(response).await;
+    let property = &result["tools"][0]["inputSchema"]["properties"]["path"];
+
+    assert_eq!(property["type"], json!("string"));
+    assert!(property.get("enum").is_none());
 }

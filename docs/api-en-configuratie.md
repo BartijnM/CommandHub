@@ -1,6 +1,6 @@
 # API- en configuratiecontract
 
-Status: `GET /status`, `GET /tools` en `POST /tools/{toolname}` zijn geïmplementeerd. F03-uitvoering voor parameterloze tools is op Windows automatisch en via een echte HTTP-aanroep gecontroleerd. Dynamische parameters volgen in F04.
+Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); CI is geslaagd op Windows, Ubuntu en macOS voor commit 1fb8d71.
 
 ## HTTP
 
@@ -26,12 +26,12 @@ Het uitvoeringsresultaat heeft deze vorm:
 
 duration is milliseconden. exitCode kan null zijn wanneer het OS geen numerieke code levert. Een niet-nul exitcode is een afgeronde uitvoering met success=false; een uitvoeringsfout is een afzonderlijke foutcategorie.
 
-Voor F03 geldt deze foutmapping:
+Voor de huidige HTTP-route geldt deze foutmapping:
 
 | Situatie | HTTP-status | Gedrag |
 | --- | --- | --- |
 | Ongeldige JSON of ongeldige invoer | 400 | Geen proces starten |
-| Geconfigureerde tool met parameters of placeholders | 400 | Niet starten; `parameters_not_supported` |
+| Ontbrekende, onbekende of ongeldige parameter, of afgewezen pad | 400 | Niet starten; `invalid_parameters` met vaste fouttekst |
 | Onbekende tool | 404 | Geen proces starten |
 | Requestbody groter dan 16 KiB | 413 | Request afwijzen vóór JSON-deserialisatie |
 | Capaciteit van vier uitvoeringen bereikt | 503 | Direct afwijzen, niet in een wachtrij plaatsen |
@@ -41,7 +41,7 @@ Voor F03 geldt deze foutmapping:
 | Gecombineerde stdout/stderr groter dan 1 MiB | 502 | Procesboom beëindigen; geen afgekapt succesresultaat teruggeven |
 | Proces gestart met niet-nul exitcode | 200 | Normaal uitvoeringsresultaat met `success: false` en de exitcode |
 
-F03 accepteert uitsluitend een leeg JSON-object `{}` met `Content-Type: application/json`. Onbekende velden en andere JSON-typen worden met 400 en `invalid_input` afgewezen. JSON-extractiefouten, waaronder ontbrekend JSON-contenttype, geven 400 en `invalid_json`. Een body boven 16 KiB geeft 413 en `request_too_large`, vóór JSON-deserialisatie; precies 16 KiB is toegestaan. Toolparameters en placeholders volgen in F04.
+De route vereist Content-Type application/json en een JSON-object. Andere JSON-vormen geven 400 invalid_input; extractiefouten geven 400 invalid_json. De service zoekt daarna de tool op (404 unknown_tool) en valideert parameters (400 invalid_parameters). Een object met onbekende velden naar een onbekende tool levert dus 404; bij een bekende tool worden onbekende velden afgewezen. Parameterloze tools accepteren uitsluitend een leeg object. Precies 16 KiB is toegestaan; daarboven volgt 413 request_too_large vóór deserialisatie.
 
 Foutresponses hebben het vaste formaat:
 
@@ -52,7 +52,7 @@ Foutresponses hebben het vaste formaat:
 }
 ```
 
-Overige codes zijn `capacity_exceeded` (503), `execution_timeout` (504) en `output_limit_exceeded` (502). De response bevat geen interne OS-fouttekst. Een onbekende tool geeft pas 404 na geldige body/invoercontrole. Dit volgt uit de volgorde extractor → invoercontrole → toolselectie.
+Overige codes zijn `capacity_exceeded` (503), `execution_timeout` (504) en `output_limit_exceeded` (502). De response bevat geen interne OS-fouttekst. Een onbekende tool geeft 404 na geldige JSON-objectcontrole. Volgorde: extractor → objectvorm → toolselectie → parametervalidatie → uitvoering.
 
 Handmatig gecontroleerd op Windows op 2026-10-30: `POST /tools/git_version` met `{}` gaf `success: true`, stdout met Git-versie 2.55.0.windows.3, lege stderr, exitcode 0 en duration 61 ms. Een herhaalde uitvoering kan een andere duur opleveren.
 
@@ -101,3 +101,19 @@ Het HTTP-contract is ongewijzigd. Configuratie wijst nu ook lege namen en comman
 ## macOS-configuratie (F07)
 
 Het HTTP-contract blijft gelijk. Kies op macOS config/tools.macos.json via COMMANDHUB_CONFIG; de standaardbestandskeuze verandert niet. Platformgeschikte vaste argumenten blijven door de beheerder bepaald. macOS-procescontrole en de macOS-CI-job zijn toegevoegd; de aangeleverde screenshot bevestigt geslaagde jobs op macOS, Ubuntu en Windows. Zie [F07](features/F07-macos-ondersteuning.md).
+
+## F04-parametercontract — 2026-11-04
+
+Alleen type string wordt ondersteund. Parameters hebben name, type, required en optioneel allowed_values en allowed_roots (exact deze snake_case-veldnamen). Ontbrekende velden betekenen geen ingestelde lijst. allowed_values vereist een niet-lege lijst zonder NUL; waarden worden exact vergeleken. Clientstrings met NUL worden afgewezen.
+
+Zonder allowed_values is een beginteken - verboden. Zonder allowed_values en allowed_roots zijn ook / en @ als eerste teken verboden. Dit vervangt geen beoordeling van de argumentbetekenis per tool. Een expliciete lijst mag optieachtige waarden toestaan.
+
+allowed_roots is een niet-lege lijst absolute bestaande directorypaden. Een gebruikte padparameter moet een bestaand absoluut pad bevatten; pad en roots worden gecanonicaliseerd en per component vergeleken. Het gecanonicaliseerde pad wordt doorgegeven. Niet-bestaande paden, doelen buiten roots en niet als UTF-8 door te geven paden worden afgewezen. Symlinkdoelen worden gecontroleerd; bestandssysteemraces blijven mogelijk.
+
+Een placeholder blijft één volledig argument. Spaties worden niet gesplitst, een lege string blijft aanwezig. Een ontbrekende optionele placeholder wordt weggelaten. Configuratie staat maximaal één optionele placeholder toe, uitsluitend als laatste argument, zonder vaste argumenten met prefix - of /. Ook -- valt onder deze beperking.
+
+GET /tools toont type, required, enum voor allowed_values en additionalProperties: false. Roots worden niet als interne serverpaden gepubliceerd. Iedere parameter moet minstens één volledige placeholder hebben. De voorbeeldconfiguratie config/tools.json bevat drie geteste dynamische tools; zie F04-handmatig-testen.md. Eerdere F03-verificatiebeschrijvingen zijn historie en bewijzen F04 niet.
+
+## CI-afronding — 2026-11-04
+
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.

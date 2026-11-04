@@ -21,7 +21,13 @@ pub async fn list_tools(State(registry): State<Arc<ToolRegistry>>) -> Json<Value
                         ParameterType::String => "string",
                     };
 
-                    (parameter.name.clone(), json!({ "type": parameter_type }))
+                    let mut schema = json!({ "type": parameter_type });
+
+                    if let Some(allowed_values) = &parameter.allowed_values {
+                        schema["enum"] = json!(allowed_values);
+                    }
+
+                    (parameter.name.clone(), schema)
                 })
                 .collect::<Map<String, Value>>();
 
@@ -39,6 +45,7 @@ pub async fn list_tools(State(registry): State<Arc<ToolRegistry>>) -> Json<Value
                 "description": tool.description,
                 "inputSchema": {
                     "type": "object",
+                    "additionalProperties": false,
                     "properties": properties,
                     "required": required
                 }

@@ -12,7 +12,7 @@ pub struct ExecutionResponse {
     pub duration: u128,
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 pub struct ExecutionErrorResponse {
     pub code: &'static str,
     pub message: &'static str,

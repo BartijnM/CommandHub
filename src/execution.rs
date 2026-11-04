@@ -36,7 +36,7 @@ pub struct ExecutionResult {
 // Representeert mogelijke fouten die kunnen optreden tijdens de uitvoering van een tool, zoals onbekende tools, overschrijding van capaciteit of timeouts.
 pub enum ExecutionError {
     UnknownTool,
-    ParametersNotSupported,
+    InvalidParameters(&'static str),
     CapacityExceeded,
     TimedOut,
     OutputLimitExceeded,
@@ -126,31 +126,33 @@ impl ExecutionService {
     fn start_process(
         &self,
         tool: &ToolDefinition,
+        arguments: &[String],
     ) -> Result<(Box<dyn ChildWrapper>, OwnedSemaphorePermit), ExecutionError> {
         let permit = self.try_acquire()?;
-        let child = create_wrapped_command(tool)
+        let child = create_wrapped_command(tool, arguments)
             .spawn()
             .map_err(ExecutionError::ProcessStartFailed)?;
 
         Ok((child, permit))
     }
 
-    // Voert een parameterloze tool uit op basis van de opgegeven naam en het geregistreerde tools. Het leest de uitvoer, wacht op voltooiing en retourneert het resultaat of een fout.
-    pub(crate) async fn execute_parameterless(
+    pub(crate) async fn execute_with_parameters(
         &self,
         registry: &ToolRegistry,
         name: &str,
+        input: &serde_json::Map<String, serde_json::Value>,
     ) -> Result<ExecutionResult, ExecutionError> {
         let (_cancel_sender, cancel_receiver) = oneshot::channel();
 
-        self.execute_parameterless_with_cancellation(registry, name, cancel_receiver)
+        self.execute_with_parameters_with_cancellation(registry, name, input, cancel_receiver)
             .await
     }
 
-    pub(crate) async fn execute_parameterless_with_cancellation(
+    pub(crate) async fn execute_with_parameters_with_cancellation(
         &self,
         registry: &ToolRegistry,
         name: &str,
+        input: &serde_json::Map<String, serde_json::Value>,
         cancellation: oneshot::Receiver<()>,
     ) -> Result<ExecutionResult, ExecutionError> {
         let started_at = Instant::now();
@@ -158,7 +160,9 @@ impl ExecutionService {
         let tool = registry.find(name);
         let tool_name = tool.map(|tool| tool.name.as_str()).unwrap_or("<unknown>");
 
-        let result = self.execute_parameterless_inner(tool, cancellation).await;
+        let result = self
+            .execute_with_parameters_inner(tool, input, cancellation)
+            .await;
 
         match &result {
             Ok(output) => {
@@ -183,17 +187,30 @@ impl ExecutionService {
         result
     }
 
-    async fn execute_parameterless_inner(
+    async fn execute_with_parameters_inner(
         &self,
         tool: Option<&ToolDefinition>,
+        input: &serde_json::Map<String, serde_json::Value>,
         cancellation: oneshot::Receiver<()>,
     ) -> Result<ExecutionResult, ExecutionError> {
-        // Controleer de al opgezochte tool voordat een proces wordt gestart.
         let tool = tool.ok_or(ExecutionError::UnknownTool)?;
-        validate_parameterless_tool(tool)?;
+
+        let arguments = crate::validation::build_arguments(tool, input)
+            .map_err(ExecutionError::InvalidParameters)?;
+
+        self.execute_tool_inner(tool, &arguments, cancellation)
+            .await
+    }
+
+    async fn execute_tool_inner(
+        &self,
+        tool: &ToolDefinition,
+        arguments: &[String],
+        cancellation: oneshot::Receiver<()>,
+    ) -> Result<ExecutionResult, ExecutionError> {
         let started_at = Instant::now();
         let mut shutdown = self.shutdown.subscribe();
-        let (child, _permit) = self.start_process(tool)?;
+        let (child, _permit) = self.start_process(tool, arguments)?;
         let mut child = ProcessGuard(child);
 
         // Bepaal de timeout voor de uitvoering, standaard 10 seconden als geen specifieke timeout is opgegeven.
@@ -245,28 +262,12 @@ impl ExecutionService {
     }
 }
 
-fn validate_parameterless_tool(tool: &ToolDefinition) -> Result<(), ExecutionError> {
-    // Controleer of de tool parameters heeft of placeholders in de argumenten bevat. Als dat het geval is, retourneer een fout.
-    let has_parameters = !tool.parameters.is_empty();
-    let has_placeholders = tool
-        .arguments
-        .iter()
-        .any(|argument| argument.contains('{') || argument.contains('}'));
-
-    if has_parameters || has_placeholders {
-        return Err(ExecutionError::ParametersNotSupported);
-    }
-
-    Ok(())
-}
-
 // Creëert een Command-object op basis van de opgegeven ToolDefinition, inclusief het instellen van de commandoregel, argumenten en standaardinvoer/-uitvoer/-fout.
-fn create_command(tool: &ToolDefinition) -> Command {
+fn create_command(tool: &ToolDefinition, arguments: &[String]) -> Command {
     let mut command = Command::new(tool.command.as_str());
 
-    // Geef vaste argumenten afzonderlijk door; er wordt geen shellstring opgebouwd.
     command
-        .args(tool.arguments.iter().map(String::as_str))
+        .args(arguments)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
@@ -275,8 +276,8 @@ fn create_command(tool: &ToolDefinition) -> Command {
 }
 
 // Creëert een CommandWrap-object dat het proces op een platformonafhankelijke manier kan beheren, inclusief het instellen van procesgroepen of jobobjecten en het automatisch beëindigen van het proces bij het loslaten van de wrapper.
-fn create_wrapped_command(tool: &ToolDefinition) -> CommandWrap {
-    let mut command = CommandWrap::from(create_command(tool));
+fn create_wrapped_command(tool: &ToolDefinition, arguments: &[String]) -> CommandWrap {
+    let mut command = CommandWrap::from(create_command(tool, arguments));
 
     // Voeg platformafhankelijke wrappers toe om het proces te beheren en ervoor te zorgen dat het correct wordt beëindigd bij het loslaten van de wrapper.
     #[cfg(unix)]
@@ -389,7 +390,7 @@ impl ExecutionError {
     fn category(&self) -> &'static str {
         match self {
             Self::UnknownTool => "unknown_tool",
-            Self::ParametersNotSupported => "parameters_not_supported",
+            Self::InvalidParameters(_) => "invalid_parameters",
             Self::CapacityExceeded => "capacity_exceeded",
             Self::TimedOut => "execution_timeout",
             Self::OutputLimitExceeded => "output_limit_exceeded",
@@ -407,9 +408,7 @@ impl std::fmt::Display for ExecutionError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnknownTool => write!(formatter, "Onbekende tool"),
-            Self::ParametersNotSupported => {
-                write!(formatter, "Deze tool ondersteunt nog geen parameters")
-            }
+            Self::InvalidParameters(message) => write!(formatter, "{message}"),
             Self::CapacityExceeded => write!(formatter, "Uitvoercapaciteit bereikt"),
             Self::TimedOut => write!(formatter, "Uitvoering verlopen"),
             Self::OutputLimitExceeded => write!(formatter, "Uitvoerlimiet overschreden"),

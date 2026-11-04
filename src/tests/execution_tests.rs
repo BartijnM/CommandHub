@@ -27,7 +27,6 @@ fn find_parameterless_tool<'a>(
     name: &str,
 ) -> Result<&'a ToolDefinition, ExecutionError> {
     let tool = registry.find(name).ok_or(ExecutionError::UnknownTool)?;
-    validate_parameterless_tool(tool)?;
     Ok(tool)
 }
 
@@ -174,7 +173,7 @@ async fn starts_with_platform_wrapper_and_waits_for_success() {
     let tool = find_parameterless_tool(&registry, "git_versie")
         .expect("de ingestelde parameterloze tool moet bestaan");
 
-    let mut command = create_wrapped_command(tool);
+    let mut command = create_wrapped_command(tool, &tool.arguments);
     let mut child = command
         .spawn()
         .expect("Het process met platformwrapper moet starten");
@@ -639,7 +638,7 @@ async fn stopping_completed_process_succeeds() {
     let tool = find_parameterless_tool(&registry, "git_versie")
         .expect("de ingestelde parameterloze tool moet bestaan");
 
-    let mut command = create_wrapped_command(tool);
+    let mut command = create_wrapped_command(tool, &tool.arguments);
     let mut child = command.spawn().expect("het proces moet starten");
 
     let status = child
@@ -673,23 +672,6 @@ fn rejects_unknown_tool() {
     let resultaat = find_parameterless_tool(&registry, "onbekende_tool");
 
     assert!(matches!(resultaat, Err(ExecutionError::UnknownTool)));
-}
-
-#[test]
-// Deze test controleert of de functie find_parameterless_tool correct een foutmelding geeft bij een tool met parameters.
-fn rejects_tool_with_parameters() {
-    let registry = test_registry(vec![ParameterDefinition {
-        name: "pad".to_owned(),
-        kind: ParameterType::String,
-        required: true,
-    }]);
-
-    let resultaat = find_parameterless_tool(&registry, "git_versie");
-
-    assert!(matches!(
-        resultaat,
-        Err(ExecutionError::ParametersNotSupported)
-    ));
 }
 
 #[tokio::test]
@@ -769,7 +751,7 @@ fn releases_capacity_when_process_start_fails() {
     };
 
     assert!(matches!(
-        service.start_process(&tool),
+        service.start_process(&tool, &tool.arguments),
         Err(ExecutionError::ProcessStartFailed(_))
     ));
 
@@ -1158,4 +1140,357 @@ async fn logs_results_without_arguments_or_process_output() {
     assert!(!logs.contains("--version"));
     assert!(!logs.contains(success.stdout.trim()));
     assert!(!logs.contains(secret_marker));
+}
+
+fn parameterized_version_tool() -> ToolDefinition {
+    ToolDefinition {
+        name: "rust_version".to_owned(),
+        description: "Rust-versie met gecontroleerd argument".to_owned(),
+        command: "rustc".to_owned(),
+        arguments: vec!["{option}".to_owned()],
+        parameters: vec![ParameterDefinition {
+            name: "option".to_owned(),
+            kind: ParameterType::String,
+            required: true,
+            allowed_values: Some(vec!["--version".to_owned()]),
+            allowed_roots: None,
+        }],
+        timeout: Some(10_000),
+    }
+}
+
+#[tokio::test]
+async fn executes_tool_with_validated_parameter() {
+    let service = ExecutionService::new();
+    let tool = parameterized_version_tool();
+    let input = serde_json::json!({ "option": "--version" });
+    let (_sender, receiver) = oneshot::channel();
+
+    let output = service
+        .execute_with_parameters_inner(Some(&tool), input.as_object().unwrap(), receiver)
+        .await
+        .expect("tool met geldige parameter moet uitvoeren");
+
+    assert!(output.success);
+    assert_eq!(output.exit_code, Some(0));
+    assert!(output.stdout.starts_with("rustc "));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn invalid_parameters_are_rejected_before_process_start() {
+    let service = ExecutionService::new();
+    let mut tool = parameterized_version_tool();
+    tool.command = "commandhub-nonexistent-executable".to_owned();
+
+    for input in [
+        serde_json::json!({}),
+        serde_json::json!({ "option": 42 }),
+        serde_json::json!({ "option": "--help" }),
+        serde_json::json!({ "option": "--version", "extra": true }),
+    ] {
+        let (_sender, receiver) = oneshot::channel();
+
+        let result = service
+            .execute_with_parameters_inner(Some(&tool), input.as_object().unwrap(), receiver)
+            .await;
+
+        assert!(matches!(result, Err(ExecutionError::InvalidParameters(_))));
+        assert_capacity_available(&service);
+    }
+}
+
+#[tokio::test]
+async fn parameterized_execution_rejects_unknown_tool() {
+    let service = ExecutionService::new();
+    let (_sender, receiver) = oneshot::channel();
+
+    let result = service
+        .execute_with_parameters_inner(None, &serde_json::Map::new(), receiver)
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::UnknownTool)));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn executes_parameterized_tool_through_registry() {
+    let service = ExecutionService::new();
+    let config = ConfigFile {
+        tools: vec![parameterized_version_tool()],
+    };
+    config
+        .validate()
+        .expect("testconfiguratie moet geldig zijn");
+    let registry = ToolRegistry::new(config);
+    let input = serde_json::json!({ "option": "--version" });
+
+    let output = service
+        .execute_with_parameters(&registry, "rust_version", input.as_object().unwrap())
+        .await
+        .expect("geregistreerde tool moet uitvoeren");
+
+    assert!(output.success);
+    assert_eq!(output.exit_code, Some(0));
+    assert!(output.stdout.starts_with("rustc "));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn registry_execution_rejects_invalid_parameters() {
+    let service = ExecutionService::new();
+    let mut tool = parameterized_version_tool();
+    tool.command = "commandhub-nonexistent-executable".to_owned();
+    let registry = ToolRegistry::new(ConfigFile { tools: vec![tool] });
+    let input = serde_json::json!({ "option": "--help" });
+
+    let result = service
+        .execute_with_parameters(&registry, "rust_version", input.as_object().unwrap())
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::InvalidParameters(_))));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn registry_execution_rejects_unknown_tool() {
+    let service = ExecutionService::new();
+    let registry = ToolRegistry::new(ConfigFile { tools: Vec::new() });
+
+    let result = service
+        .execute_with_parameters(&registry, "unknown", &serde_json::Map::new())
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::UnknownTool)));
+    assert_capacity_available(&service);
+}
+
+#[tokio::test]
+async fn parameterized_execution_is_rejected_after_shutdown() {
+    let service = ExecutionService::new();
+    let registry = ToolRegistry::new(ConfigFile {
+        tools: vec![parameterized_version_tool()],
+    });
+    let input = serde_json::json!({ "option": "--version" });
+    service.begin_shutdown();
+
+    let result = service
+        .execute_with_parameters(&registry, "rust_version", input.as_object().unwrap())
+        .await;
+
+    assert!(matches!(result, Err(ExecutionError::Cancelled)));
+}
+
+#[tokio::test]
+async fn logs_dynamic_execution_without_sensitive_values() {
+    if run_logging_test_in_isolation(
+        "execution::tests::logs_dynamic_execution_without_sensitive_values",
+    )
+    .await
+    {
+        return;
+    }
+
+    use tracing::instrument::WithSubscriber;
+
+    let buffer = LogBuffer {
+        bytes: Arc::new(std::sync::Mutex::new(Vec::new())),
+    };
+    let writer = buffer.clone();
+    let subscriber = tracing_subscriber::fmt()
+        .without_time()
+        .with_ansi(false)
+        .with_max_level(tracing::Level::TRACE)
+        .with_writer(move || writer.clone())
+        .finish();
+
+    let secret_option = "--commandhub-secret-option-7391";
+    let rejected_value = "commandhub-rejected-secret-8421";
+
+    let mut tool = parameterized_version_tool();
+    tool.name = "dynamic_logging".to_owned();
+    tool.command = "git".to_owned();
+    tool.parameters[0].allowed_values =
+        Some(vec!["--version".to_owned(), secret_option.to_owned()]);
+
+    let config = ConfigFile { tools: vec![tool] };
+    config.validate().unwrap();
+    let registry = ToolRegistry::new(config);
+    let service = ExecutionService::new();
+
+    let (success, failure, rejected) = async {
+        let success_input = serde_json::json!({ "option": "--version" });
+        let success = service
+            .execute_with_parameters(
+                &registry,
+                "dynamic_logging",
+                success_input.as_object().unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let failure_input = serde_json::json!({ "option": secret_option });
+        let failure = service
+            .execute_with_parameters(
+                &registry,
+                "dynamic_logging",
+                failure_input.as_object().unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let rejected_input = serde_json::json!({ "option": rejected_value });
+        let rejected = service
+            .execute_with_parameters(
+                &registry,
+                "dynamic_logging",
+                rejected_input.as_object().unwrap(),
+            )
+            .await;
+
+        (success, failure, rejected)
+    }
+    .with_subscriber(subscriber)
+    .await;
+
+    assert!(success.success);
+    assert!(!success.stdout.trim().is_empty());
+    assert!(!failure.success);
+    assert!(failure.stderr.contains("commandhub-secret-option-7391"));
+    assert!(matches!(
+        rejected,
+        Err(ExecutionError::InvalidParameters(_))
+    ));
+
+    let bytes = buffer.bytes.lock().unwrap().clone();
+    let logs = String::from_utf8(bytes).unwrap();
+
+    assert!(logs.contains("tool=\"dynamic_logging\""));
+    assert!(logs.contains("success=true"));
+    assert!(logs.contains("success=false"));
+    assert!(logs.contains("category=\"invalid_parameters\""));
+    assert!(logs.contains("duration_ms="));
+
+    assert!(!logs.contains("--version"));
+    assert!(!logs.contains("commandhub-secret-option-7391"));
+    assert!(!logs.contains(rejected_value));
+    assert!(!logs.contains(success.stdout.trim()));
+    assert!(!logs.contains(failure.stderr.trim()));
+
+    assert_capacity_available(&service);
+}
+
+// Compatibiliteitshelpers voor de bestaande procesbeheerscenario’s; beide gebruiken het productiepad.
+impl ExecutionService {
+    async fn execute_parameterless(
+        &self,
+        registry: &ToolRegistry,
+        name: &str,
+    ) -> Result<ExecutionResult, ExecutionError> {
+        self.execute_with_parameters(registry, name, &serde_json::Map::new())
+            .await
+    }
+
+    async fn execute_parameterless_with_cancellation(
+        &self,
+        registry: &ToolRegistry,
+        name: &str,
+        cancellation: oneshot::Receiver<()>,
+    ) -> Result<ExecutionResult, ExecutionError> {
+        self.execute_with_parameters_with_cancellation(
+            registry,
+            name,
+            &serde_json::Map::new(),
+            cancellation,
+        )
+        .await
+    }
+}
+
+#[test]
+#[ignore = "Wordt uitsluitend als geconfigureerd childproces gestart"]
+fn argument_echo_helper() {
+    let arguments: Vec<String> = std::env::args().collect();
+    let position = arguments
+        .iter()
+        .position(|argument| argument == "--skip")
+        .unwrap();
+    assert_eq!(
+        arguments.len(),
+        position + 2,
+        "invoer moet één argument blijven"
+    );
+    println!(
+        "ARGUMENT_JSON={}",
+        serde_json::to_string(&arguments[position + 1]).unwrap()
+    );
+}
+
+#[tokio::test]
+async fn dynamic_argument_preserves_spaces_quotes_and_shell_characters() {
+    let value = "Hallo wereld; & | $(echo test) \"café 🌍\"";
+    let tool = ToolDefinition {
+        name: "argument_echo".to_owned(),
+        description: "Test de werkelijke argumentgrens".to_owned(),
+        command: std::env::current_exe()
+            .unwrap()
+            .into_os_string()
+            .into_string()
+            .unwrap(),
+        arguments: vec![
+            "--exact".to_owned(),
+            "execution::tests::argument_echo_helper".to_owned(),
+            "--ignored".to_owned(),
+            "--nocapture".to_owned(),
+            "--skip".to_owned(),
+            "{message}".to_owned(),
+        ],
+        parameters: vec![ParameterDefinition {
+            name: "message".to_owned(),
+            kind: ParameterType::String,
+            required: true,
+            allowed_values: None,
+            allowed_roots: None,
+        }],
+        timeout: Some(10_000),
+    };
+    let config = ConfigFile { tools: vec![tool] };
+    config.validate().unwrap();
+    let registry = ToolRegistry::new(config);
+    let input = serde_json::json!({"message": value});
+    let result = ExecutionService::new()
+        .execute_with_parameters(&registry, "argument_echo", input.as_object().unwrap())
+        .await
+        .unwrap();
+    assert!(result.success, "helper moet slagen: {}", result.stderr);
+    let encoded = result
+        .stdout
+        .lines()
+        .find_map(|line| line.strip_prefix("ARGUMENT_JSON="))
+        .expect("helper moet argument teruggeven");
+    let actual: String = serde_json::from_str(encoded).unwrap();
+    assert_eq!(actual, value);
+}
+
+#[tokio::test]
+async fn f04_example_tools_execute_with_allowed_values() {
+    let config: ConfigFile = serde_json::from_str(include_str!("../../config/tools.json")).unwrap();
+    config.validate().unwrap();
+    let registry = ToolRegistry::new(config);
+    let service = ExecutionService::new();
+    for (name, input) in [
+        ("rust_details", serde_json::json!({"detail":"-vV"})),
+        ("git_recent", serde_json::json!({"count":"1"})),
+        ("git_diff_view", serde_json::json!({"view":"--stat"})),
+    ] {
+        let output = service
+            .execute_with_parameters(&registry, name, input.as_object().unwrap())
+            .await
+            .unwrap();
+        assert!(
+            output.success,
+            "voorbeeld {name} moet slagen: {}",
+            output.stderr
+        );
+    }
 }
