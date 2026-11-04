@@ -6,10 +6,14 @@ pub fn validate_parameters(
     input: &Map<String, Value>,
 ) -> Result<(), &'static str> {
     for name in input.keys() {
-        if !tool.parameters.iter().any(|parameter| parameter.name == *name) {
+        if !tool
+            .parameters
+            .iter()
+            .any(|parameter| parameter.name == *name)
+        {
             return Err("Onbekende parameter");
         }
-    }    
+    }
     for parameter in &tool.parameters {
         if parameter.required && !input.contains_key(&parameter.name) {
             return Err("Verplichte parameter ontbreekt");
@@ -17,9 +21,7 @@ pub fn validate_parameters(
         if let Some(value) = input.get(&parameter.name) {
             match parameter.kind {
                 crate::config::ParameterType::String => {
-                    let value = value
-                        .as_str()
-                        .ok_or("Parameter moet een string zijn")?;
+                    let value = value.as_str().ok_or("Parameter moet een string zijn")?;
 
                     if value.contains('\0') {
                         return Err("Parameter mag geen NUL-teken bevatten");
@@ -33,14 +35,14 @@ pub fn validate_parameters(
                     if parameter.allowed_values.is_none() && value.starts_with('-') {
                         return Err("Vrije parameterwaarde mag niet met '-' beginnen");
                     }
-                    if let Some(allowed_values) = &parameter.allowed_values {
-                        if !allowed_values.iter().any(|allowed| allowed == value) {
-                            return Err("Parameterwaarde is niet toegestaan");
-                        }
+                    if let Some(allowed_values) = &parameter.allowed_values
+                        && !allowed_values.iter().any(|allowed| allowed == value)
+                    {
+                        return Err("Parameterwaarde is niet toegestaan");
                     }
                 }
             }
-        }        
+        }
     }
 
     Ok(())

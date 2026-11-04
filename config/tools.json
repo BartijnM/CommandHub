@@ -42,6 +42,78 @@
       "arguments": ["-n", "4", "127.0.0.1"],
       "parameters": [],
       "timeout": 10000
+    },
+    {
+      "name": "rust_details",
+      "description": "Toon korte of uitgebreide Rust-versie-informatie",
+      "command": "rustc",
+      "arguments": [
+        "{detail}"
+      ],
+      "parameters": [
+        {
+          "name": "detail",
+          "type": "string",
+          "required": true,
+          "allowed_values": [
+            "--version",
+            "-vV"
+          ]
+        }
+      ],
+      "timeout": 10000
+    },
+    {
+      "name": "git_recent",
+      "description": "Toon een begrensd aantal recente commits",
+      "command": "git",
+      "arguments": [
+        "--no-pager",
+        "log",
+        "-n",
+        "{count}",
+        "--oneline",
+        "--no-decorate",
+        "--"
+      ],
+      "parameters": [
+        {
+          "name": "count",
+          "type": "string",
+          "required": true,
+          "allowed_values": [
+            "1",
+            "3",
+            "5"
+          ]
+        }
+      ],
+      "timeout": 10000
+    },
+    {
+      "name": "git_diff_view",
+      "description": "Toon gewijzigde bestandsnamen of een diffstat",
+      "command": "git",
+      "arguments": [
+        "--no-pager",
+        "diff",
+        "--no-ext-diff",
+        "--no-textconv",
+        "{view}",
+        "--"
+      ],
+      "parameters": [
+        {
+          "name": "view",
+          "type": "string",
+          "required": true,
+          "allowed_values": [
+            "--stat",
+            "--name-only"
+          ]
+        }
+      ],
+      "timeout": 10000
     }
   ]
 }

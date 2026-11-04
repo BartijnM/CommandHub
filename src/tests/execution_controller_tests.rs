@@ -74,8 +74,7 @@ fn input_object_rejects_other_json_types() {
         json!(42),
         json!(true),
     ] {
-        let (status, Json(error)) =
-            input_object(&input).expect_err("invoer moet een object zijn");
+        let (status, Json(error)) = input_object(&input).expect_err("invoer moet een object zijn");
 
         assert_eq!(status, StatusCode::BAD_REQUEST);
         assert_eq!(error.code, "invalid_input");

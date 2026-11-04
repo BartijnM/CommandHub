@@ -1,5 +1,5 @@
 use super::*;
-use crate::config::{ ParameterDefinition, ParameterType };
+use crate::config::{ParameterDefinition, ParameterType};
 
 #[test]
 fn missing_required_parameter_is_rejected() {
@@ -20,7 +20,10 @@ fn missing_required_parameter_is_rejected() {
 
     let input = Map::new();
 
-    assert_eq!(validate_parameters(&tool, &input), Err("Verplichte parameter ontbreekt"));
+    assert_eq!(
+        validate_parameters(&tool, &input),
+        Err("Verplichte parameter ontbreekt")
+    );
 }
 
 #[test]
@@ -233,10 +236,7 @@ fn argument_building_rejects_invalid_input() {
     let tool = validation_test_tool(true);
 
     for (input, expected_error) in [
-        (
-            serde_json::json!({}),
-            "Verplichte parameter ontbreekt",
-        ),
+        (serde_json::json!({}), "Verplichte parameter ontbreekt"),
         (
             serde_json::json!({ "message": 42 }),
             "Parameter moet een string zijn",
@@ -283,8 +283,7 @@ fn unicode_string_is_preserved() {
 #[test]
 fn configured_allowed_value_is_accepted() {
     let mut tool = validation_test_tool(true);
-    tool.parameters[0].allowed_values =
-        Some(vec!["short".to_owned(), "long".to_owned()]);
+    tool.parameters[0].allowed_values = Some(vec!["short".to_owned(), "long".to_owned()]);
     let input = serde_json::json!({ "message": "short" });
 
     assert_eq!(
@@ -296,8 +295,7 @@ fn configured_allowed_value_is_accepted() {
 #[test]
 fn values_outside_allowed_list_are_rejected() {
     let mut tool = validation_test_tool(true);
-    tool.parameters[0].allowed_values =
-        Some(vec!["short".to_owned(), "long".to_owned()]);
+    tool.parameters[0].allowed_values = Some(vec!["short".to_owned(), "long".to_owned()]);
 
     for value in ["other", "--help", "Short", "short ", ""] {
         let input = serde_json::json!({ "message": value });
@@ -401,8 +399,7 @@ fn parent_traversal_outside_root_is_rejected() {
 #[test]
 fn relative_client_path_is_rejected() {
     let mut tool = validation_test_tool(true);
-    tool.parameters[0].allowed_roots =
-        Some(vec![std::env::current_dir().unwrap()]);
+    tool.parameters[0].allowed_roots = Some(vec![std::env::current_dir().unwrap()]);
     let input = serde_json::json!({ "message": "Cargo.toml" });
 
     assert_eq!(
@@ -414,9 +411,7 @@ fn relative_client_path_is_rejected() {
 #[test]
 fn nonexistent_client_path_is_rejected() {
     let project = std::env::current_dir().unwrap();
-    let missing = project
-        .join("Cargo.toml")
-        .join("cannot-exist-under-a-file");
+    let missing = project.join("Cargo.toml").join("cannot-exist-under-a-file");
     let mut tool = validation_test_tool(true);
     tool.parameters[0].allowed_roots = Some(vec![project]);
 
@@ -434,8 +429,7 @@ fn nonexistent_client_path_is_rejected() {
 fn sibling_directory_is_not_inside_root() {
     let project = std::env::current_dir().unwrap();
     let mut tool = validation_test_tool(true);
-    tool.parameters[0].allowed_roots =
-        Some(vec![project.join("src").join("controllers")]);
+    tool.parameters[0].allowed_roots = Some(vec![project.join("src").join("controllers")]);
 
     let input = serde_json::json!({
         "message": project

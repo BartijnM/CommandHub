@@ -11,14 +11,14 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F04 maakt gecontroleerde dynamische invoer mogelijk zonder de client een executable te laten kiezen. De eerste keten werkt volgens lokale terugkoppeling van de eigenaar via de gedeelde service en HTTP-router. De feature is nog in uitvoering; eindcontroles en aanvullende veiligheidsverificatie staan open.
+F04 maakt gecontroleerde dynamische invoer mogelijk zonder de client een executable te laten kiezen. De implementatie en lokale Windows-eindcontroles zijn afgerond. Status: Review, in afwachting van drieplatform-CI en merge. De actuele verificatie staat in de laatste werksessie hieronder.
 
 ## Hoe werkt de code?
 
 - [Configuratie](../src/config.rs): ParameterDefinition heeft naast name, type en required ook allowed_values: Option<Vec<String>> en allowed_roots: Option<Vec<PathBuf>>. Ontbrekende optionele JSON-velden worden None; Rust-structliterals moeten de velden expliciet invullen.
 - [Validatie](../src/validation.rs): validate_parameters weigert onbekende velden, ontbrekende verplichte parameters, niet-stringwaarden en NUL. build_arguments valideert eerst en vervangt vervolgens volledige placeholders door afzonderlijke Strings. Spaties worden niet gesplitst; vaste argumenten en volgorde blijven behouden. Een ontbrekende optionele placeholder wordt weggelaten, een lege string blijft een argument.
 - Padcontrole gebeurt in build_arguments voor gebruikte placeholders met allowed_roots. validate_path vereist een bestaand absoluut pad, canonicaliseert pad en roots en vergelijkt componenten met Path::starts_with. Het gecanonicaliseerde pad wordt doorgegeven. Niet-UTF-8-paden worden afgewezen omdat de argumentvector momenteel Strings bevat.
-- [Uitvoering](../src/execution.rs): execute_with_parameters gebruikt execute_logged met Some(input); de parameterloze methode gebruikt None. De wrapper zoekt één keer de tool op en logt dezelfde metadata. execute_with_parameters_inner bouwt argumenten vóór processtart en vertaalt fouten naar InvalidParameters. execute_tool_inner deelt timeout, outputbudget, capaciteit, annulering en shutdown. Argumentenslices lopen via start_process en create_wrapped_command naar Command::args; command komt uit de registry.
+- [Uitvoering](../src/execution.rs): execute_with_parameters delegeert naar execute_with_parameters_with_cancellation. Ook parameterloze tools gebruiken dit pad met een leeg invoerobject. De oude productie-ingangen en ParametersNotSupported zijn verwijderd; compatibiliteitshelpers bestaan alleen in de testmodule en delegeren naar het productiepad. De wrapper zoekt één keer de tool op en logt metadata. execute_with_parameters_inner bouwt argumenten vóór processtart en vertaalt fouten naar InvalidParameters. execute_tool_inner deelt timeout, outputbudget, capaciteit, annulering en shutdown. Argumentenslices lopen via start_process en create_wrapped_command naar Command::args; command komt uit de registry.
 - [HTTP-controller](../src/controllers/execution_controller.rs): input_object leent een JSON-object; andere vormen geven 400 invalid_input. De handler roept execute_with_parameters aan. Validatiefouten geven 400 invalid_parameters met een vaste tekst. JSON/contenttype- en bodylimietfouten blijven invalid_json en request_too_large. De oude controle op uitsluitend een leeg object is verwijderd.
 - [Foutresponse](../src/models/execution.rs): Debug is toegevoegd naast Serialize zodat tests Result::expect kunnen gebruiken. Dit verandert de JSON niet en voegt geen logging toe.
 - Tests staan in src/tests/ en worden via cfg(test), path en mod tests gekoppeld; geen extra mod tests-wrapper in het testbestand.
@@ -44,7 +44,7 @@ Roots moeten absolute, bestaande directories zijn; lege lijsten en onoplosbare r
 - Meerdere optionele placeholders achteraan bleken alsnog positioneel te kunnen verschuiven. De regel is aangescherpt tot één optionele placeholder.
 - Result::expect in de objecttest vereiste Debug op ExecutionErrorResponse; derive(Debug) toegevoegd.
 
-## Verificatie — 2026-11-04, Windows
+## Historische tussenstand — 2026-11-04, vóór eindcontrole
 
 De eigenaar heeft de commando’s uitgevoerd en succes gemeld; de assistent heeft geen commando’s uitgevoerd. Er zijn geen volledige logs van de eindstand aangeleverd.
 
@@ -68,4 +68,34 @@ Eigenaar voert code zelf in na korte uitleg; tests mogen samen worden gegeven. G
 
 ## Vervolg
 
-Begin met HTTP-padtests. Daarna gerichte loggingtests voor dynamische invoer en ontdekking: GET /tools mist nog enum voor allowed_values en additionalProperties: false. Review toolbeleid, ongebruikte padparameters, rootwijzigingen en tijdelijke testdirectory-opruiming; controleer ontbrekende root en aanvullende platformgrenzen. Voer daarna eindcontroles en drieplatform-CI uit. Volledige suite na de laatste routetests opnieuw uitvoeren. Zie het featureplan voor de centrale checklist.
+Eigenaar probeert de tools uit docs/F04-handmatig-testen.md. Daarna GitHub Actions op Windows/Linux/macOS beoordelen, met name de Unix-symlinktest. PR-review en merge naar develop; daarna pas Klaar. De centrale checklist staat in het featureplan.
+
+## Werksessie — 2026-11-04, afronding na hervatten
+
+De eigenaar gaf expliciet toestemming om de resterende code en documentatie zelf af te ronden en lokale controles uit te voeren. Linux/macOS worden als laatste via Actions getest. Geen commit/push/merge/publicatie uitgevoerd.
+
+Toegevoegd/bevestigd sinds de eerdere tussenstand:
+
+- HTTP-padtests: geldig pad via git -C, buiten root, .. naar buiten, relatief en onoplosbaar pad; vaste 400-foutresponses.
+- GET /tools toont enum en additionalProperties: false, met routetests.
+- Dynamische loggingtest in een geïsoleerd proces: succes, niet-nul exit en validatiefout, zonder clientwaarden of output in logs.
+- Iedere parameter moet minstens één volledige placeholder hebben; ongebruikte padparameters worden bij startup afgewezen. Configuratiefixtures aangepast en ontbrekende root getest.
+- Clippy-correcties: goedkope vaste fout via ok_or, let chain voor allowed_values. Het dubbele productiepad is verwijderd. Bestaande timeout-, annulering-, shutdown-, drop- en procesboomtests lopen via dezelfde validatie als HTTP.
+- De oude test rejects_tool_with_parameters is verwijderd: dynamische parameters zijn nu juist toegestaan. Ontbrekende/verkeerde parameters hebben al gerichte vervangende tests. Dit verklaart één test minder vóór de nieuwe eindtests.
+- Nieuwe childhelper argument_echo_helper controleert werkelijk één dynamisch argument met spaties, quotes, Unicode en shelltekens. Dit voegt één ignored helper toe, geen overgeslagen acceptatietest.
+- config/tools.f04.json bevat rust_details, git_recent en git_diff_view. Alle drie zijn gevalideerd en werkelijk uitgevoerd in een test. Alleen vaste keuzelijsten worden geaccepteerd; git diff gebruikt --no-ext-diff en --no-textconv. Geen dynamische executable, Git-revisie of ongecontroleerde optie. Git-repository en omgeving zijn door de beheerder vertrouwd.
+- Tijdelijke padfixtures maken een eigen directory via create_dir met testnaam en proces-ID. Opruiming verwijdert uitsluitend die testdirectory; symlinks worden niet naar hun doelen gevolgd door remove_dir_all. De Unix-test blijft voor CI. Een eerdere crash kan een fixture achterlaten; create_dir faalt dan veilig in plaats van een bestaande directory te hergebruiken.
+
+### Uitgevoerde Windows-eindcontroles
+
+| Controle | Resultaat |
+| --- | --- |
+| cargo fmt --check | Geslaagd |
+| cargo clippy --all-targets --locked -- -D warnings | Geslaagd |
+| cargo test --locked | 138 passed, 0 failed, 5 ignored, 0 filtered; suite 2,83 s |
+
+Deze controles zijn door de assistent daadwerkelijk uitgevoerd. De laatste vormcorrectie in input_object is meegenomen in de definitieve controle vóór overdracht. De vijf ignored functies worden expliciet als proceshelpers gebruikt. Linux/macOS en de Unix-symlinktest zijn niet lokaal uitgevoerd. De bestaande workflow bevat formatter, Clippy, tests en build op alle drie platforms.
+
+### Bewuste beperkingen
+
+Bestaande paden zijn vereist; nieuw aan te maken bestanden zijn niet ondersteund. Geen afzonderlijke Windows-symlink/junctiontest. Niet-UTF-8-paden worden afgewezen. Roots worden per uitvoering opnieuw gecanonicaliseerd; beheerder moet roots, bovenliggende directories en repositoryconfiguratie beheren. Races tussen controle en gebruik zijn niet opgelost door canonicalisatie. Prefixfilters zijn geen algemene sandbox voor iedere tool; aangepaste tools vereisen beoordeling van hun argumentbetekenis. De voorbeeldtools gebruiken daarom expliciete keuzes. De limiet van één optioneel argument zonder vaste opties blijft bewust conservatief.

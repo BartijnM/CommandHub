@@ -1,7 +1,7 @@
 ---
 id: F04
 prioriteit: Must
-status: In uitvoering
+status: Review
 milestone: "Gecontroleerde invoer"
 ---
 
@@ -28,31 +28,33 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [x] Ondersteunde parametertypen en validatieregels vastleggen.
 - [x] Vereiste, onbekende en ongeldige parameters controleren.
 - [x] Placeholders omzetten naar afzonderlijke argumenten.
-- [ ] Optie-injectie per toegestane tool voorkomen.
+- [x] Optie-injectie per toegestane tool voorkomen.
 - [ ] Padbeleid, canonicalisatie en symlinkgedrag implementeren.
 - [x] Requestgrootte begrenzen en grensgevallen testen.
 
 ## Acceptatiecriteria
 
-- [ ] Ongeldige invoer start geen proces.
-- [ ] Client kan geen executable of ongeconfigureerde opties kiezen.
-- [ ] Paden buiten toegestane roots worden afgewezen.
-- [ ] Geldige parameters leveren de gedocumenteerde argumenten op.
+- [x] Ongeldige invoer start geen proces.
+- [x] Client kan geen executable of ongeconfigureerde opties kiezen.
+- [x] Paden buiten toegestane roots worden afgewezen.
+- [x] Geldige parameters leveren de gedocumenteerde argumenten op.
 
 ## Bewijs en koppelingen
 
 - GitHub issue: nog aan te maken.
 - Branch: feature/F04-parameters.
 - Pull request: nog niet aangemaakt.
-- Lokale controles door de eigenaar als geslaagd gemeld op Windows; geen actuele eindtelling. Zie de featurenotitie voor bewijs en beperkingen.
-- Stand 2026-11-04: dynamische HTTP-keten aanwezig. Optiebeleidreview, HTTP-padtests, dynamische loggingtests, ontdekschema, eindcontroles en drieplatform-CI blijven open.
-- De acceptatiecriteria blijven open tot de aanvullende verificatie en review zijn afgerond.
+- Lokale Windows-eindcontrole door de assistent: formatter en Clippy geslaagd; 138 tests geslaagd, 5 expliciete proceshelpers genegeerd.
+- Padbeleid is lokaal geïmplementeerd en getest; de todo blijft open tot de Unix-symlinktest via CI is bevestigd.
+- Optiebeleid beoordeeld voor de drie beheerde voorbeeldtools in config/tools.f04.json: alleen expliciete keuzelijsten, geen client-executable. Aangepaste tools vragen eigen beoordeling; prefixfilters zijn geen algemene toolisolatie.
+- Acceptatiecriteria hierboven zijn lokaal aangetoond; definitieve platformacceptatie volgt via Actions op Windows/Linux/macOS. Status blijft Review tot CI en merge.
+- [Handmatige voorbeelden](../F04-handmatig-testen.md).
 - [Featurenotitie](../../notities/F04-parameters.md).
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd.
-- [ ] Documentatie en notitie bijgewerkt.
-- [ ] Voortgang bijgewerkt.
+- [ ] Relevante controles geslaagd (lokaal groen; drieplatform-CI nog open).
+- [x] Documentatie en notitie bijgewerkt.
+- [x] Voortgang bijgewerkt.
 - [ ] PR gemerged; pas daarna status Klaar.
 

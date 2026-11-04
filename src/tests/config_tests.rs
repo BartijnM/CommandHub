@@ -265,6 +265,7 @@ fn empty_allowed_values_are_rejected() {
 #[test]
 fn nonempty_allowed_values_are_accepted() {
     let mut tool = test_tool("example", None);
+    tool.arguments = vec!["{message}".to_owned()];
     let mut parameter = test_parameter("message");
     parameter.allowed_values = Some(vec!["short".to_owned(), "long".to_owned()]);
     tool.parameters = vec![parameter];
@@ -274,10 +275,9 @@ fn nonempty_allowed_values_are_accepted() {
 
 #[test]
 fn missing_allowed_values_becomes_none() {
-    let parameter: ParameterDefinition = serde_json::from_str(
-        r#"{"name":"message","type":"string","required":true}"#,
-    )
-    .expect("parameter zonder allowed_values moet leesbaar blijven");
+    let parameter: ParameterDefinition =
+        serde_json::from_str(r#"{"name":"message","type":"string","required":true}"#)
+            .expect("parameter zonder allowed_values moet leesbaar blijven");
 
     assert_eq!(parameter.allowed_values, None);
 }
@@ -317,6 +317,7 @@ fn allowed_value_with_nul_is_rejected() {
 #[test]
 fn empty_string_as_allowed_value_is_accepted() {
     let mut tool = test_tool("example", None);
+    tool.arguments = vec!["{message}".to_owned()];
     let mut parameter = test_parameter("message");
     parameter.allowed_values = Some(vec![String::new()]);
     tool.parameters = vec![parameter];
@@ -353,6 +354,7 @@ fn relative_allowed_root_is_rejected() {
 #[test]
 fn existing_absolute_directory_is_accepted_as_root() {
     let mut tool = test_tool("example", None);
+    tool.arguments = vec!["{path}".to_owned()];
     let mut parameter = test_parameter("path");
     parameter.allowed_roots = Some(vec![
         std::env::current_dir().expect("projectdirectory moet beschikbaar zijn"),
@@ -478,4 +480,64 @@ fn fixed_positional_argument_with_optional_placeholder_is_accepted() {
     tool.arguments = vec!["show".to_owned(), "{optional}".to_owned()];
 
     assert!(ConfigFile { tools: vec![tool] }.validate().is_ok());
+}
+
+#[test]
+fn parameter_without_placeholder_is_rejected() {
+    let mut tool = test_tool("example", None);
+    tool.parameters = vec![test_parameter("message")];
+
+    assert_eq!(
+        ConfigFile { tools: vec![tool] }.validate(),
+        Err("Parameter 'message' in tool 'example' heeft geen placeholder".to_owned())
+    );
+}
+
+#[test]
+fn path_parameter_without_placeholder_is_rejected() {
+    let mut tool = test_tool("example", None);
+    let mut parameter = test_parameter("path");
+    parameter.allowed_roots = Some(vec![std::env::current_dir().unwrap()]);
+    tool.parameters = vec![parameter];
+
+    assert_eq!(
+        ConfigFile { tools: vec![tool] }.validate(),
+        Err("Parameter 'path' in tool 'example' heeft geen placeholder".to_owned())
+    );
+}
+
+#[test]
+fn repeated_parameter_placeholder_is_accepted() {
+    let mut tool = test_tool("example", None);
+    tool.parameters = vec![test_parameter("message")];
+    tool.arguments = vec!["{message}".to_owned(), "{message}".to_owned()];
+
+    assert!(ConfigFile { tools: vec![tool] }.validate().is_ok());
+}
+
+#[test]
+fn nonexistent_allowed_root_is_rejected() {
+    let mut tool = test_tool("example", None);
+    tool.arguments = vec!["{path}".to_owned()];
+
+    let mut parameter = test_parameter("path");
+    parameter.allowed_roots = Some(vec![
+        std::env::current_dir()
+            .unwrap()
+            .join("Cargo.toml")
+            .join("cannot-exist"),
+    ]);
+    tool.parameters = vec![parameter];
+
+    assert_eq!(
+        ConfigFile { tools: vec![tool] }.validate(),
+        Err("Toegestane root kan niet worden opgelost".to_owned())
+    );
+}
+
+#[test]
+fn f04_example_config_is_valid() {
+    let config: ConfigFile =
+        serde_json::from_str(include_str!("../../config/tools.f04.json")).unwrap();
+    config.validate().expect("F04-voorbeeld moet geldig zijn");
 }

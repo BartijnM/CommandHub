@@ -1,6 +1,6 @@
 # Configuratievoorbeelden
 
-Deze documentatie beschrijft het JSON-formaat, uitgebreid tijdens F04 (in uitvoering). De applicatie leest en valideert dit configuratiebestand bij startup.
+Deze documentatie beschrijft het JSON-formaat, uitgebreid tijdens F04 (Review). De applicatie leest en valideert dit configuratiebestand bij startup.
 
 Bij startup leest de server standaard `config/tools.json`, relatief aan de huidige werkdirectory. De beheerder kan een andere bestandslocatie instellen met de omgevingsvariabele `COMMANDHUB_CONFIG`.
 
@@ -48,7 +48,7 @@ De client kan `command` of vaste argumenten niet wijzigen. De huidige F04-code o
 
 F03 staat native executables en expliciet geconfigureerde interpreters toe. Voor een script configureert de beheerder de interpreter als `command` en het script als vast argument. De server start niet automatisch een shell en dispatcht niet impliciet naar Windows `.bat`- of `.cmd`-bestanden. Het childproces erft de omgeving en werkdirectory van de server.
 
-De F03-grenzen zijn maximaal 1 MiB gecombineerde stdout/stderr, 16 KiB requestbody en vier gelijktijdige uitvoeringen. Een volle capaciteit wordt direct afgewezen. De executor, process-wrap-platformwrappers, procesboomtests, HTTP-requestlimiet en POST-route zijn geïmplementeerd. POST /tools/{toolname} accepteert uitsluitend een leeg JSON-object. Dynamische parametervervanging volgt in F04. Lege toolnamen, parameternamen en commands (ook uitsluitend witruimte) worden bij startup afgewezen.
+De F03-grenzen zijn maximaal 1 MiB gecombineerde stdout/stderr, 16 KiB requestbody en vier gelijktijdige uitvoeringen. Een volle capaciteit wordt direct afgewezen. De executor, process-wrap-platformwrappers, procesboomtests, HTTP-requestlimiet en POST-route zijn geïmplementeerd. POST /tools/{toolname} accepteert een JSON-object met gevalideerde parameters; een parameterloze tool verwacht een leeg object. Lege toolnamen, parameternamen en commands (ook uitsluitend witruimte) worden bij startup afgewezen.
 
 ## macOS (F07)
 
@@ -58,6 +58,12 @@ De macOS-configuratie bevat git_version, echo_ready (/bin/echo met een vast argu
 
 ## F04-velden en beperkingen
 
-Parameterdefinities ondersteunen optioneel allowed_values (lijst strings) en allowed_roots (lijst absolute bestaande directorypaden). Zie [het API-contract](../docs/api-en-configuratie.md#f04-parametercontract--2026-11-04) voor de exacte validatieregels. De bovenstaande padvoorbeelden stammen uit F02 en bevatten nog geen roots; voeg voor werkelijk padbeleid expliciet allowed_roots met een bestaande beheerderslocatie toe. Zonder roots is de parameter gewone tekst. De meegeleverde tools.json en tools.macos.json bevatten nog geen nieuwe dynamische F04-voorbeeldtool.
+Parameterdefinities ondersteunen optioneel allowed_values (lijst strings) en allowed_roots (lijst absolute bestaande directorypaden). Zie [het API-contract](../docs/api-en-configuratie.md) voor de exacte validatieregels. De bovenstaande padvoorbeelden stammen uit F02 en bevatten nog geen roots; voeg voor werkelijk padbeleid expliciet allowed_roots met een bestaande beheerderslocatie toe. Zonder roots is de parameter gewone tekst. De meegeleverde tools.json en tools.macos.json bevatten nog geen nieuwe dynamische F04-voorbeeldtool.
 
 Een ontbrekende optionele placeholder wordt weggelaten. Maximaal één optionele placeholder, alleen als laatste argument en zonder vaste argumenten met prefix - of /, is toegestaan. De beheerder beoordeelt per executable de argumentbetekenis; prefixcontroles vormen geen volledige toolisolatie.
+
+## Geteste dynamische voorbeelden
+
+[tools.f04.json](tools.f04.json) bevat rust_details (detail: --version of -vV), git_recent (count als string 1/3/5) en git_diff_view (view: --stat of --name-only). Dit aparte bestand bevat uitsluitend deze drie tools; de standaardconfiguratie wordt niet aangepast. Kies het via COMMANDHUB_CONFIG en herstart. Alle drie zijn lokaal werkelijk uitgevoerd. Zie [de testhandleiding](../docs/F04-handmatig-testen.md) voor PowerShell-aanroepen en een optioneel padvoorbeeld.
+
+Iedere parameter moet minstens één volledige placeholder hebben. Het ontdekschema toont de waardelijsten en wijst extra velden af. F04 staat op Review: lokale formatter-, Clippy- en testcontroles zijn geslaagd; CI op drie platforms en merge volgen nog.

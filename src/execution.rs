@@ -36,7 +36,6 @@ pub struct ExecutionResult {
 // Representeert mogelijke fouten die kunnen optreden tijdens de uitvoering van een tool, zoals onbekende tools, overschrijding van capaciteit of timeouts.
 pub enum ExecutionError {
     UnknownTool,
-    ParametersNotSupported,
     InvalidParameters(&'static str),
     CapacityExceeded,
     TimedOut,
@@ -137,27 +136,6 @@ impl ExecutionService {
         Ok((child, permit))
     }
 
-    // Voert een parameterloze tool uit op basis van de opgegeven naam en het geregistreerde tools. Het leest de uitvoer, wacht op voltooiing en retourneert het resultaat of een fout.
-    pub(crate) async fn execute_parameterless(
-        &self,
-        registry: &ToolRegistry,
-        name: &str,
-    ) -> Result<ExecutionResult, ExecutionError> {
-        let (_cancel_sender, cancel_receiver) = oneshot::channel();
-
-        self.execute_parameterless_with_cancellation(registry, name, cancel_receiver)
-            .await
-    }
-
-    pub(crate) async fn execute_parameterless_with_cancellation(
-        &self,
-        registry: &ToolRegistry,
-        name: &str,
-        cancellation: oneshot::Receiver<()>,
-    ) -> Result<ExecutionResult, ExecutionError> {
-        self.execute_logged(registry, name, None, cancellation).await
-    }
-
     pub(crate) async fn execute_with_parameters(
         &self,
         registry: &ToolRegistry,
@@ -166,15 +144,15 @@ impl ExecutionService {
     ) -> Result<ExecutionResult, ExecutionError> {
         let (_cancel_sender, cancel_receiver) = oneshot::channel();
 
-        self.execute_logged(registry, name, Some(input), cancel_receiver)
+        self.execute_with_parameters_with_cancellation(registry, name, input, cancel_receiver)
             .await
     }
 
-    async fn execute_logged(
+    pub(crate) async fn execute_with_parameters_with_cancellation(
         &self,
         registry: &ToolRegistry,
         name: &str,
-        input: Option<&serde_json::Map<String, serde_json::Value>>,
+        input: &serde_json::Map<String, serde_json::Value>,
         cancellation: oneshot::Receiver<()>,
     ) -> Result<ExecutionResult, ExecutionError> {
         let started_at = Instant::now();
@@ -182,13 +160,9 @@ impl ExecutionService {
         let tool = registry.find(name);
         let tool_name = tool.map(|tool| tool.name.as_str()).unwrap_or("<unknown>");
 
-        let result = match input {
-            Some(input) => {
-                self.execute_with_parameters_inner(tool, input, cancellation)
-                    .await
-            }
-            None => self.execute_parameterless_inner(tool, cancellation).await,
-        };
+        let result = self
+            .execute_with_parameters_inner(tool, input, cancellation)
+            .await;
 
         match &result {
             Ok(output) => {
@@ -211,18 +185,6 @@ impl ExecutionService {
         }
 
         result
-    }
-
-    async fn execute_parameterless_inner(
-        &self,
-        tool: Option<&ToolDefinition>,
-        cancellation: oneshot::Receiver<()>,
-    ) -> Result<ExecutionResult, ExecutionError> {
-        let tool = tool.ok_or(ExecutionError::UnknownTool)?;
-        validate_parameterless_tool(tool)?;
-
-        self.execute_tool_inner(tool, &tool.arguments, cancellation)
-            .await
     }
 
     async fn execute_with_parameters_inner(
@@ -298,21 +260,6 @@ impl ExecutionService {
             duration: started_at.elapsed(),
         })
     }
-}
-
-fn validate_parameterless_tool(tool: &ToolDefinition) -> Result<(), ExecutionError> {
-    // Controleer of de tool parameters heeft of placeholders in de argumenten bevat. Als dat het geval is, retourneer een fout.
-    let has_parameters = !tool.parameters.is_empty();
-    let has_placeholders = tool
-        .arguments
-        .iter()
-        .any(|argument| argument.contains('{') || argument.contains('}'));
-
-    if has_parameters || has_placeholders {
-        return Err(ExecutionError::ParametersNotSupported);
-    }
-
-    Ok(())
 }
 
 // Creëert een Command-object op basis van de opgegeven ToolDefinition, inclusief het instellen van de commandoregel, argumenten en standaardinvoer/-uitvoer/-fout.
@@ -443,7 +390,6 @@ impl ExecutionError {
     fn category(&self) -> &'static str {
         match self {
             Self::UnknownTool => "unknown_tool",
-            Self::ParametersNotSupported => "parameters_not_supported",
             Self::InvalidParameters(_) => "invalid_parameters",
             Self::CapacityExceeded => "capacity_exceeded",
             Self::TimedOut => "execution_timeout",
@@ -462,9 +408,6 @@ impl std::fmt::Display for ExecutionError {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnknownTool => write!(formatter, "Onbekende tool"),
-            Self::ParametersNotSupported => {
-                write!(formatter, "Deze tool ondersteunt nog geen parameters")
-            }
             Self::InvalidParameters(message) => write!(formatter, "{message}"),
             Self::CapacityExceeded => write!(formatter, "Uitvoercapaciteit bereikt"),
             Self::TimedOut => write!(formatter, "Uitvoering verlopen"),

@@ -4,28 +4,30 @@ Bijgewerkt: 2026-11-04.
 
 ## Actief
 
-[F04 — Dynamische parameters en padbeleid](features/F04-parameters.md) is in uitvoering. De eigenaar meldt F03 na review afgesloten en macOS-ondersteuning toegevoegd; de sessie gaat verder met F04. De actuele Git-branch en merges zijn niet door de assistent gecontroleerd. Beoogde branch: feature/F04-parameters.
+[F04 — Dynamische parameters en padbeleid](features/F04-parameters.md) is gereed voor platformverificatie en PR-review. De implementatie en lokale Windows-controles zijn afgerond. F04 blijft op Review totdat CI en merge zijn bevestigd. Geen commit, push, merge of externe publicatie door de assistent uitgevoerd.
 
 ## Aanwezig
 
-De eerste dynamische keten is aangesloten: JSON-object → registry → parametervalidatie → afzonderlijke argumenten → bestaande procesuitvoering → HTTP-response. Parameterloze tools blijven werken met een leeg object. src/validation.rs controleert verplichte/onbekende velden, stringtypen, NUL, allowed_values en enkele risicovolle prefixes. allowed_roots maakt van een stringparameter een padparameter: bestaande absolute paden worden gecanonicaliseerd, op padcomponenten tegen roots gecontroleerd en als gecanonicaliseerd argument doorgegeven.
+POST /tools/{toolname} gebruikt één gedeeld uitvoeringspad voor parameterloze en dynamische tools: JSON-object → registry → validatie → afzonderlijke argumenten → proces → response. Configuratie beschrijft stringparameters met required, allowed_values en allowed_roots. Onbekende velden, ongeldige typen, NUL, verboden prefixes, niet-toegestane waarden en afgewezen paden geven 400 invalid_parameters vóór processtart.
 
-De configuratie controleert niet-lege waardelijsten zonder NUL en niet-lege rootlijsten met bestaande absolute directories. Eén optionele placeholder mag uitsluitend als laatste argument voorkomen; combinatie met vaste argumenten die met - of / beginnen wordt afgewezen. Timeout, capaciteit, outputbudget en shutdown gebruiken de bestaande kern. De loggingwrapper wordt gedeeld door beide uitvoeringspaden.
+Iedere parameter moet een volledige placeholder hebben. Maximaal één optionele placeholder mag achteraan staan, zonder vaste argumenten met prefix - of /. Padparameters vereisen bestaande absolute paden binnen bestaande absolute directoryroots. Het gecanonicaliseerde pad wordt doorgegeven. GET /tools toont enum voor waardelijsten en additionalProperties: false.
 
-## Verificatie
+De oude parameterloze productie-ingangen en ParametersNotSupported zijn verwijderd. Bestaande procestests gebruiken testhelpers die naar de huidige productie-ingang delegeren. Timeout, capaciteit, expliciete annulering, shutdown en opruiming worden zo via hetzelfde pad getest als dynamische uitvoering. Logging deelt eveneens dit pad en bevat geen parameterwaarden of procesoutput.
 
-De eigenaar heeft de voorgestelde controles lokaal op Windows uitgevoerd en telkens succes gemeld. Eén tussentijdse volledige suite telde 107 geslaagde tests; daarna zijn meer tests toegevoegd. Het huidige totale aantal is niet aangeleverd. De laatste volledige suite vóór de nieuwe dynamische routetests is als geslaagd gemeld; daarna is routes::tests:: met de nieuwe tests als geslaagd gemeld.
+## Verificatie op Windows
 
-Aanwezig zijn configuratie-, validatie-, argument-, service- en HTTP-routetests, inclusief echte rustc-uitvoering en dynamische bodies van exact 16 KiB en één byte daarboven. Deze nieuwe routertests gebruiken geen TCP. De Unix-symlinktest wordt op Windows niet gecompileerd en is voor F04 nog niet via CI bevestigd. Oudere groene F07-CI is geen bewijs voor F04.
+Door de assistent daadwerkelijk uitgevoerd na toestemming van de eigenaar:
 
-De assistent heeft alleen bestanden gelezen en op uitdrukkelijk verzoek deze documentatie bijgewerkt. Geen shell-, Cargo- of Git-commando’s uitgevoerd. Formatter, Clippy en drieplatform-CI zijn voor de eindstand nog niet bevestigd.
+- cargo fmt --check: geslaagd.
+- cargo clippy --all-targets --locked -- -D warnings: geslaagd.
+- cargo test --locked: 138 passed, 0 failed, 5 ignored; 2,83 s voor de suite.
 
-## Open en volgende stap
+De vijf genegeerde functies zijn expliciete childproceshelpers; de nieuwe argument_echo_helper wordt door een actieve test gestart. De echte argumenttest bevestigt behoud van spaties, quotes, Unicode en shelltekens als één argument. Drie tools uit config/tools.f04.json zijn geconfigureerd, gevalideerd en werkelijk uitgevoerd in de tests. HTTP-tests bewijzen geldige/ongeldige padinvoer, resultaat/foutmapping en de exacte bodygrens. Dynamische logging is in een apart proces getest.
 
-Eerst HTTP-padtests toevoegen. Daarna dynamische logging gericht controleren en GET /tools uitbreiden/beoordelen: het huidige schema toont nog geen enum voor allowed_values en geen additionalProperties: false. Vervolgens laatste review van toolafhankelijk optiebeleid, optionele argumenten, padgrenzen en testhelpers. Prefixcontroles zijn geen algemene garantie tegen alle toolopties; canonicalisatie biedt geen sandbox of bescherming tegen wijzigingen tussen controle en gebruik.
+## Grenzen en volgende stap
 
-Nog controleren: niet-bestaande configuratieroot, aanvullende padgrenzen en Windows-symlinkgedrag. Paden zonder gebruikte placeholder krijgen momenteel geen padcontrole in validate_parameters; de padcontrole gebeurt bij argumentopbouw. Review moet bepalen of ongebruikte parameterdefinities worden geweigerd of ook volledig gevalideerd.
+Linux en macOS worden op verzoek als laatste via GitHub Actions gecontroleerd. De bestaande CI-matrix bevat beide plus Windows, met formatter, Clippy, tests en build. De Unix-symlinktest is lokaal op Windows niet gecompileerd of uitgevoerd; oudere F07-CI is geen bewijs voor F04. Een afzonderlijke Windows-symlink/junctiontest is niet toegevoegd.
 
-Daarna cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en cargo test --locked; CI op Windows, Linux en macOS. Eventuele waarschuwingen na de stapsgewijze refactor moeten nog worden opgelost. Documentatie bij afronding opnieuw nalopen, PR-review en merge; F04 is nog niet Klaar.
+Padcontrole is geen sandbox: roots en symlinkdoelen worden per uitvoering opnieuw opgelost; wijzigingen tussen controle en gebruik blijven mogelijk. Beheerder beheert ook de roots en hun bovenliggende directories. Vrije strings vragen beoordeling per tool; prefixfilters blokkeren niet iedere mogelijke toolspecifieke instructie. De meegeleverde F04-tools gebruiken daarom uitsluitend vaste keuzes. Git-voorbeelden gebruiken de beheerde repository en omgeving van het serverproces.
 
-Werkvorm bij hervatten: één kort implementatiefragment met exact bestand/plaats en Rust-uitleg; eigenaar voert in en controleert. Samenhangende tests mogen gebundeld. Geen commando’s of broncodewijzigingen door de assistent zonder specifieke opdracht.
+Volgende stap: eigenaar test de voorbeelden uit [de handleiding](F04-handmatig-testen.md), daarna CI op de featurebranch, resultaten beoordelen en PR naar develop. Pas na geslaagde platformverificatie en merge F04 als Klaar markeren. Geen nieuwe code of documentatie wijzigen zonder aanleiding na groene eindcontroles.

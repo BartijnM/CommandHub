@@ -12,8 +12,6 @@ impl ConfigFile {
     pub fn validate(&self) -> Result<(), String> {
         let mut names = HashSet::new();
 
-
-
         for tool in &self.tools {
             if tool.name.trim().is_empty() {
                 return Err("Toolnaam mag niet leeg zijn".to_owned());
@@ -41,7 +39,7 @@ impl ConfigFile {
             let mut parameter_names: HashSet<&str> = HashSet::new();
 
             // Controleer op dubbele parameter namen
-            for parameter in &tool.parameters {              
+            for parameter in &tool.parameters {
                 if parameter.name.trim().is_empty() {
                     return Err(format!(
                         "Parameternaam in tool '{}' mag niet leeg zijn",
@@ -81,6 +79,14 @@ impl ConfigFile {
                         }
                     }
                 }
+                let placeholder = format!("{{{}}}", parameter.name);
+
+                if !tool.arguments.contains(&placeholder) {
+                    return Err(format!(
+                        "Parameter '{}' in tool '{}' heeft geen placeholder",
+                        parameter.name, tool.name
+                    ));
+                }
                 if !parameter_names.insert(parameter.name.as_str()) {
                     return Err(format!("Dubbele parameter in tool '{}'", tool.name));
                 }
@@ -91,8 +97,7 @@ impl ConfigFile {
             // Controleer of alle placeholders in de argumenten verwijzen naar bestaande parameters
             for argument in &tool.arguments {
                 let is_optional = tool.parameters.iter().any(|parameter| {
-                    !parameter.required
-                        && argument == &format!("{{{}}}", parameter.name)
+                    !parameter.required && argument == &format!("{{{}}}", parameter.name)
                 });
 
                 if optional_argument_seen {

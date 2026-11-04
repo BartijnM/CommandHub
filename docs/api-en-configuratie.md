@@ -1,6 +1,6 @@
 # API- en configuratiecontract
 
-Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale tests zijn door de eigenaar als geslaagd gemeld; F04-eindcontroles en CI staan open.
+Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); drieplatform-CI blijft open.
 
 ## HTTP
 
@@ -112,4 +112,4 @@ allowed_roots is een niet-lege lijst absolute bestaande directorypaden. Een gebr
 
 Een placeholder blijft één volledig argument. Spaties worden niet gesplitst, een lege string blijft aanwezig. Een ontbrekende optionele placeholder wordt weggelaten. Configuratie staat maximaal één optionele placeholder toe, uitsluitend als laatste argument, zonder vaste argumenten met prefix - of /. Ook -- valt onder deze beperking.
 
-GET /tools toont momenteel nog alleen type en required; enum voor allowed_values en additionalProperties: false zijn vervolgwerk. Er is nog geen nieuwe dynamische voorbeeldtool aan de meegeleverde configuratiebestanden toegevoegd. Eerdere F03-verificatiebeschrijvingen hieronder/boven zijn historie en bewijzen F04 niet.
+GET /tools toont type, required, enum voor allowed_values en additionalProperties: false. Roots worden niet als interne serverpaden gepubliceerd. Iedere parameter moet minstens één volledige placeholder hebben. De voorbeeldconfiguratie config/tools.f04.json bevat drie geteste dynamische tools; zie F04-handmatig-testen.md. Eerdere F03-verificatiebeschrijvingen zijn historie en bewijzen F04 niet.

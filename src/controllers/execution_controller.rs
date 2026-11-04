@@ -49,34 +49,23 @@ fn json_rejection_response(
 
 fn input_object(
     input: &serde_json::Value,
-) -> Result<
-    &serde_json::Map<String, serde_json::Value>,
-    (StatusCode, Json<ExecutionErrorResponse>),
-> {
-    input.as_object().ok_or_else(|| {
-        (
-            StatusCode::BAD_REQUEST,
-            Json(ExecutionErrorResponse {
-                code: "invalid_input",
-                message: "Verwacht een JSON-object",
-            }),
-        )
-    })
+) -> Result<&serde_json::Map<String, serde_json::Value>, (StatusCode, Json<ExecutionErrorResponse>)>
+{
+    input.as_object().ok_or((
+        StatusCode::BAD_REQUEST,
+        Json(ExecutionErrorResponse {
+            code: "invalid_input",
+            message: "Verwacht een JSON-object",
+        }),
+    ))
 }
 
 fn execution_error_response(error: ExecutionError) -> (StatusCode, Json<ExecutionErrorResponse>) {
     let (status, code, message) = match error {
         ExecutionError::UnknownTool => (StatusCode::NOT_FOUND, "unknown_tool", "Onbekende tool"),
-        ExecutionError::ParametersNotSupported => (
-            StatusCode::BAD_REQUEST,
-            "parameters_not_supported",
-            "Deze tool ondersteunt nog geen parameters",
-        ),
-        ExecutionError::InvalidParameters(message) => (
-            StatusCode::BAD_REQUEST,
-            "invalid_parameters",
-            message,
-        ),
+        ExecutionError::InvalidParameters(message) => {
+            (StatusCode::BAD_REQUEST, "invalid_parameters", message)
+        }
         ExecutionError::CapacityExceeded => (
             StatusCode::SERVICE_UNAVAILABLE,
             "capacity_exceeded",
