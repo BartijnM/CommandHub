@@ -1,6 +1,6 @@
 # API- en configuratiecontract
 
-Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); drieplatform-CI blijft open.
+Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); alleen macOS-CI blijft open (Ubuntu/Windows groen voor 2d02834).
 
 ## HTTP
 

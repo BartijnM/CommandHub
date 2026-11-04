@@ -4,7 +4,7 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-Actief is [F04 — Dynamische parameters en padbeleid](docs/features/F04-parameters.md). POST /tools/{toolname} gebruikt nu gedeelde parametervalidatie en argumentopbouw; parameterloze tools blijven met {} werken. Lokale Windows-eindcontroles zijn geslaagd: formatter, Clippy en 138 tests (5 expliciete proceshelpers). HTTP-padvalidatie, veilige dynamische logging en het ontdekschema zijn getest. F04 staat op Review: drieplatform-CI en merge blijven open. Zie [voortgang](docs/voortgang.md) en de [F04-notitie](notities/F04-parameters.md).
+Actief is [F04 — Dynamische parameters en padbeleid](docs/features/F04-parameters.md). POST /tools/{toolname} gebruikt nu gedeelde parametervalidatie en argumentopbouw; parameterloze tools blijven met {} werken. Lokale Windows-eindcontroles zijn geslaagd: formatter, Clippy en 138 tests (5 expliciete proceshelpers). HTTP-padvalidatie, veilige dynamische logging en het ontdekschema zijn getest. F04 staat op Review: macOS-CI en merge blijven open (Ubuntu/Windows groen voor 2d02834). Zie [voortgang](docs/voortgang.md) en de [F04-notitie](notities/F04-parameters.md).
 
 De macOS-uitbreiding F07 voegde platformcontroles, een voorbeeldconfiguratie en macOS-CI toe. De eerdere groene CI op drie platforms geldt voor F07, niet als bewijs voor de huidige F04-wijzigingen. MCP-integratie volgt in F05.
 

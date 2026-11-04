@@ -105,3 +105,11 @@ Bestaande paden zijn vereist; nieuw aan te maken bestanden zijn niet ondersteund
 De eigenaar heeft de drie F04-tools naar config/tools.json verplaatst en het aparte bestand verwijderd. De include_str!-verwijzingen in de configuratie- en uitvoeringstests verwezen nog naar het verwijderde bestand, waardoor CI tijdens compilatie stopte. Beide tests lezen nu de standaardconfiguratie; de uitvoeringstest voert uitsluitend de drie genoemde platformonafhankelijke voorbeeldtools uit, niet het Windows-pingvoorbeeld. Documentatie en startinstructies volgen eveneens de standaardconfiguratie. Lokale verificatie volgt hieronder; Linux/macOS opnieuw via Actions.
 
 Verificatie van de correctie op Windows: cargo fmt toegepast en cargo fmt --check geslaagd; cargo clippy --all-targets --locked -- -D warnings geslaagd; cargo test --locked: 138 passed, 0 failed, 5 ignored, suite 2,25 s. Geen commit of push uitgevoerd.
+
+## CI-overdracht — 2026-11-04, commit 2d02834
+
+De eigenaar leverde screenshots aan: Ubuntu geslaagd in 41 s en Windows in 1 m 30 s. macOS eindigde na 15 m 2 s zonder dat een hosted runner de job had opgepakt. Annotations: Internal server error; The job was not acquired by Runner of type hosted even after multiple attempts. Notices melden capaciteitstekort bij macOS arm64-runners. Er is geen macOS-test uitgevoerd en geen codefout aangetoond. Exact runnummer/URL en testtotalen zijn niet zichtbaar.
+
+De assistent controleerde branch feature/F04-parameters en HEAD 2d02834 lokaal. De werkmap was schoon. Testverwijzingen gebruiken config/tools.json en de workflow bevat Ubuntu/Windows/macOS met formatter, Clippy, tests en build. Geen broncode gewijzigd of tests herhaald tijdens deze documentatieoverdracht. De groene Ubuntu-job levert F04-bewijs voor de Unix-symlinktest; macOS-verificatie ontbreekt nog.
+
+Plan voor 2026-11-05: Re-run failed jobs, macOS-resultaat beoordelen. Bij groen bewijs en checklist actualiseren, PR-review en merge naar develop. Bij opnieuw geen runner: later herstarten; geen broncodecorrectie zonder concrete code-/testfout. Geen commit/push/merge namens de eigenaar uitgevoerd. Zie docs/F04-hervatprompt.md voor de starttekst voor een nieuwe chat.

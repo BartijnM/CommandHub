@@ -71,3 +71,7 @@ De assistent heeft na expliciete toestemming formatter, Clippy met -D warnings e
 Ook aanwezig en geslaagd: HTTP-padscenario’s, enum/additionalProperties in toolontdekking, geïsoleerde dynamische logging, verplichte placeholderkoppeling en ontbrekende root. Alle drie F04-voorbeeldtools zijn werkelijk uitgevoerd. Oude procestests gebruiken via testadapters het actuele generieke productiepad.
 
 Nog open: Actions op Windows/Linux/macOS, met Unix-symlinktest. Windows-symlinks/junctions hebben geen afzonderlijke test. Handmatige voorbeelden zijn beschreven, niet namens de eigenaar uitgevoerd. Historische open punten hierboven zijn hiermee vervangen door deze actuele stand.
+
+## Laatste F04-CI-bewijs
+
+Screenshots voor commit 2d02834: Ubuntu Success (41 s), Windows Success (1 m 30 s). De workflow omvat formatter, Clippy, tests en build, inclusief de Unix-symlinktest op Ubuntu. macOS kreeg na meerdere pogingen geen hosted runner en eindigde na 15 m 2 s; macOS-tests zijn niet uitgevoerd. Alleen macOS-platformverificatie ontbreekt. Geen exacte run-URL of CI-testtotalen aangeleverd. Volgende stap: Re-run failed jobs, daarna bewijs vastleggen en PR-review/merge.

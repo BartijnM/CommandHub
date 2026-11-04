@@ -4,7 +4,7 @@ Bijgewerkt: 2026-11-04.
 
 ## Actief
 
-[F04 — Dynamische parameters en padbeleid](features/F04-parameters.md) is gereed voor platformverificatie en PR-review. De implementatie en lokale Windows-controles zijn afgerond. F04 blijft op Review totdat CI en merge zijn bevestigd. Geen commit, push, merge of externe publicatie door de assistent uitgevoerd.
+[F04 — Dynamische parameters en padbeleid](features/F04-parameters.md) is gereed voor platformverificatie en PR-review. De implementatie en lokale Windows-controles zijn afgerond. F04 blijft op Review totdat macOS-CI en merge zijn bevestigd. Geen commit, push, merge of externe publicatie door de assistent uitgevoerd.
 
 ## Aanwezig
 
@@ -26,12 +26,20 @@ De vijf genegeerde functies zijn expliciete childproceshelpers; de nieuwe argume
 
 ## Grenzen en volgende stap
 
-Linux en macOS worden op verzoek als laatste via GitHub Actions gecontroleerd. De bestaande CI-matrix bevat beide plus Windows, met formatter, Clippy, tests en build. De Unix-symlinktest is lokaal op Windows niet gecompileerd of uitgevoerd; oudere F07-CI is geen bewijs voor F04. Een afzonderlijke Windows-symlink/junctiontest is niet toegevoegd.
+De aangeleverde CI-screenshot voor commit 2d02834 bevestigt Ubuntu en Windows geslaagd. macOS heeft geen runner gekregen en heeft dus geen controles uitgevoerd. De bestaande CI-matrix bevat beide plus Windows, met formatter, Clippy, tests en build. De Unix-symlinktest is lokaal op Windows niet gecompileerd of uitgevoerd; de groene Ubuntu-job van F04 voert deze test via de workflow wel uit. Exacte CI-testtotalen zijn niet zichtbaar. macOS moet nog volgen. Een afzonderlijke Windows-symlink/junctiontest is niet toegevoegd.
 
 Padcontrole is geen sandbox: roots en symlinkdoelen worden per uitvoering opnieuw opgelost; wijzigingen tussen controle en gebruik blijven mogelijk. Beheerder beheert ook de roots en hun bovenliggende directories. Vrije strings vragen beoordeling per tool; prefixfilters blokkeren niet iedere mogelijke toolspecifieke instructie. De meegeleverde F04-tools gebruiken daarom uitsluitend vaste keuzes. Git-voorbeelden gebruiken de beheerde repository en omgeving van het serverproces.
 
-Volgende stap: eigenaar test de voorbeelden uit [de handleiding](F04-handmatig-testen.md), daarna CI op de featurebranch, resultaten beoordelen en PR naar develop. Pas na geslaagde platformverificatie en merge F04 als Klaar markeren. Geen nieuwe code of documentatie wijzigen zonder aanleiding na groene eindcontroles.
+Volgende stap op 2026-11-05: eigenaar herstart de mislukte macOS-job via Re-run failed jobs en deelt het resultaat. Bij groen kan de PR-review/merge naar develop worden afgerond. De eigenaar heeft eerder gemeld dat de voorbeeldtools werken; er is geen volledige handmatige checklist aangeleverd. Pas na geslaagde platformverificatie en merge F04 als Klaar markeren. Geen nieuwe code of documentatie wijzigen zonder aanleiding na groene eindcontroles.
 
 ## Correctie voorbeeldconfiguratie
 
-De drie dynamische voorbeelden staan nu in config/tools.json. Na verwijdering van het aparte bestand zijn beide compile-time testverwijzingen en alle documentatielinks/startinstructies aangepast. Windows: formatter en Clippy geslaagd, 138 tests geslaagd en 5 proceshelpers genegeerd (2,25 s). De getoonde CI-fout was een ontbrekend include_str!-bestand; Linux/macOS moeten na deze correctie opnieuw via Actions worden gecontroleerd.
+De drie dynamische voorbeelden staan nu in config/tools.json. Na verwijdering van het aparte bestand zijn beide compile-time testverwijzingen en alle documentatielinks/startinstructies aangepast. Windows: formatter en Clippy geslaagd, 138 tests geslaagd en 5 proceshelpers genegeerd (2,25 s). De getoonde CI-fout was een ontbrekend include_str!-bestand; Ubuntu en Windows zijn daarna via Actions geslaagd; alleen macOS blijft open door ontbrekende runnercapaciteit.
+
+## Overdracht voor 2026-11-05
+
+Branch gecontroleerd: feature/F04-parameters. Laatste codecommit: 2d02834 (fix: laat tests de standaard toolconfiguratie gebruiken). Werkmap was schoon vóór deze documentatie-update. Geen broncodewijzigingen en geen herhaling van lokale tests in deze overdrachtssessie: de code is niet gewijzigd sinds de groene controles.
+
+CI-bewijs uit screenshots: Ubuntu Success (41 s), Windows Success (1 m 30 s); macOS na 15 m 2 s mislukt zonder toegewezen runner. Meldingen: Internal server error en The job was not acquired by Runner of type hosted even after multiple attempts; notices noemen capaciteit voor macOS arm64. Dit is geen aangetoonde code- of testfout. Geen runnerlabel/timeout wijzigen op basis van deze infrastructuurmelding.
+
+De workflow voert formatter, Clippy, tests en build uit op alle drie platforms. Alleen macOS-platformverificatie ontbreekt. Exact runnummer/URL en CI-testtotalen zijn niet beschikbaar. Na een groene herstart: bewijs in voortgang, F04-notitie en featureplan bijwerken; dan PR-review/merge volgens de projectwerkwijze. Status pas Klaar na bevestigde merge. Hervatprompt: [F04-hervatprompt.md](F04-hervatprompt.md).

@@ -66,4 +66,4 @@ Een ontbrekende optionele placeholder wordt weggelaten. Maximaal één optionele
 
 [tools.json](tools.json) bevat rust_details (detail: --version of -vV), git_recent (count als string 1/3/5) en git_diff_view (view: --stat of --name-only). Deze tools staan naast de bestaande tools in de standaardconfiguratie. Herstart de server om configuratiewijzigingen te laden. Alle drie zijn lokaal werkelijk uitgevoerd. Zie [de testhandleiding](../docs/F04-handmatig-testen.md) voor PowerShell-aanroepen en een optioneel padvoorbeeld.
 
-Iedere parameter moet minstens één volledige placeholder hebben. Het ontdekschema toont de waardelijsten en wijst extra velden af. F04 staat op Review: lokale formatter-, Clippy- en testcontroles zijn geslaagd; CI op drie platforms en merge volgen nog.
+Iedere parameter moet minstens één volledige placeholder hebben. Het ontdekschema toont de waardelijsten en wijst extra velden af. F04 staat op Review: lokale formatter-, Clippy- en testcontroles zijn geslaagd; alleen macOS-CI en merge volgen nog; Ubuntu/Windows zijn groen voor 2d02834.
