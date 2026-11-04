@@ -90,7 +90,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - [x] Ubuntu- en Windows-CI na de racecorrectie geslaagd in run #22.
 - [x] Documentatie en notitie bijgewerkt tot de gecontroleerde stand van 2026-11-02.
 - [x] Voortgang bijgewerkt tot de gecontroleerde stand van 2026-11-02.
-- [ ] PR gemerged; pas daarna status Klaar.
+- [x] PR gemerged; pas daarna status Klaar.
 
 ## Reviewcorrecties — 2026-11-03
 

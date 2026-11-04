@@ -36,6 +36,6 @@ De bestaande Unix-executor gebruikt ook op macOS procesgroepen. Deze uitbreiding
 Lokaal op Windows zijn alleen `cargo fmt --check` en `cargo metadata --locked --offline --no-deps --format-version 1` gecontroleerd. Geen tests, Clippy of build uitgevoerd: de eigenaar wil de verificatie via GitHub Actions doen. macOS is lokaal niet beschikbaar. De later aangeleverde screenshot bevestigt de CI op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). De workflow bevat formatter, Clippy, tests en build. Exacte CI-testtotalen en commit-/run-ID zijn niet zichtbaar. De platformacceptatiecriteria zijn daarmee aangetoond; PR-review/merge blijft open.
 
 - [x] CI-resultaten vastgelegd.
-- [ ] PR beoordeeld en gemerged naar develop; pas daarna status Klaar.
+- [x] PR beoordeeld en gemerged naar develop; pas daarna status Klaar.
 
 [Featurenotitie](../../notities/F07-macos-ondersteuning.md).
