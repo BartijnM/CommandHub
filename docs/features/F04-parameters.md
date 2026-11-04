@@ -45,15 +45,15 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - Branch: feature/F04-parameters.
 - Pull request: nog niet aangemaakt.
 - Lokale Windows-eindcontrole door de assistent: formatter en Clippy geslaagd; 138 tests geslaagd, 5 expliciete proceshelpers genegeerd.
-- Padbeleid is lokaal getest; de Unix-symlinktest is meegenomen in de geslaagde Ubuntu-CI van commit 2d02834. macOS-platformverificatie blijft open.
+- Padbeleid is lokaal getest; de Unix-symlinktest is meegenomen in de geslaagde Ubuntu-CI van commit 2d02834. macOS is inmiddels eveneens geslaagd in run #39.
 - Optiebeleid beoordeeld voor de drie beheerde voorbeeldtools in config/tools.json: alleen expliciete keuzelijsten, geen client-executable. Aangepaste tools vragen eigen beoordeling; prefixfilters zijn geen algemene toolisolatie.
-- Acceptatiecriteria hierboven zijn lokaal aangetoond; Windows en Ubuntu zijn via Actions geslaagd voor 2d02834; alleen macOS ontbreekt door runnercapaciteit. Status blijft Review tot CI en merge.
+- Acceptatiecriteria hierboven zijn lokaal aangetoond; alle drie platforms zijn via Actions geslaagd voor 1fb8d71 (run #39). Status blijft Review tot bevestigde PR-review/merge.
 - [Handmatige voorbeelden](../F04-handmatig-testen.md).
 - [Featurenotitie](../../notities/F04-parameters.md).
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd (lokaal en Ubuntu/Windows groen; macOS-runner nog open).
+- [x] Relevante controles geslaagd (lokaal en CI op Windows, Ubuntu en macOS).
 - [x] Documentatie en notitie bijgewerkt.
 - [x] Voortgang bijgewerkt.
 - [ ] PR gemerged; pas daarna status Klaar.
@@ -61,4 +61,8 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 ## Laatste CI-stand en vervolg
 
-Screenshot voor 2d02834: Ubuntu 41 s en Windows 1 m 30 s geslaagd. macOS kreeg geen runner en eindigde na 15 m 2 s; geen testfout aangetoond. Op 2026-11-05 de mislukte job opnieuw uitvoeren, daarna bewijs bijwerken en PR-review/merge afronden. Exacte run-URL en testtotalen zijn niet aangeleverd. Zie [hervatprompt](../F04-hervatprompt.md).
+Screenshot voor 2d02834: Ubuntu 41 s en Windows 1 m 30 s geslaagd. macOS kreeg geen runner en eindigde na 15 m 2 s; geen testfout aangetoond. Op 2026-11-05 de mislukte job opnieuw uitvoeren, daarna bewijs bijwerken en PR-review/merge afronden. Exacte run-URL en testtotalen zijn niet aangeleverd.
+
+## CI-afronding — 2026-11-04
+
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.

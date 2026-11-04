@@ -11,7 +11,7 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F04 maakt gecontroleerde dynamische invoer mogelijk zonder de client een executable te laten kiezen. De implementatie en lokale Windows-eindcontroles zijn afgerond. Status: Review, in afwachting van drieplatform-CI en merge. De actuele verificatie staat in de laatste werksessie hieronder.
+F04 maakt gecontroleerde dynamische invoer mogelijk zonder de client een executable te laten kiezen. De implementatie en lokale Windows-eindcontroles zijn afgerond. Status: Review, drieplatform-CI geslaagd; PR-review/merge is nog niet bevestigd. De actuele verificatie staat in de laatste werksessie hieronder.
 
 ## Hoe werkt de code?
 
@@ -112,4 +112,8 @@ De eigenaar leverde screenshots aan: Ubuntu geslaagd in 41 s en Windows in 1 m 3
 
 De assistent controleerde branch feature/F04-parameters en HEAD 2d02834 lokaal. De werkmap was schoon. Testverwijzingen gebruiken config/tools.json en de workflow bevat Ubuntu/Windows/macOS met formatter, Clippy, tests en build. Geen broncode gewijzigd of tests herhaald tijdens deze documentatieoverdracht. De groene Ubuntu-job levert F04-bewijs voor de Unix-symlinktest; macOS-verificatie ontbreekt nog.
 
-Plan voor 2026-11-05: Re-run failed jobs, macOS-resultaat beoordelen. Bij groen bewijs en checklist actualiseren, PR-review en merge naar develop. Bij opnieuw geen runner: later herstarten; geen broncodecorrectie zonder concrete code-/testfout. Geen commit/push/merge namens de eigenaar uitgevoerd. Zie docs/F04-hervatprompt.md voor de starttekst voor een nieuwe chat.
+Plan voor 2026-11-05: Re-run failed jobs, macOS-resultaat beoordelen. Bij groen bewijs en checklist actualiseren, PR-review en merge naar develop. Bij opnieuw geen runner: later herstarten; geen broncodecorrectie zonder concrete code-/testfout. Geen commit/push/merge namens de eigenaar uitgevoerd.
+
+## CI-afronding — 2026-11-04
+
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.

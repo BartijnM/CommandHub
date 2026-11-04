@@ -66,4 +66,8 @@ Een ontbrekende optionele placeholder wordt weggelaten. Maximaal één optionele
 
 [tools.json](tools.json) bevat rust_details (detail: --version of -vV), git_recent (count als string 1/3/5) en git_diff_view (view: --stat of --name-only). Deze tools staan naast de bestaande tools in de standaardconfiguratie. Herstart de server om configuratiewijzigingen te laden. Alle drie zijn lokaal werkelijk uitgevoerd. Zie [de testhandleiding](../docs/F04-handmatig-testen.md) voor PowerShell-aanroepen en een optioneel padvoorbeeld.
 
-Iedere parameter moet minstens één volledige placeholder hebben. Het ontdekschema toont de waardelijsten en wijst extra velden af. F04 staat op Review: lokale formatter-, Clippy- en testcontroles zijn geslaagd; alleen macOS-CI en merge volgen nog; Ubuntu/Windows zijn groen voor 2d02834.
+Iedere parameter moet minstens één volledige placeholder hebben. Het ontdekschema toont de waardelijsten en wijst extra velden af. F04 staat op Review: lokale formatter-, Clippy- en testcontroles zijn geslaagd; CI is geslaagd op Windows, Ubuntu en macOS voor 1fb8d71; alleen PR-review/merge volgt nog.
+
+## CI-afronding — 2026-11-04
+
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.

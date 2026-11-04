@@ -75,3 +75,7 @@ Nog open: Actions op Windows/Linux/macOS, met Unix-symlinktest. Windows-symlinks
 ## Laatste F04-CI-bewijs
 
 Screenshots voor commit 2d02834: Ubuntu Success (41 s), Windows Success (1 m 30 s). De workflow omvat formatter, Clippy, tests en build, inclusief de Unix-symlinktest op Ubuntu. macOS kreeg na meerdere pogingen geen hosted runner en eindigde na 15 m 2 s; macOS-tests zijn niet uitgevoerd. Alleen macOS-platformverificatie ontbreekt. Geen exacte run-URL of CI-testtotalen aangeleverd. Volgende stap: Re-run failed jobs, daarna bewijs vastleggen en PR-review/merge.
+
+## CI-afronding — 2026-11-04
+
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.

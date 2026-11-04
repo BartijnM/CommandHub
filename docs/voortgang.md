@@ -4,42 +4,24 @@ Bijgewerkt: 2026-11-04.
 
 ## Actief
 
-[F04 — Dynamische parameters en padbeleid](features/F04-parameters.md) is gereed voor platformverificatie en PR-review. De implementatie en lokale Windows-controles zijn afgerond. F04 blijft op Review totdat macOS-CI en merge zijn bevestigd. Geen commit, push, merge of externe publicatie door de assistent uitgevoerd.
+[F04 — Dynamische parameters en padbeleid](features/F04-parameters.md) staat op Review. Implementatie, lokale controles en CI op alle drie platforms zijn geslaagd. Alleen PR-review/merge naar develop en branchafsluiting resten. Markeer F04 pas Klaar na bevestigde merge. De eigenaar commit deze documentatie en sluit de branch zelf af.
 
 ## Aanwezig
 
-POST /tools/{toolname} gebruikt één gedeeld uitvoeringspad voor parameterloze en dynamische tools: JSON-object → registry → validatie → afzonderlijke argumenten → proces → response. Configuratie beschrijft stringparameters met required, allowed_values en allowed_roots. Onbekende velden, ongeldige typen, NUL, verboden prefixes, niet-toegestane waarden en afgewezen paden geven 400 invalid_parameters vóór processtart.
+Dynamische HTTP-uitvoering met verplichte/onbekende/typecontrole, allowed_values, veilige afzonderlijke argumenten en allowed_roots. Padcanonicalisatie controleert symlinkdoelen binnen toegestane roots. Iedere parameter vereist een placeholder; maximaal één optionele placeholder achteraan, zonder vaste opties. GET /tools toont enum en additionalProperties: false. Eén gedeeld uitvoeringspad voor parameterloze en dynamische tools, met capaciteit, timeout, outputlimiet, annulering, shutdown en logging zonder parameterwaarden of output.
 
-Iedere parameter moet een volledige placeholder hebben. Maximaal één optionele placeholder mag achteraan staan, zonder vaste argumenten met prefix - of /. Padparameters vereisen bestaande absolute paden binnen bestaande absolute directoryroots. Het gecanonicaliseerde pad wordt doorgegeven. GET /tools toont enum voor waardelijsten en additionalProperties: false.
+De voorbeeldtools rust_details, git_recent en git_diff_view staan in config/tools.json. De aparte F04-configuratie is verwijderd en de tests lezen de standaardconfiguratie. Zie [handmatig testen](F04-handmatig-testen.md).
 
-De oude parameterloze productie-ingangen en ParametersNotSupported zijn verwijderd. Bestaande procestests gebruiken testhelpers die naar de huidige productie-ingang delegeren. Timeout, capaciteit, expliciete annulering, shutdown en opruiming worden zo via hetzelfde pad getest als dynamische uitvoering. Logging deelt eveneens dit pad en bevat geen parameterwaarden of procesoutput.
+## Verificatie
 
-## Verificatie op Windows
+Lokaal Windows: cargo fmt --check en cargo clippy --all-targets --locked -- -D warnings geslaagd; cargo test --locked: 138 passed, 0 failed, 5 ignored (expliciete proceshelpers). Laatste lokale suite: 2,25 s. HTTP-paden, dynamische logging, argumentgrenzen en voorbeeldtools zijn getest.
 
-Door de assistent daadwerkelijk uitgevoerd na toestemming van de eigenaar:
+Screenshot run #39 voor commit 1fb8d71 op feature/F04-parameters: Success op macOS (57 s), Ubuntu (40 s) en Windows (1 m 50 s); totaal 1 m 54 s. De workflow bevat formatter, Clippy, tests en build. Ook de Unix-symlinktest loopt op Ubuntu/macOS mee. Exacte CI-testtotalen zijn niet zichtbaar. De eerdere macOS-run voor 2d02834 kreeg geen runner; deze infrastructuurblokkade is nu vervallen. De eigenaar meldt dat alles werkt.
 
-- cargo fmt --check: geslaagd.
-- cargo clippy --all-targets --locked -- -D warnings: geslaagd.
-- cargo test --locked: 138 passed, 0 failed, 5 ignored; 2,83 s voor de suite.
+## Grenzen
 
-De vijf genegeerde functies zijn expliciete childproceshelpers; de nieuwe argument_echo_helper wordt door een actieve test gestart. De echte argumenttest bevestigt behoud van spaties, quotes, Unicode en shelltekens als één argument. Drie tools uit config/tools.json zijn geconfigureerd, gevalideerd en werkelijk uitgevoerd in de tests. HTTP-tests bewijzen geldige/ongeldige padinvoer, resultaat/foutmapping en de exacte bodygrens. Dynamische logging is in een apart proces getest.
+Geen sandbox of bescherming tegen wijzigingen tussen padcontrole en gebruik. Alleen bestaande absolute clientpaden; niet-UTF-8-paden worden afgewezen. Roots, bovenliggende directories en toolconfiguratie worden door de beheerder beheerd. Prefixfilters vervangen geen toolspecifieke beoordeling. Geen afzonderlijke Windows-symlink/junctiontest. Deze bewuste grenzen zijn geen nieuwe featureopdracht.
 
-## Grenzen en volgende stap
+## Volgende stap
 
-De aangeleverde CI-screenshot voor commit 2d02834 bevestigt Ubuntu en Windows geslaagd. macOS heeft geen runner gekregen en heeft dus geen controles uitgevoerd. De bestaande CI-matrix bevat beide plus Windows, met formatter, Clippy, tests en build. De Unix-symlinktest is lokaal op Windows niet gecompileerd of uitgevoerd; de groene Ubuntu-job van F04 voert deze test via de workflow wel uit. Exacte CI-testtotalen zijn niet zichtbaar. macOS moet nog volgen. Een afzonderlijke Windows-symlink/junctiontest is niet toegevoegd.
-
-Padcontrole is geen sandbox: roots en symlinkdoelen worden per uitvoering opnieuw opgelost; wijzigingen tussen controle en gebruik blijven mogelijk. Beheerder beheert ook de roots en hun bovenliggende directories. Vrije strings vragen beoordeling per tool; prefixfilters blokkeren niet iedere mogelijke toolspecifieke instructie. De meegeleverde F04-tools gebruiken daarom uitsluitend vaste keuzes. Git-voorbeelden gebruiken de beheerde repository en omgeving van het serverproces.
-
-Volgende stap op 2026-11-05: eigenaar herstart de mislukte macOS-job via Re-run failed jobs en deelt het resultaat. Bij groen kan de PR-review/merge naar develop worden afgerond. De eigenaar heeft eerder gemeld dat de voorbeeldtools werken; er is geen volledige handmatige checklist aangeleverd. Pas na geslaagde platformverificatie en merge F04 als Klaar markeren. Geen nieuwe code of documentatie wijzigen zonder aanleiding na groene eindcontroles.
-
-## Correctie voorbeeldconfiguratie
-
-De drie dynamische voorbeelden staan nu in config/tools.json. Na verwijdering van het aparte bestand zijn beide compile-time testverwijzingen en alle documentatielinks/startinstructies aangepast. Windows: formatter en Clippy geslaagd, 138 tests geslaagd en 5 proceshelpers genegeerd (2,25 s). De getoonde CI-fout was een ontbrekend include_str!-bestand; Ubuntu en Windows zijn daarna via Actions geslaagd; alleen macOS blijft open door ontbrekende runnercapaciteit.
-
-## Overdracht voor 2026-11-05
-
-Branch gecontroleerd: feature/F04-parameters. Laatste codecommit: 2d02834 (fix: laat tests de standaard toolconfiguratie gebruiken). Werkmap was schoon vóór deze documentatie-update. Geen broncodewijzigingen en geen herhaling van lokale tests in deze overdrachtssessie: de code is niet gewijzigd sinds de groene controles.
-
-CI-bewijs uit screenshots: Ubuntu Success (41 s), Windows Success (1 m 30 s); macOS na 15 m 2 s mislukt zonder toegewezen runner. Meldingen: Internal server error en The job was not acquired by Runner of type hosted even after multiple attempts; notices noemen capaciteit voor macOS arm64. Dit is geen aangetoonde code- of testfout. Geen runnerlabel/timeout wijzigen op basis van deze infrastructuurmelding.
-
-De workflow voert formatter, Clippy, tests en build uit op alle drie platforms. Alleen macOS-platformverificatie ontbreekt. Exact runnummer/URL en CI-testtotalen zijn niet beschikbaar. Na een groene herstart: bewijs in voortgang, F04-notitie en featureplan bijwerken; dan PR-review/merge volgens de projectwerkwijze. Status pas Klaar na bevestigde merge. Hervatprompt: [F04-hervatprompt.md](F04-hervatprompt.md).
+Documentatie committen, PR beoordelen en naar develop mergen, daarna branch afsluiten. Na bevestigde merge status/checklist op Klaar zetten. F05 (MCP-integratie) is de volgende feature, pas starten op opdracht. Deze sessie wijzigde uitsluitend documentatie op basis van de screenshot; geen broncodewijzigingen, nieuwe testuitvoering, commits, pushes of merges door de assistent.

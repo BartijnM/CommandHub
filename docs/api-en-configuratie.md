@@ -1,6 +1,6 @@
 # API- en configuratiecontract
 
-Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); alleen macOS-CI blijft open (Ubuntu/Windows groen voor 2d02834).
+Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); CI is geslaagd op Windows, Ubuntu en macOS voor commit 1fb8d71.
 
 ## HTTP
 
@@ -113,3 +113,7 @@ allowed_roots is een niet-lege lijst absolute bestaande directorypaden. Een gebr
 Een placeholder blijft één volledig argument. Spaties worden niet gesplitst, een lege string blijft aanwezig. Een ontbrekende optionele placeholder wordt weggelaten. Configuratie staat maximaal één optionele placeholder toe, uitsluitend als laatste argument, zonder vaste argumenten met prefix - of /. Ook -- valt onder deze beperking.
 
 GET /tools toont type, required, enum voor allowed_values en additionalProperties: false. Roots worden niet als interne serverpaden gepubliceerd. Iedere parameter moet minstens één volledige placeholder hebben. De voorbeeldconfiguratie config/tools.json bevat drie geteste dynamische tools; zie F04-handmatig-testen.md. Eerdere F03-verificatiebeschrijvingen zijn historie en bewijzen F04 niet.
+
+## CI-afronding — 2026-11-04
+
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
