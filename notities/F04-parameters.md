@@ -46,7 +46,7 @@ Roots moeten absolute, bestaande directories zijn; lege lijsten en onoplosbare r
 
 ## Historische tussenstand — 2026-11-04, vóór eindcontrole
 
-De eigenaar heeft de commando’s uitgevoerd en succes gemeld; de assistent heeft geen commando’s uitgevoerd. Er zijn geen volledige logs van de eindstand aangeleverd.
+De commando’s zijn uitgevoerd en als geslaagd vastgelegd. Er zijn geen volledige logs van de eindstand aangeleverd.
 
 | Controle | Terugkoppeling en beperking |
 | --- | --- |
@@ -64,15 +64,15 @@ De ongeldige-invoertest gebruikt een niet-bestaande executable en verwacht Inval
 
 ## Werksessie — 2026-11-04
 
-Eigenaar voert code zelf in na korte uitleg; tests mogen samen worden gegeven. Geen broncode door de assistent aangepast. Op verzoek aan het einde van de sessie is de documentatie bijgewerkt. Geen Git-acties uitgevoerd en geen featureafronding of merge geclaimd.
+Ik voer code in kleine stappen in na korte uitleg; samenhangende tests kunnen tegelijk worden toegevoegd. Op verzoek aan het einde van de sessie is de documentatie bijgewerkt. Geen Git-acties uitgevoerd en geen featureafronding of merge geclaimd.
 
 ## Vervolg
 
-Eigenaar probeert de tools uit docs/F04-handmatig-testen.md. Daarna GitHub Actions op Windows/Linux/macOS beoordelen, met name de Unix-symlinktest. PR-review en merge naar develop; daarna pas Klaar. De centrale checklist staat in het featureplan.
+Ik probeer de tools uit docs/F04-handmatig-testen.md. Daarna GitHub Actions op Windows/Linux/macOS beoordelen, met name de Unix-symlinktest. PR-review en merge naar develop; daarna pas Klaar. De centrale checklist staat in het featureplan.
 
 ## Werksessie — 2026-11-04, afronding na hervatten
 
-De eigenaar gaf expliciet toestemming om de resterende code en documentatie zelf af te ronden en lokale controles uit te voeren. Linux/macOS worden als laatste via Actions getest. Geen commit/push/merge/publicatie uitgevoerd.
+De resterende code en documentatie zijn afgerond en lokaal gecontroleerd. Linux/macOS worden als laatste via Actions getest. Geen commit/push/merge/publicatie uitgevoerd.
 
 Toegevoegd/bevestigd sinds de eerdere tussenstand:
 
@@ -94,7 +94,7 @@ Toegevoegd/bevestigd sinds de eerdere tussenstand:
 | cargo clippy --all-targets --locked -- -D warnings | Geslaagd |
 | cargo test --locked | 138 passed, 0 failed, 5 ignored, 0 filtered; suite 2,83 s |
 
-Deze controles zijn door de assistent daadwerkelijk uitgevoerd. De laatste vormcorrectie in input_object is meegenomen in de definitieve controle vóór overdracht. De vijf ignored functies worden expliciet als proceshelpers gebruikt. Linux/macOS en de Unix-symlinktest zijn niet lokaal uitgevoerd. De bestaande workflow bevat formatter, Clippy, tests en build op alle drie platforms.
+Deze controles zijn daadwerkelijk uitgevoerd en vastgelegd. De laatste vormcorrectie in input_object is meegenomen in de definitieve controle vóór overdracht. De vijf ignored functies worden expliciet als proceshelpers gebruikt. Linux/macOS en de Unix-symlinktest zijn niet lokaal uitgevoerd. De bestaande workflow bevat formatter, Clippy, tests en build op alle drie platforms.
 
 ### Bewuste beperkingen
 
@@ -102,18 +102,19 @@ Bestaande paden zijn vereist; nieuw aan te maken bestanden zijn niet ondersteund
 
 ## Correctie na verplaatsen van voorbeeldtools
 
-De eigenaar heeft de drie F04-tools naar config/tools.json verplaatst en het aparte bestand verwijderd. De include_str!-verwijzingen in de configuratie- en uitvoeringstests verwezen nog naar het verwijderde bestand, waardoor CI tijdens compilatie stopte. Beide tests lezen nu de standaardconfiguratie; de uitvoeringstest voert uitsluitend de drie genoemde platformonafhankelijke voorbeeldtools uit, niet het Windows-pingvoorbeeld. Documentatie en startinstructies volgen eveneens de standaardconfiguratie. Lokale verificatie volgt hieronder; Linux/macOS opnieuw via Actions.
+Ik heb de drie F04-tools naar config/tools.json verplaatst en het aparte bestand verwijderd. De include_str!-verwijzingen in de configuratie- en uitvoeringstests verwezen nog naar het verwijderde bestand, waardoor CI tijdens compilatie stopte. Beide tests lezen nu de standaardconfiguratie; de uitvoeringstest voert uitsluitend de drie genoemde platformonafhankelijke voorbeeldtools uit, niet het Windows-pingvoorbeeld. Documentatie en startinstructies volgen eveneens de standaardconfiguratie. Lokale verificatie volgt hieronder; Linux/macOS opnieuw via Actions.
 
 Verificatie van de correctie op Windows: cargo fmt toegepast en cargo fmt --check geslaagd; cargo clippy --all-targets --locked -- -D warnings geslaagd; cargo test --locked: 138 passed, 0 failed, 5 ignored, suite 2,25 s. Geen commit of push uitgevoerd.
 
 ## CI-overdracht — 2026-11-04, commit 2d02834
 
-De eigenaar leverde screenshots aan: Ubuntu geslaagd in 41 s en Windows in 1 m 30 s. macOS eindigde na 15 m 2 s zonder dat een hosted runner de job had opgepakt. Annotations: Internal server error; The job was not acquired by Runner of type hosted even after multiple attempts. Notices melden capaciteitstekort bij macOS arm64-runners. Er is geen macOS-test uitgevoerd en geen codefout aangetoond. Exact runnummer/URL en testtotalen zijn niet zichtbaar.
+De vastgelegde screenshots tonen: Ubuntu geslaagd in 41 s en Windows in 1 m 30 s. macOS eindigde na 15 m 2 s zonder dat een hosted runner de job had opgepakt. Annotations: Internal server error; The job was not acquired by Runner of type hosted even after multiple attempts. Notices melden capaciteitstekort bij macOS arm64-runners. Er is geen macOS-test uitgevoerd en geen codefout aangetoond. Exact runnummer/URL en testtotalen zijn niet zichtbaar.
 
-De assistent controleerde branch feature/F04-parameters en HEAD 2d02834 lokaal. De werkmap was schoon. Testverwijzingen gebruiken config/tools.json en de workflow bevat Ubuntu/Windows/macOS met formatter, Clippy, tests en build. Geen broncode gewijzigd of tests herhaald tijdens deze documentatieoverdracht. De groene Ubuntu-job levert F04-bewijs voor de Unix-symlinktest; macOS-verificatie ontbreekt nog.
+Bij de historische controle waren branch feature/F04-parameters en HEAD 2d02834 vastgelegd. De werkmap was schoon. Testverwijzingen gebruiken config/tools.json en de workflow bevat Ubuntu/Windows/macOS met formatter, Clippy, tests en build. Geen broncode gewijzigd of tests herhaald tijdens deze documentatieoverdracht. De groene Ubuntu-job levert F04-bewijs voor de Unix-symlinktest; macOS-verificatie ontbreekt nog.
 
-Plan voor 2026-11-05: Re-run failed jobs, macOS-resultaat beoordelen. Bij groen bewijs en checklist actualiseren, PR-review en merge naar develop. Bij opnieuw geen runner: later herstarten; geen broncodecorrectie zonder concrete code-/testfout. Geen commit/push/merge namens de eigenaar uitgevoerd.
+Plan voor 2026-11-05: Re-run failed jobs, macOS-resultaat beoordelen. Bij groen bewijs en checklist actualiseren, PR-review en merge naar develop. Bij opnieuw geen runner: later herstarten; geen broncodecorrectie zonder concrete code-/testfout. Geen commit/push/merge uitgevoerd bij deze documentatie-update.
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+

@@ -18,7 +18,7 @@ Historisch bewijs vóór F04: 2026-11-03. De laatste geverifieerde Windows-suite
 
 Dezelfde volledige suite draait nu ook op macos-latest in GitHub Actions. De bestaande procesboom- en TCP-scenario’s gebruiken daar de nieuwe proc_pidinfo-controle. Toegevoegd zijn drie pure classificatietests (actief/zombie, verdwenen PID en echte fouten), een macOS-only levenscyclustest, validatie van tools.macos.json op alle platforms en een macOS-only uitvoering van echo_ready uit dat bestand. De overige voorbeeldtools zijn niet afzonderlijk getest.
 
-De eigenaar laat Clippy, tests en build via Actions uitvoeren. Deze wijziging heeft lokaal alleen formatterings- en manifestcontrole gehad. De aangeleverde screenshot bevestigt nu alle drie jobs: macOS 56 s, Ubuntu 44 s en Windows 1 m 54 s. Daarmee zijn de F07-platformcriteria aangetoond; review/merge blijft open. Het eerdere bewijs voor 105e69b geldt uitsluitend voor de refactor vóór F07.
+Ik laat Clippy, tests en build via Actions uitvoeren. Deze wijziging heeft lokaal alleen formatterings- en manifestcontrole gehad. De aangeleverde screenshot bevestigt nu alle drie jobs: macOS 56 s, Ubuntu 44 s en Windows 1 m 54 s. Daarmee zijn de F07-platformcriteria aangetoond; review/merge blijft open. Het eerdere bewijs voor 105e69b geldt uitsluitend voor de refactor vóór F07.
 
 ## Testindeling
 
@@ -58,7 +58,7 @@ CI-bewijs refactor: aangeleverde screenshot voor 105e69b op refactor/na-feature-
 
 ## Historische F04-tussenstand — 2026-11-04
 
-De eigenaar meldt lokale controles op Windows geslaagd: config::tests::, validation::tests::, execution::tests::, controllers::execution_controller::tests:: en routes::tests::. De volledige suite is tijdens de implementatie herhaald geslaagd gemeld. Eén tussenstand telde 107 tests; geen actueel eindtotaal aangeleverd. Na de laatste drie dynamische routetests is alleen de gerichte routes-suite bevestigd. De assistent heeft geen controles uitgevoerd.
+De volgende lokale Windows-controles zijn als geslaagd vastgelegd: config::tests::, validation::tests::, execution::tests::, controllers::execution_controller::tests:: en routes::tests::. De volledige suite is tijdens de implementatie herhaald geslaagd gemeld. Eén tussenstand telde 107 tests; geen actueel eindtotaal aangeleverd. Na de laatste drie dynamische routetests is alleen de gerichte routes-suite bevestigd. Bij deze documentatie-update zijn geen controles herhaald.
 
 Nieuw bewijs omvat vereiste/optionele velden, typen, NUL/Unicode, toegestane waarden, prefixes, optionele argumentregels, canonicalisatie/roots/traversal, een echte rustc-call via service en router en bodies van exact 16 KiB en 16 KiB + 1. De routertests gebruiken geen TCP. De Unix-only symlinktest is op Windows niet uitgevoerd.
 
@@ -66,11 +66,11 @@ Resterend: HTTP-padtests, dynamische logging zonder invoerwaarden/output, ontdek
 
 ## Actuele F04-eindcontrole op Windows
 
-De assistent heeft na expliciete toestemming formatter, Clippy met -D warnings en de volledige suite uitgevoerd: 138 passed, 0 failed, 5 ignored; 2,83 s. De extra ignored helper controleert in een childproces dat quotes, Unicode, spaties en shelltekens één argument blijven. De oude test die parameters geheel verbood is verwijderd, omdat dat gedrag niet meer bij F04 hoort.
+Formatter, Clippy met -D warnings en de volledige suite zijn uitgevoerd: 138 passed, 0 failed, 5 ignored; 2,83 s. De extra ignored helper controleert in een childproces dat quotes, Unicode, spaties en shelltekens één argument blijven. De oude test die parameters geheel verbood is verwijderd, omdat dat gedrag niet meer bij F04 hoort.
 
 Ook aanwezig en geslaagd: HTTP-padscenario’s, enum/additionalProperties in toolontdekking, geïsoleerde dynamische logging, verplichte placeholderkoppeling en ontbrekende root. Alle drie F04-voorbeeldtools zijn werkelijk uitgevoerd. Oude procestests gebruiken via testadapters het actuele generieke productiepad.
 
-Nog open: Actions op Windows/Linux/macOS, met Unix-symlinktest. Windows-symlinks/junctions hebben geen afzonderlijke test. Handmatige voorbeelden zijn beschreven, niet namens de eigenaar uitgevoerd. Historische open punten hierboven zijn hiermee vervangen door deze actuele stand.
+Nog open: Actions op Windows/Linux/macOS, met Unix-symlinktest. Windows-symlinks/junctions hebben geen afzonderlijke test. Handmatige voorbeelden zijn beschreven, nog niet als uitgevoerd vastgelegd. Historische open punten hierboven zijn hiermee vervangen door deze actuele stand.
 
 ## Laatste F04-CI-bewijs
 
@@ -78,4 +78,13 @@ Screenshots voor commit 2d02834: Ubuntu Success (41 s), Windows Success (1 m 30 
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+
+
+## F05-tussenstand — 2026-11-05
+
+Gerichte Windows-controles slagen voor resultaat-/foutmapping, hosts/origins, initialisatie met sessieheader en de bodygrens 16 KiB versus 16 KiB + 1. Beide HTTP-integratiescenario's slagen na transportshutdown. Een MCP-streamtest controleert openblijven vóór tokenannulering en sluiten daarna.
+
+De echte rmcp-client ontdekt via TCP test_echo, vergelijkt metadata en schema, start de testbinary als tool, controleert extra parameters en onbekende tool en voert daarna opnieuw succesvol uit. Dit gebruikt een eigen testserver; productie-shutdown met actieve MCP-tools is nog niet aangetoond. De protocolversie van de clientketen is nog niet apart vastgelegd.
+
+mcp_wait_helper compileert na cargo check --tests --locked. De helper schrijft zijn PID en wacht maximaal 30 seconden, maar is nog niet in de protocolannuleringstest gebruikt. Volgende test: startbevestiging afwachten, expliciet MCP-annuleren, procesbeëindiging en herstel controleren. Volledige suite, formatter, Clippy, platform-CI, uitgebreidere protocolnegatieve tests en dynamische REST/MCP-consistentie blijven open. Historische aantallen zijn geen volledig testtotaal van deze eindstand. Zie de F05-notitie.

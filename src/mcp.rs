@@ -49,15 +49,30 @@ impl rmcp::ServerHandler for McpServer {
     async fn call_tool(
         &self,
         request: rmcp::model::CallToolRequestParams,
-        _context: rmcp::service::RequestContext<rmcp::RoleServer>,
+        context: rmcp::service::RequestContext<rmcp::RoleServer>,
     ) -> Result<rmcp::model::CallToolResponse, rmcp::ErrorData> {
         let arguments = request.arguments.unwrap_or_default();
+        let (cancel_sender, cancel_receiver) = tokio::sync::oneshot::channel();
 
-        let result = self
+        let execution = self
             .state
             .execution
-            .execute_with_parameters(&self.state.registry, request.name.as_ref(), &arguments)
-            .await;
+            .execute_with_parameters_with_cancellation(
+                &self.state.registry,
+                request.name.as_ref(),
+                &arguments,
+                cancel_receiver,
+            );
+
+        tokio::pin!(execution);
+
+        let result = tokio::select! {
+            result = &mut execution => result,
+            () = context.ct.cancelled() => {
+                let _ = cancel_sender.send(());
+                execution.await
+            }
+        };
 
         let response = match result {
             Ok(result) => execution_result(result),
@@ -136,6 +151,7 @@ fn execution_error(
 
 pub fn service(
     state: AppState,
+    shutdown: tokio_util::sync::CancellationToken,
 ) -> rmcp::transport::streamable_http_server::tower::StreamableHttpService<
     McpServer,
     rmcp::transport::streamable_http_server::session::local::LocalSessionManager,
@@ -143,19 +159,17 @@ pub fn service(
     use std::sync::Arc;
 
     use rmcp::transport::streamable_http_server::{
-        session::local::LocalSessionManager,
-        tower::StreamableHttpService,
+        session::local::LocalSessionManager, tower::StreamableHttpService,
     };
 
     StreamableHttpService::new(
         move || Ok(McpServer::new(state.clone())),
         Arc::new(LocalSessionManager::default()),
-        transport_config(),
+        transport_config().with_cancellation_token(shutdown),
     )
 }
 
-fn transport_config()
--> rmcp::transport::streamable_http_server::StreamableHttpServerConfig {
+fn transport_config() -> rmcp::transport::streamable_http_server::StreamableHttpServerConfig {
     use rmcp::transport::streamable_http_server::StreamableHttpServerConfig;
 
     let mut config = StreamableHttpServerConfig::default()

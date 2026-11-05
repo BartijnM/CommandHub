@@ -181,7 +181,7 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 
 ## Vervolg
 
-Commit en push de documentatie-update, controleer de laatste CI en bevestig daarna review en merge naar develop; de gebruikersmelding dat F03 af is, is geen afzonderlijk gecontroleerd mergebewijs. Daarna volgt F04. De assistent voert geen Git-commando’s uit.
+Commit en push de documentatie-update, controleer de laatste CI en bevestig daarna review en merge naar develop; de gebruikersmelding dat F03 af is, is geen afzonderlijk gecontroleerd mergebewijs. Daarna volgt F04. Git-acties voer ik afzonderlijk zelf uit.
 
 ### 2026-11-03 — Review en opruiming na F03
 
@@ -214,4 +214,5 @@ De aangeleverde screenshot toont een geslaagde push-run voor commit `105e69b` op
 
 ### 2026-11-03 — Overdracht naar F07
 
-De eigenaar is na de refactor terug op develop gegaan en heeft daarna feature/macos-ondersteuning aangemaakt. De volgende actieve uitbreiding is [F07](F07-macos-ondersteuning.md), vóór F04. Die gebruikt dezelfde Unix-executor; macOS-verificatie moet nog via Actions gebeuren. De eerdere CI-resultaten in deze notitie blijven historie van F03/de refactor.
+Ik ben na de refactor terug op develop gegaan en heb daarna feature/macos-ondersteuning aangemaakt. De volgende actieve uitbreiding is [F07](F07-macos-ondersteuning.md), vóór F04. Die gebruikt dezelfde Unix-executor; macOS-verificatie moet nog via Actions gebeuren. De eerdere CI-resultaten in deze notitie blijven historie van F03/de refactor.
+

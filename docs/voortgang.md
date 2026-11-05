@@ -1,31 +1,33 @@
 # Huidige voortgang
 
-Bijgewerkt: 2026-11-05.
+Bijgewerkt: 2026-11-05, einde werksessie.
 
 ## Actief
 
-[F05 — MCP-integratie](features/F05-mcp-integratie.md) is in uitvoering op opdracht van de eigenaar. De eigenaar voert code zelf in en voert de controles uit; de assistent geeft kleine fragmenten met uitleg. Alleen expliciet gevraagde wijzigingen worden door de assistent gemaakt. Geen Git-commando's uitvoeren.
-
-De vorige overdracht vermeldde F04 op Review met geslaagde lokale controles en drieplatform-CI; PR-review/merge is in deze sessie niet bevestigd. De start van F05 is geen mergebewijs voor F04.
+[F05 — MCP-integratie](features/F05-mcp-integratie.md) is in uitvoering. Ik bouw en controleer de feature in kleine stappen. De vorige overdracht vermeldde F04 op Review met geslaagde lokale controles en drieplatform-CI; merge is in deze werksessie niet afzonderlijk bevestigd.
 
 ## Aanwezig
 
-De bestaande dynamische REST-uitvoering deelt registry en ExecutionService met de nieuwe MCP-adapter. Schemaopbouw staat in registry::input_schema en wordt door REST en MCP gebruikt. McpServer biedt get_info, list_tools en call_tool; toolcalls gebruiken execute_with_parameters. Procesresultaten en veilige kernfouten worden naar MCP-responses vertaald.
+/mcp biedt Streamable HTTP via rmcp 3.6.0 naast REST. Beide adapters delen registry, inputschemaopbouw, validatie en ExecutionService. MCP vertaalt procesresultaten en kernfouten naar gestructureerde en tekstuele toolresultaten. Host/Origin-controles en een bodylimiet van 16 KiB zijn ingesteld. Legacy-sessiemodus is ingeschakeld.
 
-Streamable HTTP is aangesloten op /mcp naast de bestaande REST-routes, met rmcp exact 3.6.0. Host- en Origin-controles zijn expliciet ingesteld voor localhost/127.0.0.1 op poort 3000; requests zonder Origin zijn toegestaan. MCP-bodies zijn begrensd op 16 KiB. Legacy-sessiemodus is ingeschakeld; initialisatie met 2025-11-25 is gericht getest. tokio-util is toegevoegd ter voorbereiding van transportshutdown.
+Een CancellationToken verbindt de MCP-service met het bestaande serverafsluitpad. De MCP-requestcontext is via select! en oneshot aangesloten op execute_with_parameters_with_cancellation. Deze requestannulering compileert, maar de protocolannuleringsketen is nog niet getest.
 
 ## Verificatie
 
-Door de eigenaar op Windows teruggekoppeld: 18 REST-routetests geslaagd na schema-extractie; vervolgens 9 MCP-tests geslaagd (0 failed, 143 filtered out, 0,01 s). De MCP-tests controleren resultaat-/foutmapping en transportcontroles, inclusief geldige initialisatie met sessieheader en exacte bodygrens. cargo check is tijdens de stappen geslaagd gemeld, laatst na toevoegen tokio-util.
+Op Windows slagen de eerder uitgevoerde 18 REST-routetests en 9 MCP-mapping-/transporttests. Daarna slagen de twee bestaande HTTP-integratiescenario's na de shutdownwijziging en een nieuwe test voor het sluiten van een actieve MCP-stream na tokenannulering.
 
-Deze tests bewijzen nog geen complete MCP-toolketen. Geen volledige F05-suite, formatter, Clippy, echte client of F05-CI op drie platforms bevestigd. De assistent heeft tijdens deze werksessie geen tests uitgevoerd. Zie de [F05-notitie](../notities/F05-mcp-integratie.md) voor details.
+Een echte SDK-client ontdekt en voert via TCP een geconfigureerde testtool uit. Metadata/schema, veilige afwijzing van extra parameters, onbekende tool en een geldige vervolgaanroep zijn gecontroleerd. De ketentest gebruikt een testbinary als tool en een eigen Axum-server op een vrije loopbackpoort. Hij bewijst nog niet het productieafsluitpad met actieve MCP-tools.
 
-Historisch F04-bewijs: lokaal 138 tests geslaagd met 5 proceshelpers; CI-run #39 voor 1fb8d71 geslaagd op Windows, Ubuntu en macOS. Dit geldt niet als verificatie van F05.
+Laatste controle: cargo check --tests --locked geslaagd na toevoegen mcp_wait_helper. Deze helper is alleen gecompileerd. Geen volledige suite, formatter, Clippy of platform-CI voor de huidige eindstand bevestigd. Details en historische testtotalen staan in de [F05-notitie](../notities/F05-mcp-integratie.md).
 
 ## Grenzen
 
-MCP-transportshutdown en requestannulering zijn nog niet gekoppeld. Nieuwe protocolversies zijn niet end-to-end getest. Alleen lokale binding; geen remote deployment of authenticatie toegevoegd. De bestaande grenzen rond padcanonicalisatie, toolspecifieke argumentbeoordeling en ontbreken van een sandbox blijven gelden.
+Protocolannulering, procesopruiming/capaciteitsherstel via MCP, dynamische MCP-parameters, gedeelde REST/MCP-belasting en productie-shutdown met een actieve MCP-call vragen nog bewijs. De onderhandelde protocolversie van de SDK-ketentest is nog niet expliciet vastgelegd. Geen remote deployment, authenticatie of sandbox toegevoegd.
+
+## Exact stoppunt
+
+src/tests/mcp_tests.rs bevat nu mcp_wait_helper: een ignored proceshelper die zijn PID schrijft naar het opgegeven commandhub-mcp-pid-file= pad en maximaal 30 seconden wacht. De bijbehorende annuleringstest is nog niet geschreven.
 
 ## Volgende stap
 
-CancellationToken aansluiten op MCP-service en bestaand serverafsluitpad; gericht controleren dat sessies/streams stoppen. Daarna MCP-annulering, echte toolketen, REST/MCP-consistentie en protocolfouten testen. Vervolgens echte MCP-client, volledige controles en platform-CI. F05 blijft in uitvoering. Deze tussentijdse update wijzigde alleen documentatie; geen Git-acties uitgevoerd.
+Schrijf de protocolannuleringstest: start de helper via een MCP-toolcall, wacht begrensd op een geldig PID-bestand, stuur een expliciet annuleringsbericht via de SDK-client en controleer procesbeëindiging met process_checks::assert_stopped. Controleer vooraf het SDK-gedrag bij annulering. Daarna resterende keten-/grenstests, volledige eindcontroles en CI. Geen Git-status, commit, push of merge geverifieerd tijdens deze documentatie-update.

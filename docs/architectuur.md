@@ -72,4 +72,13 @@ ParameterDefinition bevat optionele allowed_values en allowed_roots. De command-
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+
+
+## F05-tussenstand — 2026-11-05
+
+De MCP-adapter deelt AppState, registry, input_schema en annuleerbare ExecutionService met REST. list_tools biedt de configuratie dynamisch aan; call_tool gebruikt de bestaande validatie en executor. Er is geen tweede executor per sessie.
+
+router_with_shutdown geeft een CancellationToken aan de MCP-service. server::serve signaleert execution.begin_shutdown en annuleert het transporttoken; na Axum wordt execution.shutdown afgewacht. Requestannulering vertaalt context.ct via select! naar het bestaande oneshot-kanaal. Deze koppeling compileert; protocolannulering met processtatusbewijs is nog niet getest.
+
+De SDK-clientketentest gebruikt een eigen Axum-server op een vrije loopbackpoort. Ontdekking, schema, uitvoering en enkele foutgevallen slagen. De streamtest controleert sluiten na tokenannulering. Dit bewijst nog niet het productieafsluitpad met actieve MCP-tools. Oudere passages over ontbrekende MCP-integratie beschrijven de stand vóór F05. Zie de F05-notitie voor het exacte stoppunt.

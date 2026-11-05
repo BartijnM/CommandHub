@@ -38,7 +38,7 @@ Herhaal git_recent met elk van deze bodies. Verwacht HTTP 400 met code invalid_p
 {"count":"3","command":"other"}
 ```
 
-Dit controleert achtereenvolgens de keuzelijst, het stringtype, een verplicht veld en een onbekend veld. Voorbeeldtools en positieve uitvoering zijn lokaal automatisch getest. Deze handmatige stappen worden pas als uitgevoerd beschouwd na terugkoppeling van de eigenaar.
+Dit controleert achtereenvolgens de keuzelijst, het stringtype, een verplicht veld en een onbekend veld. Voorbeeldtools en positieve uitvoering zijn lokaal automatisch getest. Deze handmatige stappen worden pas als uitgevoerd beschouwd nadat ik ze daadwerkelijk heb uitgevoerd en het resultaat heb vastgelegd.
 
 ## Padbeleid handmatig proberen
 

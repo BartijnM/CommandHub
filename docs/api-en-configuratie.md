@@ -116,4 +116,11 @@ GET /tools toont type, required, enum voor allowed_values en additionalPropertie
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+
+
+## F05-tussenstand — 2026-11-05
+
+De /mcp-route gebruikt rmcp 3.6.0 Streamable HTTP. tools/list publiceert dezelfde naam, beschrijving en inputSchema als REST. tools/call voert via de gedeelde kern uit. Resultaten bevatten success, stdout, stderr, exitCode en duration in structuredContent en dezelfde gegevens als JSON-tekst. Niet-succesvolle exit geeft isError: true. UnknownTool wordt METHOD_NOT_FOUND; overige kernfouten geven veilige toolresultaten met isError: true en code/message.
+
+Host/Origin en de bodylimiet van 16 KiB zijn expliciet ingesteld. legacy_session_mode is true; 2025-11-25-initialisatie met sessieheader is getest. De SDK-clientketentest gebruikt standaardonderhandeling; de gekozen versie is nog niet apart vastgelegd. Het definitieve protocol-/annuleringscontract en volledige REST/MCP-consistentie zijn nog in verificatie. Zie de F05-notitie.

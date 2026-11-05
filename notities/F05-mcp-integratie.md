@@ -11,52 +11,63 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-F05 voegt een MCP-adapter toe aan de bestaande CommandHub-kern. De implementatie is in uitvoering: /mcp is aangesloten, maar volledige toolinteractie met een echte MCP-client is nog niet gecontroleerd. REST en MCP delen registry, schemaopbouw en uitvoeringsservice.
+Ik voeg een MCP-adapter toe waarmee clients de geconfigureerde tools via Streamable HTTP kunnen ontdekken en uitvoeren. REST en MCP gebruiken dezelfde registry, inputschema's, parametervalidatie en uitvoeringsservice. F05 is in uitvoering; de annuleringsketen en eindcontroles zijn nog niet afgerond.
 
 ## Hoe werkt de code?
 
-- src/registry.rs bevat input_schema(&ToolDefinition), gebruikt door zowel de REST-ontdekcontroller als MCP. Het schema bevat properties, required, enum waar ingesteld en additionalProperties: false.
-- src/mcp.rs bevat McpServer met gedeelde AppState. Clone kopieert de Arc-verwijzingen; er ontstaat geen afzonderlijke executor per MCP-handler of sessie.
-- get_info gebruikt ServerConfig en kondigt toolondersteuning aan. list_tools vertaalt de volledige registry naar SDK-tools zonder paginering.
-- call_tool behandelt ontbrekende arguments als een leeg object en roept execute_with_parameters aan. De bestaande kern blijft verantwoordelijk voor parameter- en padvalidatie, argumentopbouw, capaciteit en procesbeheer.
-- execution_result levert stdout, stderr, exitCode, success en duration in milliseconden als structuredContent en als JSON-tekst. Niet-succesvolle procesexit geeft isError: true.
-- execution_error vertaalt UnknownTool naar een protocolfout met METHOD_NOT_FOUND. Overige kernfouten worden toolresultaten met isError: true en vaste foutcodes/teksten; interne OS-details worden niet gepubliceerd.
-- routes.rs koppelt de StreamableHttpService aan /mcp, naast de bestaande REST-routes. De listener blijft 127.0.0.1:3000.
-- src/tests/mcp_tests.rs is via cfg(test), path en mod tests gekoppeld aan mcp.rs, zonder extra modulewrapper.
+- src/registry.rs bevat input_schema(&ToolDefinition). REST en MCP gebruiken dezelfde schemaopbouw met properties, required, enum en additionalProperties: false.
+- src/mcp.rs bevat McpServer met AppState. Clone deelt de bestaande Arc-verwijzingen; er ontstaat geen executor per sessie. get_info gebruikt ServerConfig en kondigt tools aan. list_tools levert de volledige registry zonder vervolgpagina.
+- call_tool gebruikt execute_with_parameters_with_cancellation. Ontbrekende arguments worden een leeg object. De gedeelde kern controleert parameters en paden en bewaakt capaciteit, output, timeout en procesbeheer.
+- context.ct is het SDK-annuleringssignaal. tokio::select! wacht op uitvoering of annulering. Bij annulering wordt een oneshot-bericht naar de kern gestuurd en de uitvoering afgewacht. De code compileert; het gedrag bij een echte protocolannulering is nog niet getest.
+- execution_result levert success, stdout, stderr, exitCode en duration in milliseconden als structuredContent en als JSON-tekst. Een niet-succesvolle procesexit geeft isError: true.
+- execution_error vertaalt een onbekende tool naar METHOD_NOT_FOUND. Andere kernfouten worden veilige toolresultaten met isError: true; interne OS-details blijven buiten de response.
+- routes.rs bevat router_with_shutdown en koppelt de service aan /mcp. De bestaande router maakt voor routetests een eigen token.
+- server.rs maakt het transporttoken en geeft een kloon aan de router. Het afsluitsignaal start eerst de shutdown van de uitvoeringsservice en annuleert daarna het MCP-token. Ook na terugkeer van Axum wordt het token geannuleerd en execution.shutdown afgewacht.
 
-Rust: Result en ? geven protocolfouten door; match onderscheidt kernresultaten en foutvarianten. into() vertaalt CallToolResult naar CallToolResponse. De servicefactory gebruikt move om AppState te bewaren en clone om gedeelde state aan handlers te geven.
+Rust: Arc-klonen delen gegevens; move bewaart state in de servicefactory. Result en ? geven protocolfouten door. into() vertaalt een toolresultaat naar CallToolResponse. tokio::pin! laat dezelfde uitvoeringsfuture door select! en de aansluitende afhandeling gebruiken. CancellationToken is een gedeeld stopsignaal; oneshot blijft het transportonafhankelijke annuleringsmechanisme in de kern.
 
 ## Keuzes en grenzen
 
-- rmcp is exact vastgezet op 3.6.0 met server en transport-streamable-http-server. Dit is het uitgangspunt uit F00; het definitieve protocol-/clientcontract is nog niet afgerond.
-- Native clients zonder Origin zijn toegestaan. Aanwezige origins zijn beperkt tot http://127.0.0.1:3000 en http://localhost:3000. Hosts zijn beperkt tot 127.0.0.1:3000 en localhost:3000. Browserclients op andere poorten zijn daarmee niet toegestaan.
-- De SDK begrenst de MCP-requestbody op 16 KiB tijdens het lezen.
-- legacy_session_mode is true. Initialisatie met protocol 2025-11-25 levert in de gerapporteerde tests een sessieheader op. Volgens de geïnspecteerde SDK-bron gebruikt protocol 2026-07-28 geen protocolsessies; deze nieuwere keten is nog niet getest.
-- tokio-util 0.7 met rt is toegevoegd voor CancellationToken. Het token is nog niet gekoppeld aan de service en het serverafsluitpad.
-- MCP-requestannulering is nog niet aan de bestaande annuleerbare uitvoeringsmethode gekoppeld. Clientdisconnectbeleid is nog niet vastgesteld.
+- rmcp staat exact op 3.6.0. De normale dependencies activeren server en transport-streamable-http-server. De dev-dependency voegt client en transport-streamable-http-client-reqwest toe. tokio-util 0.7 met rt levert CancellationToken.
+- De productielistener blijft 127.0.0.1:3000. Host is beperkt tot 127.0.0.1:3000 en localhost:3000. Aanwezige origins moeten overeenkomen met http://127.0.0.1:3000 of http://localhost:3000. Requests zonder Origin zijn toegestaan. Geen remote deployment of authenticatie toegevoegd.
+- De MCP-bodylimiet is 16 KiB en wordt door de SDK tijdens lezen afgedwongen.
+- legacy_session_mode is true. Routertests initialiseren expliciet met protocol 2025-11-25 en controleren de sessieheader. De SDK behandelt 2026-07-28 zonder protocolsessies. De TCP-ketentest gebruikt standaard SDK-onderhandeling; de werkelijk gekozen protocolversie is niet afzonderlijk vastgelegd en wordt niet afgeleid uit de oudere tests.
+- De TCP-ketentest bindt aan een vrije loopbackpoort en past alleen in de test de Host-allowlist aan. Hij gebruikt een eigen Axum-testserver, niet server::serve. Dit is dus geen bewijs voor het volledige productieafsluitpad met een actieve MCP-call.
+- Clientdisconnectbeleid, volledige protocolfoutmatrix, gedeelde REST/MCP-belasting en dynamische MCP-parameters vragen nog verificatie. De bestaande grenzen rond padcanonicalisatie en het ontbreken van een sandbox blijven gelden.
 
 ## Problemen en oplossingen
 
-ServerInfo bleek een non_exhaustive structalias: een structliteral werd afgewezen. Een instantie wordt nu via default gemaakt en daarna ingesteld. Vervolgens meldde de editor dat ServerInfo verouderd is; de code gebruikt nu ServerConfig.
+Een structliteral met ServerInfo werd afgewezen vanwege non_exhaustive. De instantie wordt nu via default gemaakt en daarna ingesteld. ServerInfo bleek ook een verouderde alias; ik gebruik ServerConfig.
 
-## Verificatie — Windows, door eigenaar teruggekoppeld
+## Verificatie — Windows, 2026-11-05
 
-De assistent heeft bronbestanden gelezen, maar in deze werksessie geen builds of tests uitgevoerd. Onderstaande resultaten komen uit de terugkoppeling van de eigenaar.
+Ik voer na kleine implementatiestappen gerichte controles uit. Onderstaande resultaten zijn tijdens de werksessie vastgelegd; er is bij deze documentatie-update geen nieuwe controle uitgevoerd.
 
-| Controle | Resultaat en grens |
+| Controle | Vastgelegd resultaat |
 | --- | --- |
-| cargo test --locked routes::tests:: na gedeelde schemaopbouw | 18 passed, 0 failed, 125 filtered out; 0,79 s |
-| cargo check / cargo check --locked tijdens stappen | Geslaagd gemeld, laatst ook na toevoegen tokio-util |
-| cargo test --locked mcp::tests:: | Laatste run: 9 passed, 0 failed, 0 ignored, 143 filtered out; 0,01 s |
+| cargo test --locked routes::tests:: na schema-extractie | 18 passed, 0 failed, 125 filtered out; 0,79 s |
+| cargo check en cargo check --locked tijdens de implementatie | Geslaagd; na dependencywijzigingen zonder --locked om de lockfile bij te werken |
+| cargo test --locked mcp::tests:: vóór uitbreiding van de ketentests | 9 passed, 0 failed, 143 filtered out; 0,01 s |
+| cargo test --locked http_execution_tests:: na shutdownkoppeling | Beide scenario's geslaagd: concurrentielimiet/capaciteitsherstel en shutdown van een actieve HTTP-procesboom; twee functies zijn expliciete proceshelpers |
+| cargo test --locked mcp::tests::transport_cancellation_closes_active_mcp_stream | 1 passed, 0 failed, 152 filtered out; 0,06 s |
+| cargo test --locked mcp::tests::mcp_client_discovers_and_executes_configured_tool | Eerste run: 1 passed, 0 failed, 154 filtered out; 0,15 s. Na uitbreiding met extra parameters, onbekende tool en geldige vervolgaanroep opnieuw geslaagd |
+| cargo check --tests na clientdependency | Geslaagd |
+| cargo check --tests --locked na mcp_wait_helper | Geslaagd; dit compileert de helper maar voert hem niet uit |
 
-De negen MCP-tests controleren resultaatvelden en tekst/structuredContent, niet-nul exit, ontbrekende exitcode, onbekende tool, alle kernfoutvarianten met veilige OS-foutafhandeling, afgewezen hosts/origins, toegestane hosts/origins, sessieheader na initialisatie en de bodygrens van precies 16 KiB tegenover 16 KiB + 1. De transporttests lopen door de router met oneshot; ze openen geen TCP-poort en starten geen toolprocessen.
+De mappingtests controleren resultaatvelden, tekst/structuredContent, niet-nul exit, ontbrekende exitcode en veilige foutmapping. Routertests controleren afgewezen/toegestane hosts en origins, initialisatie met sessieheader en de grens 16 KiB versus 16 KiB + 1. De streamtest bewijst dat een open legacy-MCP-stream sluit na tokenannulering.
 
-Niet geverifieerd voor F05: volledige testsuite, formatter, Clippy, build-/testmatrix op Linux/macOS, echte MCP-client, tools/list en tools/call end-to-end, gedeelde capaciteit onder REST/MCP-belasting, MCP-annulering en transportshutdown. Eerdere F04-CI is geen bewijs voor F05.
+De echte SDK-client ontdekt via TCP test_echo, vergelijkt metadata en inputschema, voert de testbinary als childproces uit, ontvangt een toolfout bij extra parameters en een fout bij een onbekende tool en kan daarna opnieuw succesvol aanroepen. Hierbij wordt geen Git-proces gestart.
+
+Nog niet uitgevoerd voor de huidige F05-stand: volledige suite, cargo fmt --check, Clippy met -D warnings, platform-CI, zelfstandige Inspector-controle, protocolannulering met PID-bewijs en een MCP-procesboom tijdens het productieafsluitpad. Er is geen nieuw volledig testtotaal vastgesteld.
 
 ## Werksessie — 2026-11-05
 
-De eigenaar voerde code zelf in op basis van kleine fragmenten en voerde gerichte controles uit. Tests werden per samenhangende stap gebundeld. Alleen op expliciet verzoek is deze tussentijdse documentatie door de assistent bijgewerkt. Geen broncode aangepast en geen Git-commando's uitgevoerd bij deze documentatie-update. Branchnaam is de geplande naam; actuele Git-status en merge zijn niet gecontroleerd.
+Ik werk in kleine stappen: één codefragment met uitleg, daarna de gerichte controle. Samenhangende testcode kan in één keer worden toegevoegd. De volgende stap begint pas na een geslaagde controle. Documentatie werk ik op afzonderlijke momenten bij; de centrale checklist staat in het featureplan. Git-acties voer ik zelf uit; deze update bevat geen nieuwe commit- of CI-verificatie.
 
-## Vervolg
+## Stoppunt en vervolg
 
-Eerst CancellationToken aan MCP-service en serverafsluitpad koppelen en gericht testen. Daarna MCP-annulering, toolontdekking/uitvoering, REST/MCP-consistentie en protocolnegatieve tests uitwerken, gevolgd door een echte MCP-client en eindcontroles. De centrale checklist staat uitsluitend in het featureplan.
+De functie mcp_wait_helper is toegevoegd aan src/tests/mcp_tests.rs. Deze ignored proceshelper leest een commandhub-mcp-pid-file= argument, schrijft zijn eigen PID en wacht maximaal 30 seconden. Alleen de compilatie is gecontroleerd; de helper is nog niet in een test gestart.
+
+Eerstvolgende stap: een SDK-client een langlopende toolcall laten starten, wachten op een geldig PID-bestand, expliciet het MCP-annuleringsbericht sturen en met de bestaande process_checks::assert_stopped controleren dat het proces stopt. Controleer ook herstel/bruikbaarheid na annulering. Inspecteer vooraf hoe de SDK bij annulering de handlerfuture behandelt: de gecompileerde koppeling alleen bewijst nog geen afgewachte opruiming. Gebruik unieke tijdelijke bestanden en begrensde wachttijden.
+
+Daarna de resterende transport-/protocol-, dynamische parameter-, REST/MCP-consistentie-, capaciteits- en shutdowntests uitwerken, gevolgd door eindcontroles en platform-CI. F05 blijft in uitvoering.

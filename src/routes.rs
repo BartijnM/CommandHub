@@ -10,8 +10,15 @@ use crate::controllers::{
 
 // Bouw de HTTP-routes met gedeelde applicatiestate.
 pub fn router(state: crate::app_state::AppState) -> Router {
+    router_with_shutdown(state, tokio_util::sync::CancellationToken::new())
+}
+
+pub fn router_with_shutdown(
+    state: crate::app_state::AppState,
+    shutdown: tokio_util::sync::CancellationToken,
+) -> Router {
     Router::new()
-        .route_service("/mcp", crate::mcp::service(state.clone()))
+        .route_service("/mcp", crate::mcp::service(state.clone(), shutdown))
         .route("/status", get(status))
         .route("/tools", get(list_tools))
         .route(

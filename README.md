@@ -4,11 +4,11 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-Actief is [F04 — Dynamische parameters en padbeleid](docs/features/F04-parameters.md). POST /tools/{toolname} gebruikt nu gedeelde parametervalidatie en argumentopbouw; parameterloze tools blijven met {} werken. Lokale Windows-eindcontroles zijn geslaagd: formatter, Clippy en 138 tests (5 expliciete proceshelpers). HTTP-padvalidatie, veilige dynamische logging en het ontdekschema zijn getest. F04 staat op Review: CI is geslaagd op alle drie platforms voor 1fb8d71; alleen PR-review/merge blijft open. Zie [voortgang](docs/voortgang.md) en de [F04-notitie](notities/F04-parameters.md).
+Actief is [F05 — MCP-integratie](docs/features/F05-mcp-integratie.md). Streamable HTTP op `/mcp` deelt registry, inputschemaopbouw en uitvoering met REST. Een echte SDK-client ontdekt en voert een geconfigureerde testtool via TCP uit. Foutmapping, Host/Origin, bodygrenzen en streamannulering zijn gericht getest op Windows.
 
-De macOS-uitbreiding F07 voegde platformcontroles, een voorbeeldconfiguratie en macOS-CI toe. De eerdere groene CI op drie platforms geldt voor F07, niet als bewijs voor de huidige F04-wijzigingen. MCP-integratie volgt in F05.
+F05 is in uitvoering. Requestannulering is aangesloten, maar de protocoltest met PID-bewijs moet nog worden geschreven. De helper `mcp_wait_helper` is toegevoegd en compileert. Volledige formatter-/lint-/testcontroles, productie-shutdown met actieve MCP-tools en F05-CI zijn nog niet bevestigd. Zie [voortgang](docs/voortgang.md) en de [F05-notitie](notities/F05-mcp-integratie.md).
 
-Nieuwe dynamische tools staan in [config/tools.json](config/tools.json). Zie [de F04-testhandleiding](docs/F04-handmatig-testen.md) voor starten, aanroepen en foutgevallen.
+De vorige F04-stand heeft geslaagde lokale controles en drieplatform-CI. Dit geldt niet als bewijs voor F05; review/merge is tijdens deze werksessie niet afzonderlijk bevestigd. De voorbeeldtools staan in [config/tools.json](config/tools.json); zie de [F04-testhandleiding](docs/F04-handmatig-testen.md).
 
 ## Installeren en gebruiken
 
@@ -102,4 +102,6 @@ Commit `Cargo.lock` na de eerste build. Dit is een applicatie, dus de lockfile h
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+
+
