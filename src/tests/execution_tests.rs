@@ -950,6 +950,10 @@ fn writes_output_above_limit() {
         .lock()
         .write_all(&bytes)
         .expect("de testuitvoer moet geschreven worden");
+
+    loop {
+        std::thread::sleep(std::time::Duration::from_secs(1));
+    }
 }
 
 #[tokio::test]
