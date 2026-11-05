@@ -70,3 +70,26 @@ Stop de server. In de terminal waarin de configuratievariabele is ingesteld:
 Remove-Item Env:COMMANDHUB_CONFIG
 cargo run --locked
 ```
+```json
+    {
+      "name": "list_directory",
+      "description": "Toon bestanden en mappen binnen de CommandHub-projectmap",
+      "command": "powershell.exe",
+      "arguments": [
+        "-NoProfile",
+        "-NonInteractive",
+        "-File",
+        "C:/xampp/htdocs/Educom/Cases/CommandHub/scripts/list-directory.ps1",
+        "{path}"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true,
+          "allowed_roots": ["C:/xampp/htdocs/Educom/Cases/CommandHub"]
+        }
+      ],
+      "timeout": 10000
+    }
+```
