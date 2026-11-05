@@ -11,6 +11,7 @@ use crate::controllers::{
 // Bouw de HTTP-routes met gedeelde applicatiestate.
 pub fn router(state: crate::app_state::AppState) -> Router {
     Router::new()
+        .route_service("/mcp", crate::mcp::service(state.clone()))
         .route("/status", get(status))
         .route("/tools", get(list_tools))
         .route(

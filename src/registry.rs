@@ -23,3 +23,40 @@ impl ToolRegistry {
         self.tools.iter().find(|tool| tool.name == name)
     }
 }
+
+pub fn input_schema(tool: &ToolDefinition) -> serde_json::Value {
+    use crate::config::ParameterType;
+    use serde_json::{Map, Value, json};
+
+    let properties = tool
+        .parameters
+        .iter()
+        .map(|parameter| {
+            let parameter_type = match &parameter.kind {
+                ParameterType::String => "string",
+            };
+
+            let mut schema = json!({ "type": parameter_type });
+
+            if let Some(allowed_values) = &parameter.allowed_values {
+                schema["enum"] = json!(allowed_values);
+            }
+
+            (parameter.name.clone(), schema)
+        })
+        .collect::<Map<String, Value>>();
+
+    let required = tool
+        .parameters
+        .iter()
+        .filter(|parameter| parameter.required)
+        .map(|parameter| parameter.name.clone())
+        .collect::<Vec<_>>();
+
+    json!({
+        "type": "object",
+        "additionalProperties": false,
+        "properties": properties,
+        "required": required
+    })
+}

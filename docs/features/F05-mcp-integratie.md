@@ -1,7 +1,7 @@
 ---
 id: F05
 prioriteit: Must
-status: Backlog
+status: In uitvoering
 milestone: "MCP-keten"
 ---
 
@@ -28,7 +28,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [ ] SDK en gekozen transport integreren.
 - [ ] Registry vertalen naar MCP-tools en inputschema's.
 - [ ] Toolcalls via dezelfde toolservice als REST uitvoeren.
-- [ ] Kernfouten en procesresultaten naar MCP-resultaten vertalen.
+- [x] Kernfouten en procesresultaten naar MCP-resultaten vertalen.
 - [ ] Toepasselijke transportbeveiliging en sessiegedrag implementeren.
 - [ ] Met echte MCP-client en ongeldige protocolrequests testen.
 
@@ -44,7 +44,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - GitHub issue: nog aan te maken.
 - Branch: feature/F05-mcp-integratie.
 - Pull request: nog niet aangemaakt.
-- Tests/handmatige verificatie: nog vast te leggen.
+- Tussenstand 2026-11-05: eigenaar rapporteert 18 REST-routetests en 9 MCP-tests geslaagd op Windows; compilatie geslaagd na toevoegen tokio-util. Mapping en transportgrenzen getest; echte toolketen, annulering, transportshutdown en eindcontroles staan open. Zie de featurenotitie.
 - [Featurenotitie](../../notities/F05-mcp-integratie.md).
 
 ## Afronden
@@ -53,4 +53,9 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [ ] Documentatie en notitie bijgewerkt.
 - [ ] Voortgang bijgewerkt.
 - [ ] PR gemerged; pas daarna status Klaar.
+
+
+## Tussenstand — 2026-11-05
+
+SDK, /mcp-route, dynamische toolbeschrijvingen en gedeelde uitvoering zijn in code aanwezig. De mappingtaak is met gerichte tests gecontroleerd. Overige taken blijven open totdat ook de toolketen, sessie-/shutdown- en annuleringsgedrag en de benodigde eindcontroles zijn aangetoond. Documentatie is tussentijds bijgewerkt; definitieve afronding en acceptatiecriteria blijven open.
 
