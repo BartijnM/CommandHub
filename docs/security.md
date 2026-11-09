@@ -55,4 +55,4 @@ Protocolannulering is getest met een gestart proces en PID-bewijs. Productie-shu
 
 De shutdowntestclient gebruikt NeverRetry en schakelt sessieherinitialisatie uit. Bij de standaard herverbindingsinstellingen bleef de clientaanroep wachten na serverafsluiting. Alleen de gedocumenteerde testclientinstelling is gewijzigd.
 
-MCP-padvalidatie is via de clientketen met REST vergeleken voor toegestane en afgewezen paden. Open blijven platform-CI en expliciet beleid voor onverwacht clientdisconnect. Beheerder beheert executable, serveromgeving en padroots. De eerder vastgelegde grenzen rond canonicalisatie gelden ook voor MCP.
+MCP-padvalidatie is via de clientketen met REST vergeleken voor toegestane en afgewezen paden. Platform-CI is geslaagd in run #50. Expliciet beleid voor onverwacht clientdisconnect blijft open. Beheerder beheert executable, serveromgeving en padroots. De eerder vastgelegde grenzen rond canonicalisatie gelden ook voor MCP.

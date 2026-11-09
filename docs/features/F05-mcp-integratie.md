@@ -45,12 +45,12 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - Branch: feature/F05-mcp-integratie.
 - Pull request: nog niet aangemaakt.
 - Tussenstand 2026-11-09. Eigenaar bevestigt Windows-formatter en Clippy met -D warnings geslaagd, volledige suite 156 passed en 7 proceshelpers. SDK-client onderhandelt 2025-11-25. Annulering met PID-bewijs, productie-shutdown met MCP-procesboom, gemengde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn getest.
-- De uitgebreide SDK-ketentest vergelijkt ook padvalidatie met REST. Laatste lokale suite geeft 156 passed, 0 failed en 7 helpers in 9,77 s. Open voor afronding zijn F05-platform-CI en PR-review/merge.
+- De uitgebreide SDK-ketentest vergelijkt ook padvalidatie met REST. Laatste lokale suite geeft 156 passed, 0 failed en 7 helpers in 9,77 s. F05-platform-CI is geslaagd in run #50. Open voor afronding is PR-review/merge.
 - [Featurenotitie](../../notities/F05-mcp-integratie.md).
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd op de definitieve stand, inclusief platform-CI (lokale tussenstand groen).
+- [x] Relevante controles geslaagd, inclusief platform-CI op Ubuntu, macOS en Windows (run #50).
 - [x] Documentatie en notitie bijgewerkt tot 2026-11-09.
 - [x] Voortgang bijgewerkt tot 2026-11-09.
 - [ ] PR gemerged; pas daarna status Klaar.
@@ -58,4 +58,4 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 ## Tussenstand op 2026-11-09
 
-De implementatietaken en acceptatiecriteria zijn lokaal op Windows aangetoond, inclusief padvalidatie via een echte SDK-client en vergelijking met REST. Formatter, Clippy met -D warnings en de volledige suite zijn na de uitbreiding als geslaagd bevestigd. Status Review wacht op F05-platform-CI en PR-review/merge. De shutdownclient gebruikt expliciet NeverRetry. De algemene README bevat handmatige Inspector-controles waarvan nog geen uitvoer is aangeleverd.
+De implementatietaken en acceptatiecriteria zijn lokaal op Windows aangetoond, inclusief padvalidatie via een echte SDK-client en vergelijking met REST. Formatter, Clippy met -D warnings en de volledige suite zijn na de uitbreiding als geslaagd bevestigd. Status Review wacht op PR-review/merge. F05-platform-CI is geslaagd op alle drie platforms in run #50. De shutdownclient gebruikt expliciet NeverRetry. De algemene README bevat handmatige Inspector-controles waarvan nog geen uitvoer is aangeleverd.

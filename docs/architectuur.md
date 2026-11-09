@@ -1,6 +1,6 @@
 # Architectuur
 
-Status op 2026-11-09. REST en MCP zijn aangesloten op dezelfde registry, schemaopbouw, validatie en uitvoeringsservice. De F05-tussenstand is lokaal op Windows gecontroleerd met 156 geslaagde tests en 7 proceshelpers. MCP-padvalidatie is met REST vergeleken via een echte SDK-client. F05-platform-CI en PR-review/merge blijven open. Historische verificatie van F03/F04 staat verderop en in de featurenotities.
+Status op 2026-11-09. REST en MCP zijn aangesloten op dezelfde registry, schemaopbouw, validatie en uitvoeringsservice. De F05-tussenstand is lokaal op Windows gecontroleerd met 156 geslaagde tests en 7 proceshelpers. MCP-padvalidatie is met REST vergeleken via een echte SDK-client. F05-platform-CI is geslaagd op alle drie platforms in run #50. PR-review/merge blijft open. Historische verificatie van F03/F04 staat verderop en in de featurenotities.
 
 ## Beoogde gegevensstroom
 

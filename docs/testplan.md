@@ -99,4 +99,8 @@ De SDK-ketentest vergelijkt dynamische stringinvoer, verplichte/extra velden, ty
 
 De zeven ignored functies zijn expliciete proceshelpers. De shutdownclient gebruikt NeverRetry en heeft sessieherinitialisatie uitgeschakeld, zodat streamsluiting tijdig aan de client wordt doorgegeven.
 
-De uitgebreide SDK-ketentest controleert geldige absolute paden, canonicalisatie met .. binnen de root, paden buiten de root, relatieve paden en onoplosbare paden. MCP en REST leveren inhoudelijk gelijke resultaten en foutcodes. De gerichte ketentest slaagde in 0,61 s. F05-CI op Windows/Linux/macOS staat open. De [README](../README.md#mcp-handmatig-testen) bevat handmatige Inspector-controles. Daarvan is nog geen resultaat aangeleverd. De lokale eindcontroles zijn door de eigenaar bevestigd na de laatste codewijziging.
+De uitgebreide SDK-ketentest controleert geldige absolute paden, canonicalisatie met .. binnen de root, paden buiten de root, relatieve paden en onoplosbare paden. MCP en REST leveren inhoudelijk gelijke resultaten en foutcodes. De gerichte ketentest slaagde in 0,61 s. F05-CI op Windows, Ubuntu en macOS is geslaagd in run #50. De [README](../README.md#mcp-handmatig-testen) bevat handmatige Inspector-controles. Daarvan is nog geen resultaat aangeleverd. De lokale eindcontroles zijn door de eigenaar bevestigd na de laatste codewijziging.
+
+## Platformverificatie op 2026-11-09
+
+De eigenaar leverde een screenshot van CI-run #50 aan. De jobs Checks (ubuntu-latest), Checks (macos-latest) en Checks (windows-latest) zijn geslaagd. Op alle drie zijn cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings, cargo test --locked en cargo build --locked groen. Exacte CI-testtotalen, commit-SHA en run-URL zijn niet zichtbaar in de screenshot. De lokale testtotalen hierboven blijven afzonderlijk vastgelegd. PR-review/merge is nog open.

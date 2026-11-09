@@ -32,7 +32,7 @@ De zeven ignored functies zijn expliciete proceshelpers, waaronder mcp_echo_help
 
 De uitgebreide SDK-ketentest vergelijkt geldige absolute paden, canonicalisatie met .. binnen de root en afwijzing buiten allowed_roots, relatieve paden en onoplosbare paden met REST. De eigenaar bevestigt de lokale eindcontroles na deze uitbreiding.
 
-Volgende stap is committen door de eigenaar en F05 via GitHub Actions op Windows, Linux en macOS verifiëren. Daarna CI-bewijs vastleggen en PR-review/merge afronden. De [algemene README](../README.md#mcp-handmatig-testen) bevat Inspector-commando’s voor ontdekking, uitvoering en parameterafwijzing. Een zelfstandige Inspector-controle is nog niet bevestigd.
+CI-run #50 is geslaagd op Ubuntu, macOS en Windows. De volgende stap is deze documentatie committen en PR-review/merge afronden. De [algemene README](../README.md#mcp-handmatig-testen) bevat Inspector-commando’s voor ontdekking, uitvoering en parameterafwijzing. Een zelfstandige Inspector-controle is nog niet bevestigd.
 
 ## Aandachtspunten
 
@@ -40,4 +40,8 @@ De shutdowntestclient gebruikt NeverRetry en schakelt sessieherinitialisatie uit
 
 rmcp 3.6.0 geeft 415 bij een niet-deserialiseerbare JSON-RPC-body. Een onbekende protocolversieheader geeft 400, onvolledige Accept 406 en een onbekende sessie 404. Dit SDK-gedrag staat in het API-contract.
 
-F05-platform-CI, definitieve review en merge zijn nog open. Oud F04-CI-bewijs geldt voor F04. Expliciet beleid voor onverwacht clientdisconnect blijft open. Padcanonicalisatie en beheerdersconfiguratie hebben de eerder vastgelegde grenzen. F05 staat op Review.
+F05-platform-CI is geslaagd in run #50. Definitieve review en merge zijn nog open. Oud F04-CI-bewijs geldt voor F04. Expliciet beleid voor onverwacht clientdisconnect blijft open. Padcanonicalisatie en beheerdersconfiguratie hebben de eerder vastgelegde grenzen. F05 staat op Review.
+
+## Platformverificatie op 2026-11-09
+
+De eigenaar leverde een screenshot van CI-run #50 aan. De jobs Checks (ubuntu-latest), Checks (macos-latest) en Checks (windows-latest) zijn geslaagd. Op alle drie zijn cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings, cargo test --locked en cargo build --locked groen. Exacte CI-testtotalen, commit-SHA en run-URL zijn niet zichtbaar in de screenshot. De lokale testtotalen hierboven blijven afzonderlijk vastgelegd. PR-review/merge is nog open.
