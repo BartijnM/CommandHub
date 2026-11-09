@@ -9,7 +9,7 @@ milestone: "Platformuitbreiding"
 
 ## Doel en scope
 
-Voeg macOS toe als ondersteund platform naast Windows en Linux, op verzoek van de eigenaar vóór F04. Het ID is F07 zodat bestaande feature-ID's niet veranderen. Branch: `feature/macos-ondersteuning`. Afhankelijkheid: F03. Requirements: R14, R19 en R17 voor de gebruiksinstructies.
+Voeg macOS toe als ondersteund platform naast Windows en Linux, vóór F04 volgens mijn planning. Het ID is F07 zodat bestaande feature-ID's niet veranderen. Branch: `feature/macos-ondersteuning`. Afhankelijkheid: F03. Requirements: R14, R19 en R17 voor de gebruiksinstructies.
 
 De bestaande Unix-executor gebruikt ook op macOS procesgroepen. Deze uitbreiding voegt een macOS-processtatuscontrole voor tests, een native voorbeeldconfiguratie en een macOS-CI-job toe. Geen nieuwe HTTP-routes, dynamische parameters, MCP-integratie of andere Unix-platforms.
 
@@ -33,9 +33,10 @@ De bestaande Unix-executor gebruikt ook op macOS procesgroepen. Deze uitbreiding
 
 ## Verificatie en afronding
 
-Lokaal op Windows zijn alleen `cargo fmt --check` en `cargo metadata --locked --offline --no-deps --format-version 1` gecontroleerd. Geen tests, Clippy of build uitgevoerd: de eigenaar wil de verificatie via GitHub Actions doen. macOS is lokaal niet beschikbaar. De later aangeleverde screenshot bevestigt de CI op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). De workflow bevat formatter, Clippy, tests en build. Exacte CI-testtotalen en commit-/run-ID zijn niet zichtbaar. De platformacceptatiecriteria zijn daarmee aangetoond; PR-review/merge blijft open.
+Lokaal op Windows zijn alleen `cargo fmt --check` en `cargo metadata --locked --offline --no-deps --format-version 1` gecontroleerd. Geen tests, Clippy of build uitgevoerd: ik voer de verificatie via GitHub Actions uit. macOS is lokaal niet beschikbaar. De later aangeleverde screenshot bevestigt de CI op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). De workflow bevat formatter, Clippy, tests en build. Exacte CI-testtotalen en commit-/run-ID zijn niet zichtbaar. De platformacceptatiecriteria zijn daarmee aangetoond; PR-review/merge blijft open.
 
 - [x] CI-resultaten vastgelegd.
 - [x] PR beoordeeld en gemerged naar develop; pas daarna status Klaar.
 
 [Featurenotitie](../../notities/F07-macos-ondersteuning.md).
+

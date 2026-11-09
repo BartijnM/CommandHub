@@ -16,13 +16,19 @@ tokio = { version = "1", features = [
     "io-util",
     "sync"
 ] }
+tokio-util = { version = "0.7", features = ["rt"] }
 serde = { version = "1", features = ["derive"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 serde_json = "1.0.154"
+rmcp = { version = "=3.6.0", features = ["server", "transport-streamable-http-server"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
+rmcp = { version = "=3.6.0", features = [
+    "client",
+    "transport-streamable-http-client-reqwest"
+] }
 
 [target.'cfg(windows)'.dev-dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Threading"] }

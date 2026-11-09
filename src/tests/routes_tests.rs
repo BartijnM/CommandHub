@@ -12,7 +12,9 @@ use crate::{
     registry::ToolRegistry,
 };
 
-use super::router;
+pub(crate) fn router(state: crate::app_state::AppState) -> axum::Router {
+    crate::routes::router_with_shutdown(state, tokio_util::sync::CancellationToken::new())
+}
 
 fn post_request(tool: &str, input: impl Into<Body>) -> Request<Body> {
     Request::builder()

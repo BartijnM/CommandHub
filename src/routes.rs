@@ -8,9 +8,12 @@ use crate::controllers::{
     execution_controller::execute_tool, status_controller::status, tool_controller::list_tools,
 };
 
-// Bouw de HTTP-routes met gedeelde applicatiestate.
-pub fn router(state: crate::app_state::AppState) -> Router {
+pub fn router_with_shutdown(
+    state: crate::app_state::AppState,
+    shutdown: tokio_util::sync::CancellationToken,
+) -> Router {
     Router::new()
+        .route_service("/mcp", crate::mcp::service(state.clone(), shutdown))
         .route("/status", get(status))
         .route("/tools", get(list_tools))
         .route(
@@ -19,6 +22,9 @@ pub fn router(state: crate::app_state::AppState) -> Router {
         )
         .with_state(state)
 }
+
+#[cfg(test)]
+pub(crate) use tests::router;
 
 #[cfg(test)]
 #[path = "tests/routes_tests.rs"]

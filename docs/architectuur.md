@@ -1,6 +1,6 @@
 # Architectuur
 
-Status (2026-11-04): status, toolontdekking en dynamische uitvoering via HTTP zijn aangesloten. F04 staat op Review; lokale Windows-eindcontroles zijn geslaagd, CI is geslaagd op alle drie platforms voor 1fb8d71; alleen PR-review/merge blijft open. `AppState` deelt registry en uitvoeringsservice. De kern ondersteunt timeout, outputbudget, capaciteit, expliciete annulering en shutdown. De review van 2026-11-03 is lokaal op Windows en via CI op Ubuntu en Windows gecontroleerd (commit 105e69b op refactor/na-feature-3). Windows-tests controleren subprocessopruiming na deze stoproutes, future-drop en Tokio-taakafbreking. Linux-run #20 slaagde; de statusleesrace uit run #21 is daarna gecorrigeerd en in run #22 op Ubuntu/Windows geverifieerd. MCP-integratie volgt in F05. De macOS-uitbreiding F07 is via de aangeleverde CI-screenshot bevestigd, samen met Ubuntu en Windows.
+Status op 2026-11-09. REST en MCP zijn aangesloten op dezelfde registry, schemaopbouw, validatie en uitvoeringsservice. De F05-tussenstand is lokaal op Windows gecontroleerd met 156 geslaagde tests en 7 proceshelpers. MCP-padvalidatie is met REST vergeleken via een echte SDK-client. F05-platform-CI is geslaagd op alle drie platforms in run #50. PR-review/merge blijft open. Historische verificatie van F03/F04 staat verderop en in de featurenotities.
 
 ## Beoogde gegevensstroom
 
@@ -45,7 +45,7 @@ Tests staan fysiek in `src/tests/`, maar blijven via `#[cfg(test)]` en `#[path =
 
 ## Fouten
 
-Maak onderscheid tussen ongeldige invoer, onbekende tool, capaciteitsgebrek, startfout, niet-succesvolle exitcode, timeout, outputlimiet, annulering en opruimfout. HTTP vertaalt dezelfde kernfout naar vaste statuscodes en JSON-foutcodes. Annulering/shutdown wordt HTTP 503; interne procesbeheerfouten worden 500. MCP-mapping volgt in F05. Clientdisconnects zijn nog niet als expliciet annuleringsbeleid gekoppeld.
+Maak onderscheid tussen ongeldige invoer, onbekende tool, capaciteitsgebrek, startfout, niet-succesvolle exitcode, timeout, outputlimiet, annulering en opruimfout. HTTP vertaalt dezelfde kernfout naar vaste statuscodes en JSON-foutcodes. Annulering/shutdown wordt HTTP 503; interne procesbeheerfouten worden 500. MCP vertaalt kernfouten naar protocolfouten of veilige toolresultaten. Clientdisconnects zijn nog niet als expliciet annuleringsbeleid gekoppeld.
 
 ## Platformbeleid
 
@@ -72,4 +72,15 @@ ParameterDefinition bevat optionele allowed_values en allowed_roots. De command-
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+
+
+## F05-tussenstand op 2026-11-09
+
+McpServer deelt AppState, registry, input_schema en de annuleerbare ExecutionService met REST. context.ct bereikt via select! en oneshot de kern. De protocoltest controleert procesbeëindiging en herhaalde vervolgaanroepen. server::serve is gecontroleerd met een actieve MCP-procesboom, processtatuschecks en capaciteitsvrijgave. Een gemengde TCP-test controleert de vier gedeelde uitvoeringsplekken over REST en MCP.
+
+De kleine router-wrapper staat in src/tests/routes_tests.rs. routes.rs herexporteert hem onder cfg(test). Productie gebruikt router_with_shutdown. De tests voor de productierouter gebruiken een vrije TCP-poort en een Host-header uit de productie-allowlist.
+
+De shutdowntestclient gebruikt NeverRetry om SSE-herverbinden uit te schakelen en heeft reinit_on_expired_session op false. De eerdere clienttimeout verdween na die instelling. Het afwachten van serverafsluiting, beide PID-checks en de capaciteitscontrole blijven onderdeel van de test.
+
+De SDK-ketentest rapporteert protocol 2025-11-25. REST en MCP vergelijken dynamische stringwaarden, validatiefouten en resultaatvelden, met afzonderlijke duurmetingen. De uitgebreide ketentest vergelijkt ook geldige paden, canonicalisatie binnen de root en afwijzing van paden buiten de root, relatieve paden en onoplosbare paden. Zie de F05-notitie voor verificatie en resterende punten.

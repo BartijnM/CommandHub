@@ -2,6 +2,7 @@ mod app_state;
 mod config;
 mod controllers;
 mod execution;
+mod mcp;
 mod models;
 mod registry;
 mod routes;

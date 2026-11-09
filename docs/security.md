@@ -44,4 +44,15 @@ Padbeleid vereist bestaande absolute clientpaden en roots. Canonicalisatie contr
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+
+
+## F05-tussenstand op 2026-11-09
+
+De lokale MCP-service beperkt Host en aanwezige Origin tot de ingestelde loopbackadressen op poort 3000. Ontbrekende Origin is toegestaan voor native clients. Tests controleren de allowlists, sessieinitialisatie, onbekende sessie, protocolversieheader, contentonderhandeling en de bodygrens van 16 KiB.
+
+Protocolannulering is getest met een gestart proces en PID-bewijs. Productie-shutdown is getest met een MCP-procesboom, beide processtatussen, capaciteitsvrijgave en een gesloten luisterpoort. Een gemengde belastingstest controleert dat REST en MCP vier gedeelde uitvoeringsplekken gebruiken en na vrijgave herstellen. Interne OS-details worden in de MCP-foutmapping afgeschermd.
+
+De shutdowntestclient gebruikt NeverRetry en schakelt sessieherinitialisatie uit. Bij de standaard herverbindingsinstellingen bleef de clientaanroep wachten na serverafsluiting. Alleen de gedocumenteerde testclientinstelling is gewijzigd.
+
+MCP-padvalidatie is via de clientketen met REST vergeleken voor toegestane en afgewezen paden. Platform-CI is geslaagd in run #50. Expliciet beleid voor onverwacht clientdisconnect blijft open. Beheerder beheert executable, serveromgeving en padroots. De eerder vastgelegde grenzen rond canonicalisatie gelden ook voor MCP.

@@ -1,6 +1,6 @@
 # API- en configuratiecontract
 
-Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); CI is geslaagd op Windows, Ubuntu en macOS voor commit 1fb8d71.
+Status op 2026-11-09. REST en MCP via /mcp delen registry, inputschema’s, validatie en procesuitvoering. De lokale F05-eindcontroles op Windows slagen met 156 tests en 7 proceshelpers. F05 staat op Review. Platform-CI is geslaagd op Ubuntu, macOS en Windows in run #50. PR-review/merge staat open. Het F05-contract staat onderaan dit document.
 
 ## HTTP
 
@@ -83,7 +83,7 @@ Het childproces erft de omgeving en werkdirectory van het serverproces. De clien
 
 Timeout, outputoverschrijding en expliciete annulering worden in de F03-kern afgehandeld. `process-wrap` 10.0.1 met `tokio1` gebruikt Unix `ProcessGroup`, Windows `JobObject` en `KillOnDrop`. Windows-tests controleren subprocess-PID's na timeout, outputoverschrijding, annulering, shutdown, future-drop en taakafbreking, ook bij een eerder afgerond direct child. Run #20 controleerde Linux-status en Unix-groepsopruiming succesvol, maar run #21 vond een ESRCH-race in de testhelper. De correctie is daarna via run #22 op Ubuntu en Windows gecontroleerd; het HTTP-contract is ongewijzigd.
 
-De annuleerbare kernmethode ontvangt een `oneshot::Receiver<()>`. Een expliciet bericht leidt na de opruimroute tot `Cancelled`; een opruimfout kan die fout vervangen. Sluiten zonder bericht annuleert niet. Shutdown gebruikt daarnaast een `watch`-signaal, weigert nieuwe uitvoeringen en wacht op capaciteitsvrijgave. Ctrl+C is hierop aangesloten. De HTTP-mapping voor `Cancelled` is 503. Dit levert geen publiek annuleringsendpoint op; expliciet clientdisconnectbeleid en MCP-mapping blijven open.
+De annuleerbare kernmethode ontvangt een `oneshot::Receiver<()>`. Een expliciet bericht leidt na de opruimroute tot `Cancelled`; een opruimfout kan die fout vervangen. Sluiten zonder bericht annuleert niet. Shutdown gebruikt daarnaast een `watch`-signaal, weigert nieuwe uitvoeringen en wacht op capaciteitsvrijgave. Ctrl+C is hierop aangesloten. De HTTP-mapping voor `Cancelled` is 503. Dit levert geen publiek annuleringsendpoint op; expliciet clientdisconnectbeleid blijft open. MCP-mapping is in F05 aangesloten.
 
 ## MCP
 
@@ -116,4 +116,25 @@ GET /tools toont type, required, enum voor allowed_values en additionalPropertie
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De eigenaar meldt dat alles werkt. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+
+
+## F05-contract op 2026-11-09
+
+/mcp gebruikt rmcp 3.6.0 en Streamable HTTP. tools/list publiceert naam, beschrijving en inputSchema uit dezelfde schemaopbouw als REST. tools/call gebruikt de gedeelde kern. Ontbrekende arguments worden een leeg object. Resultaten bevatten success, stdout, stderr, exitCode en duration in structuredContent en als JSON-tekst. Een niet-succesvolle exit geeft isError true. UnknownTool wordt METHOD_NOT_FOUND. Overige kernfouten geven een toolresultaat met isError true en veilige code/message.
+
+De productielistener bindt aan 127.0.0.1:3000. Toegestane Hosts zijn 127.0.0.1:3000 en localhost:3000. Aanwezige Origins zijn beperkt tot http://127.0.0.1:3000 en http://localhost:3000. Requests zonder Origin zijn toegestaan. De bodylimiet is 16 KiB. legacy_session_mode is true. De echte SDK-ketentest onderhandelt 2025-11-25. De sessieheader bij legacy-initialisatie is gecontroleerd.
+
+| Geval | Gecontroleerde HTTP-status van rmcp 3.6.0 |
+| --- | --- |
+| Ongeldige JSON of ongeldige JSON-RPC-body | 415 |
+| Content-Type text/plain | 415 |
+| Accept uitsluitend application/json | 406 |
+| Onbekende MCP-Protocol-Version-header | 400 |
+| Onbekende MCP-sessie | 404 |
+| Niet-toegestane Host of aanwezige Origin | 403 |
+| Body boven 16 KiB | 413 |
+
+De parsehelper van deze SDK-versie gebruikt 415 bij deserialisatiefouten. De MCP-adapter volgt die afhandeling. REST heeft zijn eigen eerder beschreven foutmapping.
+
+Een expliciete requestannulering bereikt de kern via context.ct en oneshot. De clienttest controleert dat het proces stopt en vervolgaanroepen slagen. Bij serverafsluiting kan de actieve clientcall een annuleringsresultaat of transportfout opleveren. De shutdowntestclient schakelt SSE-herverbinden uit met NeverRetry. Gedrag van onverwacht clientdisconnect vraagt nog een expliciet beleid. MCP-padvalidatie is via de echte SDK-client met REST vergeleken. F05-platform-CI is geslaagd op Ubuntu, macOS en Windows in run #50. Handmatige Inspector-commando’s staan in de [README](../README.md#mcp-handmatig-testen).
