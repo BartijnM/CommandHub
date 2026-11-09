@@ -11,7 +11,7 @@ tags:
 
 ## Wat bouw ik en waarom?
 
-Ik voeg een MCP-adapter toe waarmee clients de geconfigureerde tools via Streamable HTTP kunnen ontdekken en uitvoeren. REST en MCP gebruiken dezelfde registry, inputschema's, parametervalidatie en uitvoeringsservice. F05 is in uitvoering. De annuleringsketen, productie-shutdown en gemengde belasting zijn op Windows getest. Lokale formatter, Clippy en de volledige suite slagen. MCP-padtests, platform-CI en definitieve beoordeling staan open.
+Ik voeg een MCP-adapter toe waarmee clients de geconfigureerde tools via Streamable HTTP kunnen ontdekken en uitvoeren. REST en MCP gebruiken dezelfde registry, inputschema's, parametervalidatie en uitvoeringsservice. F05 staat op Review. De annuleringsketen, productie-shutdown en gemengde belasting zijn op Windows getest. Lokale formatter, Clippy en de volledige suite slagen. MCP-padvalidatie is ook via de clientketen met REST vergeleken. Platform-CI en PR-review/merge staan open.
 
 ## Hoe werkt de code?
 
@@ -33,7 +33,7 @@ Rust: Arc-klonen delen gegevens; move bewaart state in de servicefactory. Result
 - De MCP-bodylimiet is 16 KiB en wordt door de SDK tijdens lezen afgedwongen.
 - legacy_session_mode is true. Routertests initialiseren expliciet met protocol 2025-11-25 en controleren de sessieheader. De SDK behandelt 2026-07-28 zonder protocolsessies. De TCP-ketentest leest peer_info na SDK-onderhandeling en rapporteert op 2026-11-09 expliciet 2025-11-25.
 - De TCP-ketentest bindt aan een vrije loopbackpoort en past alleen in de test de Host-allowlist aan. Hij gebruikt een eigen Axum-testserver, niet server::serve. Een afzonderlijke test in http_execution_tests.rs controleert inmiddels het volledige productieafsluitpad met een actieve MCP-procesboom.
-- Expliciet beleid voor onverwacht clientdisconnect, MCP-padvalidatie via de clientketen en platform-CI blijven open. Dynamische stringparameters en gemengde REST/MCP-belasting zijn getest. De vastgelegde grenzen rond padcanonicalisatie blijven gelden.
+- Expliciet beleid voor onverwacht clientdisconnect en platform-CI blijven open. MCP-padvalidatie via de clientketen is inmiddels met REST vergeleken. Dynamische stringparameters en gemengde REST/MCP-belasting zijn getest. De vastgelegde grenzen rond padcanonicalisatie blijven gelden.
 
 ## Problemen en oplossingen
 
@@ -76,7 +76,7 @@ De request wordt gemaakt met CallToolRequest::new. Een structliteral gaf E0639 d
 
 De SDK-ketentest bevat nu test_version met detail als verplichte string en allowed_values voor --version en -vV. De test vergelijkt MCP en de REST-router met dezelfde AppState. Succesvelden success, stdout, stderr en exitCode zijn gelijk. Duration wordt afzonderlijk op numeriek type gecontroleerd. Ontbrekende parameters, verkeerde typen, verboden waarden en extra velden leveren dezelfde inhoudelijke code/message op.
 
-De client ontdekt beide testtools en kan na afgewezen calls verder werken. peer_info rapporteert de daadwerkelijk onderhandelde protocolversie 2025-11-25.
+De uitgebreide clienttest ontdekt drie testtools en kan na afgewezen calls verder werken. peer_info rapporteert de daadwerkelijk onderhandelde protocolversie 2025-11-25.
 
 ### Productie-shutdown en gedeelde capaciteit
 
@@ -113,8 +113,16 @@ De eigenaar voerde de controles uit en deelde de uitvoer. De assistent heeft de 
 
 De zeven ignored functies zijn expliciete proceshelpers. F05-platform-CI en een zelfstandige Inspector-controle zijn nog niet uitgevoerd. Oudere F04-CI bewijst deze F05-wijzigingen niet.
 
+## Padvalidatie en lokale eindcontrole op 2026-11-09
+
+De bestaande mcp_client_discovers_and_executes_configured_tool-test is uitgebreid met test_path. De beheerdersconfiguratie start Git met gescheiden argumenten -C, het pad, rev-parse en --show-toplevel. De toegestane root is de src-map van het project. Er is geen nieuwe uitvoerings- of validatielogica in de MCP-adapter toegevoegd.
+
+Een absoluut pad naar src en src/tests/.. worden geaccepteerd. De projectroot en src/.. vallen buiten allowed_roots. Het relatieve pad src en een onoplosbaar pad onder Cargo.toml worden afgewezen. Iedere invoer gaat via een echte MCP-client over TCP en via REST met dezelfde AppState. De test vergelijkt resultaatvelden en veilige foutcodes/berichten. Bij succes wordt het canonieke repositorypad gecontroleerd. duration wordt afzonderlijk op een getal gecontroleerd omdat twee uitvoeringen elk een eigen duur hebben.
+
+De eigenaar bevestigt de uitgebreide ketentest met 1 passed, 162 filtered out in 0,61 s. Daarna zijn formatter, Clippy met -D warnings en de volledige suite als geslaagd bevestigd. De laatste volledige uitvoer geeft 156 passed, 0 failed, 7 ignored, 0 filtered out in 9,77 s. Het aantal tests blijft gelijk doordat de bestaande ketentest is uitgebreid. De eerdere tabel legt de tussencontrole vóór deze uitbreiding vast.
+
+De algemene README bevat nu vastgezette Inspector CLI-commando’s voor tools/list, een call naar git_version en toegestane/afgewezen detail-invoer voor rust_details uit de standaardconfiguratie. Er is nog geen handmatig Inspector-resultaat aangeleverd. Bij deze documentatie-update zijn uitsluitend Markdown-bestanden aangepast en zijn de Cargo-controles niet opnieuw uitgevoerd.
+
 ## Stoppunt en vervolg
 
-De code en lokale controles zijn groen op de huidige tussenstand. De eerstvolgende stap is MCP-padvalidatie via een echte client, met een geldig pad en afwijzing buiten allowed_roots, vergeleken met REST. Daarna de resterende acceptatiecriteria beoordelen, lokale controles na nieuwe code herhalen en CI op Windows/Linux/macOS uitvoeren. F05 blijft In uitvoering tot die verificatie, review en merge zijn afgerond.
-
-Deze documentatie-update is op verzoek van de eigenaar uitgevoerd. Testresultaten zijn overgenomen uit diens gedeelde uitvoer en niet opnieuw uitgevoerd. De eigenaar commit zelf.
+F05 staat op Review. De lokale implementatie en acceptatiecriteria zijn aangetoond met de gedeelde Windows-resultaten. De eigenaar commit en laat GitHub Actions draaien op Windows, Linux en macOS. Daarna de platformresultaten vastleggen, PR-review/merge afronden en pas na bevestigde merge de status op Klaar zetten.

@@ -1,6 +1,6 @@
 # Plan van aanpak
 
-Status op 2026-11-09. Dynamische parameters en padbeleid zijn geïmplementeerd. F05 koppelt MCP aan dezelfde kern, met geslaagde lokale Windows-controles. MCP-padtests en F05-platform-CI volgen nog.
+Status op 2026-11-09. Dynamische parameters en padbeleid zijn geïmplementeerd. F05 koppelt MCP aan dezelfde kern, met geslaagde lokale Windows-controles. MCP-padvalidatie is lokaal via de clientketen gecontroleerd. F05 staat op Review met platform-CI en PR-review/merge open.
 
 ## Doel
 
@@ -42,7 +42,7 @@ Code, README, ontwerp, configuratievoorbeelden, voorbeeldrequests en demonstrati
 
 - Deadline en beschikbare ontwikkeltijd.
 - Definitieve MCP-integratie en transportbeveiliging voor F05; de F00-proef staat in ADR-002.
-- MCP-padvalidatie via de clientketen en definitieve F05-verificatie. REST en MCP delen het geïmplementeerde parameter- en padbeleid.
+- F05-platformverificatie via GitHub Actions en PR-review/merge. REST en MCP delen het parameter- en padbeleid en zijn lokaal ook voor padvalidatie vergeleken.
 - Platformvoorbeelden en volledige ketencontrole bij F06; F03 gebruikt al Unix-procesgroepen en Windows Job Objects.
 - Naamgeving van documenten conform de opleidingsafspraken.
 

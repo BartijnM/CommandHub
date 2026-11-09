@@ -1,6 +1,6 @@
 # API- en configuratiecontract
 
-Status (2026-11-04): dynamische parameters zijn via de gedeelde kern op POST /tools/{toolname} aangesloten. Lokale Windows-eindcontroles zijn geslaagd (138 tests, 5 proceshelpers); CI is geslaagd op Windows, Ubuntu en macOS voor commit 1fb8d71.
+Status op 2026-11-09. REST en MCP via /mcp delen registry, inputschema’s, validatie en procesuitvoering. De lokale F05-eindcontroles op Windows slagen met 156 tests en 7 proceshelpers. F05 staat op Review met platform-CI en PR-review/merge open. Het F05-contract staat onderaan dit document.
 
 ## HTTP
 
@@ -137,4 +137,4 @@ De productielistener bindt aan 127.0.0.1:3000. Toegestane Hosts zijn 127.0.0.1:3
 
 De parsehelper van deze SDK-versie gebruikt 415 bij deserialisatiefouten. De MCP-adapter volgt die afhandeling. REST heeft zijn eigen eerder beschreven foutmapping.
 
-Een expliciete requestannulering bereikt de kern via context.ct en oneshot. De clienttest controleert dat het proces stopt en vervolgaanroepen slagen. Bij serverafsluiting kan de actieve clientcall een annuleringsresultaat of transportfout opleveren. De shutdowntestclient schakelt SSE-herverbinden uit met NeverRetry. Gedrag van onverwacht clientdisconnect vraagt nog een expliciet beleid. MCP-padvalidatie via de clientketen en platform-CI staan open.
+Een expliciete requestannulering bereikt de kern via context.ct en oneshot. De clienttest controleert dat het proces stopt en vervolgaanroepen slagen. Bij serverafsluiting kan de actieve clientcall een annuleringsresultaat of transportfout opleveren. De shutdowntestclient schakelt SSE-herverbinden uit met NeverRetry. Gedrag van onverwacht clientdisconnect vraagt nog een expliciet beleid. MCP-padvalidatie is via de echte SDK-client met REST vergeleken. F05-platform-CI staat open. Handmatige Inspector-commando’s staan in de [README](../README.md#mcp-handmatig-testen).

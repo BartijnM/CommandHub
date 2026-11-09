@@ -1,7 +1,7 @@
 ---
 id: F05
 prioriteit: Must
-status: In uitvoering
+status: Review
 milestone: "MCP-keten"
 ---
 
@@ -36,8 +36,8 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 - [x] MCP-client ontdekt geconfigureerde tools en voert ze uit.
 - [x] Geen aparte executor of validatieregels in MCP-adapter.
-- [ ] REST en MCP tonen consistent inhoudelijk gedrag.
-- [ ] Protocol- en transportkeuzes zijn gedocumenteerd en getoetst.
+- [x] REST en MCP tonen consistent inhoudelijk gedrag.
+- [x] Protocol- en transportkeuzes zijn gedocumenteerd en lokaal getoetst.
 
 ## Bewijs en koppelingen
 
@@ -45,7 +45,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - Branch: feature/F05-mcp-integratie.
 - Pull request: nog niet aangemaakt.
 - Tussenstand 2026-11-09. Eigenaar bevestigt Windows-formatter en Clippy met -D warnings geslaagd, volledige suite 156 passed en 7 proceshelpers. SDK-client onderhandelt 2025-11-25. Annulering met PID-bewijs, productie-shutdown met MCP-procesboom, gemengde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn getest.
-- Open voor afronding zijn MCP-padvalidatie via de clientketen, definitieve beoordeling en F05-platform-CI.
+- De uitgebreide SDK-ketentest vergelijkt ook padvalidatie met REST. Laatste lokale suite geeft 156 passed, 0 failed en 7 helpers in 9,77 s. Open voor afronding zijn F05-platform-CI en PR-review/merge.
 - [Featurenotitie](../../notities/F05-mcp-integratie.md).
 
 ## Afronden
@@ -58,4 +58,4 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 ## Tussenstand op 2026-11-09
 
-De implementatietaken zijn op Windows getest. De acceptatiecriteria voor volledige REST/MCP-consistentie en de definitieve protocol-/transportbeoordeling blijven open tot de MCP-padtest en eindbeoordeling zijn afgerond. De shutdownclient gebruikt expliciet NeverRetry. Platform-CI en merge volgen daarna.
+De implementatietaken en acceptatiecriteria zijn lokaal op Windows aangetoond, inclusief padvalidatie via een echte SDK-client en vergelijking met REST. Formatter, Clippy met -D warnings en de volledige suite zijn na de uitbreiding als geslaagd bevestigd. Status Review wacht op F05-platform-CI en PR-review/merge. De shutdownclient gebruikt expliciet NeverRetry. De algemene README bevat handmatige Inspector-controles waarvan nog geen uitvoer is aangeleverd.

@@ -1,6 +1,6 @@
 # Architectuur
 
-Status op 2026-11-09. REST en MCP zijn aangesloten op dezelfde registry, schemaopbouw, validatie en uitvoeringsservice. De F05-tussenstand is lokaal op Windows gecontroleerd met 156 geslaagde tests en 7 proceshelpers. MCP-padtests en platform-CI blijven open. Historische verificatie van F03/F04 staat verderop en in de featurenotities.
+Status op 2026-11-09. REST en MCP zijn aangesloten op dezelfde registry, schemaopbouw, validatie en uitvoeringsservice. De F05-tussenstand is lokaal op Windows gecontroleerd met 156 geslaagde tests en 7 proceshelpers. MCP-padvalidatie is met REST vergeleken via een echte SDK-client. F05-platform-CI en PR-review/merge blijven open. Historische verificatie van F03/F04 staat verderop en in de featurenotities.
 
 ## Beoogde gegevensstroom
 
@@ -83,4 +83,4 @@ De kleine router-wrapper staat in src/tests/routes_tests.rs. routes.rs herexport
 
 De shutdowntestclient gebruikt NeverRetry om SSE-herverbinden uit te schakelen en heeft reinit_on_expired_session op false. De eerdere clienttimeout verdween na die instelling. Het afwachten van serverafsluiting, beide PID-checks en de capaciteitscontrole blijven onderdeel van de test.
 
-De SDK-ketentest rapporteert protocol 2025-11-25. REST en MCP vergelijken dynamische stringwaarden, validatiefouten en resultaatvelden, met afzonderlijke duurmetingen. MCP-padconsistentie is de volgende stap. Zie de F05-notitie voor verificatie en resterende punten.
+De SDK-ketentest rapporteert protocol 2025-11-25. REST en MCP vergelijken dynamische stringwaarden, validatiefouten en resultaatvelden, met afzonderlijke duurmetingen. De uitgebreide ketentest vergelijkt ook geldige paden, canonicalisatie binnen de root en afwijzing van paden buiten de root, relatieve paden en onoplosbare paden. Zie de F05-notitie voor verificatie en resterende punten.

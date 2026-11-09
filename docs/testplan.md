@@ -7,7 +7,7 @@ Historisch bewijs vóór F04: 2026-11-03. De laatste geverifieerde Windows-suite
 | R01–R03 | Configuratie-, laadfout- en ontdekkingstests; lege namen/commands worden afgewezen. Herstart zonder rebuild is eerder handmatig gecontroleerd |
 | R04–R06 | Succes, niet-nul exit, startfout, output, timeout, annulering en shutdown; PID-controles bij stoproutes, future-drop en taakafbreking |
 | R07 | Gedeeld outputbudget, capaciteitsgrens/vrijgave, body exact 16 KiB en overschrijding; vier echte actieve TCP-uitvoeringen en vijfde 503, daarna capaciteitsherstel |
-| R08–R10 | F04: lokale configuratie-, validatie-, argument- en servicetests als geslaagd gemeld; HTTP-padtests en voorbeeldtoolreview geslaagd; Unix-symlink-CI nog open |
+| R08–R10 | F04: lokale configuratie-, validatie-, argument- en servicetests als geslaagd gemeld; HTTP-padtests en voorbeeldtoolreview geslaagd; Unix-symlinktests geslaagd in F04-CI op Ubuntu en macOS |
 | R11/R16 | F05 SDK-client over TCP, protocol 2025-11-25, Host/Origin, sessie- en negatieve transporttests op Windows |
 | R12 | Routertests voor resultaat en fouten; echte TCP-tests voor capaciteit en actieve shutdown |
 | R13 | Vaste foutcodes en geen OS-details in JSON; geïsoleerde loggingtests bewaken het ontbreken van argumentwaarden en procesoutput |
@@ -89,9 +89,9 @@ De eigenaar heeft de controles uitgevoerd en uitvoer gedeeld. Bij deze documenta
 | --- | --- |
 | cargo fmt --check | Geslaagd, geen verschillen |
 | cargo clippy --all-targets --locked -- -D warnings | Geslaagd in 0,25 s |
-| cargo test --locked | 156 passed, 0 failed, 7 ignored, 0 filtered, 9,83 s |
+| cargo test --locked | 156 passed, 0 failed, 7 ignored, 0 filtered, 9,77 s |
 | Tien transporttests | 10 passed in 0,07 s |
-| SDK-clientketen met zichtbare onderhandeling | Geslaagd in 0,28 s, protocol 2025-11-25 |
+| SDK-clientketen inclusief padvalidatie | Geslaagd in 0,61 s, protocol 2025-11-25 |
 
 Aanwezig bewijs omvat expliciete MCP-annulering met PID-check, vier annuleringsrondes met herstel, productie-shutdown met actieve MCP-procesboom en een gemengde belasting van twee REST- en twee MCP-procesbomen. Extra calls via beide protocollen worden afgewezen. Na vrijgave herstellen beide protocollen.
 
@@ -99,4 +99,4 @@ De SDK-ketentest vergelijkt dynamische stringinvoer, verplichte/extra velden, ty
 
 De zeven ignored functies zijn expliciete proceshelpers. De shutdownclient gebruikt NeverRetry en heeft sessieherinitialisatie uitgeschakeld, zodat streamsluiting tijdig aan de client wordt doorgegeven.
 
-Volgende bewijsstap is MCP-padvalidatie, met geldig pad en afwijzing buiten de root. F05-CI op Windows/Linux/macOS staat open. Een zelfstandige Inspector-controle is nog niet uitgevoerd. Na volgende codewijzigingen lokale controles opnieuw uitvoeren en daarna de platformresultaten vastleggen.
+De uitgebreide SDK-ketentest controleert geldige absolute paden, canonicalisatie met .. binnen de root, paden buiten de root, relatieve paden en onoplosbare paden. MCP en REST leveren inhoudelijk gelijke resultaten en foutcodes. De gerichte ketentest slaagde in 0,61 s. F05-CI op Windows/Linux/macOS staat open. De [README](../README.md#mcp-handmatig-testen) bevat handmatige Inspector-controles. Daarvan is nog geen resultaat aangeleverd. De lokale eindcontroles zijn door de eigenaar bevestigd na de laatste codewijziging.

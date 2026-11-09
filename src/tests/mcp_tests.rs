@@ -386,6 +386,9 @@ async fn mcp_client_discovers_and_executes_configured_tool() {
     };
     use tokio_util::sync::CancellationToken;
 
+    let project = std::env::current_dir().unwrap();
+    let allowed_root = project.join("src");
+
     let config = crate::config::ConfigFile {
         tools: vec![
             crate::config::ToolDefinition {
@@ -416,6 +419,25 @@ async fn mcp_client_discovers_and_executes_configured_tool() {
                     required: true,
                     allowed_values: Some(vec!["--version".to_owned(), "-vV".to_owned()]),
                     allowed_roots: None,
+                }],
+                timeout: Some(5_000),
+            },
+            crate::config::ToolDefinition {
+                name: "test_path".to_owned(),
+                description: "Repository opzoeken binnen de toegestane root".to_owned(),
+                command: "git".to_owned(),
+                arguments: vec![
+                    "-C".to_owned(),
+                    "{path}".to_owned(),
+                    "rev-parse".to_owned(),
+                    "--show-toplevel".to_owned(),
+                ],
+                parameters: vec![crate::config::ParameterDefinition {
+                    name: "path".to_owned(),
+                    kind: crate::config::ParameterType::String,
+                    required: true,
+                    allowed_values: None,
+                    allowed_roots: Some(vec![allowed_root.clone()]),
                 }],
                 timeout: Some(5_000),
             },
@@ -465,7 +487,7 @@ async fn mcp_client_discovers_and_executes_configured_tool() {
 
         let tools = client.list_all_tools().await.unwrap();
 
-        assert_eq!(tools.len(), 2);
+        assert_eq!(tools.len(), 3);
         assert_eq!(tools[0].name.as_ref(), "test_echo");
         assert_eq!(
             tools[0].description.as_deref(),
@@ -606,6 +628,91 @@ async fn mcp_client_discovers_and_executes_configured_tool() {
 
                     assert!(mcp_output["duration"].is_u64());
                     assert!(rest_output["duration"].is_u64());
+                }
+            }
+        }
+
+        {
+            use tower::ServiceExt as TowerServiceExt;
+
+            let cases = [
+                (allowed_root.clone(), None),
+                (allowed_root.join("tests").join(".."), None),
+                (project.clone(), Some("Pad ligt buiten toegestane roots")),
+                (
+                    allowed_root.join(".."),
+                    Some("Pad ligt buiten toegestane roots"),
+                ),
+                (
+                    std::path::PathBuf::from("src"),
+                    Some("Pad moet absoluut zijn"),
+                ),
+                (
+                    project.join("Cargo.toml").join("cannot-exist"),
+                    Some("Pad kan niet worden opgelost"),
+                ),
+            ];
+
+            for (path, expected_error) in cases {
+                let input = json!({ "path": path });
+
+                let mcp_response = client
+                    .call_tool(
+                        CallToolRequestParams::new("test_path")
+                            .with_arguments(input.as_object().unwrap().clone()),
+                    )
+                    .await
+                    .expect("MCP-padcall moet een toolresultaat opleveren");
+
+                let request = axum::http::Request::builder()
+                    .method("POST")
+                    .uri("/tools/test_path")
+                    .header("content-type", "application/json")
+                    .body(axum::body::Body::from(input.to_string()))
+                    .unwrap();
+
+                let rest_response = crate::routes::router(state.clone())
+                    .oneshot(request)
+                    .await
+                    .unwrap();
+
+                let rest_status = rest_response.status();
+                let body = axum::body::to_bytes(rest_response.into_body(), 64 * 1024)
+                    .await
+                    .unwrap();
+
+                let rest_output: serde_json::Value = serde_json::from_slice(&body).unwrap();
+                let mcp_output = mcp_response.structured_content.unwrap();
+
+                if let Some(message) = expected_error {
+                    let expected = json!({
+                        "code": "invalid_parameters",
+                        "message": message
+                    });
+
+                    assert_eq!(mcp_response.is_error, Some(true));
+                    assert_eq!(rest_status, axum::http::StatusCode::BAD_REQUEST);
+                    assert_eq!(mcp_output, expected);
+                    assert_eq!(rest_output, expected);
+                } else {
+                    assert_eq!(mcp_response.is_error, Some(false));
+                    assert_eq!(rest_status, axum::http::StatusCode::OK);
+                    assert_eq!(mcp_output["success"], true);
+                    assert_eq!(mcp_output["exitCode"], 0);
+
+                    let reported_root =
+                        std::path::Path::new(mcp_output["stdout"].as_str().unwrap().trim())
+                            .canonicalize()
+                            .unwrap();
+
+                    assert_eq!(reported_root, project.canonicalize().unwrap());
+
+                    for field in ["success", "stdout", "stderr", "exitCode"] {
+                        assert_eq!(
+                            mcp_output[field], rest_output[field],
+                            "REST en MCP verschillen voor veld {field}"
+                        );
+                    }
                 }
             }
         }
