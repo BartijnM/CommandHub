@@ -8,7 +8,7 @@ Historisch bewijs vóór F04: 2026-11-03. De laatste geverifieerde Windows-suite
 | R04–R06 | Succes, niet-nul exit, startfout, output, timeout, annulering en shutdown; PID-controles bij stoproutes, future-drop en taakafbreking |
 | R07 | Gedeeld outputbudget, capaciteitsgrens/vrijgave, body exact 16 KiB en overschrijding; vier echte actieve TCP-uitvoeringen en vijfde 503, daarna capaciteitsherstel |
 | R08–R10 | F04: lokale configuratie-, validatie-, argument- en servicetests als geslaagd gemeld; HTTP-padtests en voorbeeldtoolreview geslaagd; Unix-symlink-CI nog open |
-| R11/R16 | Geïsoleerde F00-proef; protocol- en Host/Origin-controles bij F05 |
+| R11/R16 | F05 SDK-client over TCP, protocol 2025-11-25, Host/Origin, sessie- en negatieve transporttests op Windows |
 | R12 | Routertests voor resultaat en fouten; echte TCP-tests voor capaciteit en actieve shutdown |
 | R13 | Vaste foutcodes en geen OS-details in JSON; geïsoleerde loggingtests bewaken het ontbreken van argumentwaarden en procesoutput |
 | R14/R15 | Kern zonder HTTP-afhankelijkheid; Windows-suite slaagt. Historische CI-run #22 controleerde Ubuntu/Windows na ESRCH-correctie. De reviewstand van commit 105e69b is eveneens op Ubuntu en Windows via CI geslaagd |
@@ -81,10 +81,22 @@ Screenshots voor commit 2d02834: Ubuntu Success (41 s), Windows Success (1 m 30 
 De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
 
 
-## F05-tussenstand — 2026-11-05
+## F05-verificatie op Windows, 2026-11-09
 
-Gerichte Windows-controles slagen voor resultaat-/foutmapping, hosts/origins, initialisatie met sessieheader en de bodygrens 16 KiB versus 16 KiB + 1. Beide HTTP-integratiescenario's slagen na transportshutdown. Een MCP-streamtest controleert openblijven vóór tokenannulering en sluiten daarna.
+De eigenaar heeft de controles uitgevoerd en uitvoer gedeeld. Bij deze documentatie-update heeft de assistent de actuele code gelezen.
 
-De echte rmcp-client ontdekt via TCP test_echo, vergelijkt metadata en schema, start de testbinary als tool, controleert extra parameters en onbekende tool en voert daarna opnieuw succesvol uit. Dit gebruikt een eigen testserver; productie-shutdown met actieve MCP-tools is nog niet aangetoond. De protocolversie van de clientketen is nog niet apart vastgelegd.
+| Controle | Gedeeld resultaat |
+| --- | --- |
+| cargo fmt --check | Geslaagd, geen verschillen |
+| cargo clippy --all-targets --locked -- -D warnings | Geslaagd in 0,25 s |
+| cargo test --locked | 156 passed, 0 failed, 7 ignored, 0 filtered, 9,83 s |
+| Tien transporttests | 10 passed in 0,07 s |
+| SDK-clientketen met zichtbare onderhandeling | Geslaagd in 0,28 s, protocol 2025-11-25 |
 
-mcp_wait_helper compileert na cargo check --tests --locked. De helper schrijft zijn PID en wacht maximaal 30 seconden, maar is nog niet in de protocolannuleringstest gebruikt. Volgende test: startbevestiging afwachten, expliciet MCP-annuleren, procesbeëindiging en herstel controleren. Volledige suite, formatter, Clippy, platform-CI, uitgebreidere protocolnegatieve tests en dynamische REST/MCP-consistentie blijven open. Historische aantallen zijn geen volledig testtotaal van deze eindstand. Zie de F05-notitie.
+Aanwezig bewijs omvat expliciete MCP-annulering met PID-check, vier annuleringsrondes met herstel, productie-shutdown met actieve MCP-procesboom en een gemengde belasting van twee REST- en twee MCP-procesbomen. Extra calls via beide protocollen worden afgewezen. Na vrijgave herstellen beide protocollen.
+
+De SDK-ketentest vergelijkt dynamische stringinvoer, verplichte/extra velden, typen, allowed_values en resultaatvelden met REST. De duur wordt per aanroep op type gecontroleerd. De transporttests dekken ongeldige JSON-RPC-bodies, contentonderhandeling, onbekende protocolversie en sessie naast Host/Origin en bodygrens. De SDK gebruikt 415 voor deserialisatiefouten.
+
+De zeven ignored functies zijn expliciete proceshelpers. De shutdownclient gebruikt NeverRetry en heeft sessieherinitialisatie uitgeschakeld, zodat streamsluiting tijdig aan de client wordt doorgegeven.
+
+Volgende bewijsstap is MCP-padvalidatie, met geldig pad en afwijzing buiten de root. F05-CI op Windows/Linux/macOS staat open. Een zelfstandige Inspector-controle is nog niet uitgevoerd. Na volgende codewijzigingen lokale controles opnieuw uitvoeren en daarna de platformresultaten vastleggen.

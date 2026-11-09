@@ -1,33 +1,41 @@
 # Huidige voortgang
 
-Bijgewerkt: 2026-11-05, einde werksessie.
+Bijgewerkt op 2026-11-09.
 
 ## Actief
 
-[F05 — MCP-integratie](features/F05-mcp-integratie.md) is in uitvoering. Ik bouw en controleer de feature in kleine stappen. De vorige overdracht vermeldde F04 op Review met geslaagde lokale controles en drieplatform-CI; merge is in deze werksessie niet afzonderlijk bevestigd.
+[F05 — MCP-integratie](features/F05-mcp-integratie.md) is in uitvoering. De eigenaar voert de code in en draait de controles. De implementatie en Windows-tests zijn uitgebreid sinds de sessie van 2026-11-05.
 
 ## Aanwezig
 
-/mcp biedt Streamable HTTP via rmcp 3.6.0 naast REST. Beide adapters delen registry, inputschemaopbouw, validatie en ExecutionService. MCP vertaalt procesresultaten en kernfouten naar gestructureerde en tekstuele toolresultaten. Host/Origin-controles en een bodylimiet van 16 KiB zijn ingesteld. Legacy-sessiemodus is ingeschakeld.
+/mcp biedt Streamable HTTP via rmcp 3.6.0 naast REST. Beide adapters delen AppState, registry, input_schema, validatie en ExecutionService. MCP levert procesresultaten en veilige fouten als structuredContent en JSON-tekst. De echte SDK-client onderhandelt 2025-11-25. Legacy-sessiemodus, Host/Origin-controles en de bodylimiet van 16 KiB zijn ingesteld.
 
-Een CancellationToken verbindt de MCP-service met het bestaande serverafsluitpad. De MCP-requestcontext is via select! en oneshot aangesloten op execute_with_parameters_with_cancellation. Deze requestannulering compileert, maar de protocolannuleringsketen is nog niet getest.
+Expliciete MCP-requestannulering bereikt via context.ct en oneshot de uitvoeringskern. Vier annuleringsrondes controleren procesbeëindiging en succesvolle vervolgaanroepen. Het productieafsluitpad server::serve is getest met een actieve MCP-procesboom, beide PID’s, capaciteitsvrijgave en een gesloten luisterpoort.
 
-## Verificatie
+Een gemengde belastingstest start twee REST- en twee MCP-procesbomen. Extra calls via beide protocollen worden afgewezen, waarna uitvoering via beide protocollen herstelt. De ketentest vergelijkt dynamische stringinvoer, keuzelijsten, typefouten, verplichte/extra velden en resultaatvelden tussen REST en MCP.
 
-Op Windows slagen de eerder uitgevoerde 18 REST-routetests en 9 MCP-mapping-/transporttests. Daarna slagen de twee bestaande HTTP-integratiescenario's na de shutdownwijziging en een nieuwe test voor het sluiten van een actieve MCP-stream na tokenannulering.
+Transporttests controleren Host/Origin, sessieinitialisatie, onbekende sessies, protocolversieheaders, contentonderhandeling, ongeldige JSON-RPC-bodies en bodygrenzen. De kleine router-testwrapper staat in src/tests/routes_tests.rs en wordt uitsluitend voor tests vanuit routes.rs geherexporteerd.
 
-Een echte SDK-client ontdekt en voert via TCP een geconfigureerde testtool uit. Metadata/schema, veilige afwijzing van extra parameters, onbekende tool en een geldige vervolgaanroep zijn gecontroleerd. De ketentest gebruikt een testbinary als tool en een eigen Axum-server op een vrije loopbackpoort. Hij bewijst nog niet het productieafsluitpad met actieve MCP-tools.
+## Verificatie op Windows
 
-Laatste controle: cargo check --tests --locked geslaagd na toevoegen mcp_wait_helper. Deze helper is alleen gecompileerd. Geen volledige suite, formatter, Clippy of platform-CI voor de huidige eindstand bevestigd. Details en historische testtotalen staan in de [F05-notitie](../notities/F05-mcp-integratie.md).
+De eigenaar deelde de volgende geslaagde resultaten op 2026-11-09.
 
-## Grenzen
+- cargo fmt --check gaf geen verschillen.
+- cargo clippy --all-targets --locked -- -D warnings slaagde in 0,25 s.
+- cargo test --locked gaf 156 passed, 0 failed, 7 ignored, 0 filtered out, in 9,83 s.
+- De tien transporttests slaagden in 0,07 s.
+- De SDK-ketentest rapporteerde protocolversie 2025-11-25 en slaagde in 0,28 s.
 
-Protocolannulering, procesopruiming/capaciteitsherstel via MCP, dynamische MCP-parameters, gedeelde REST/MCP-belasting en productie-shutdown met een actieve MCP-call vragen nog bewijs. De onderhandelde protocolversie van de SDK-ketentest is nog niet expliciet vastgelegd. Geen remote deployment, authenticatie of sandbox toegevoegd.
+De zeven ignored functies zijn expliciete proceshelpers, waaronder mcp_echo_helper en mcp_wait_helper. De assistent heeft de actuele code gelezen. De resultaten hierboven komen uit de gedeelde uitvoer van de eigenaar. Bij deze documentatie-update zijn uitsluitend Markdown-bestanden gewijzigd.
 
-## Exact stoppunt
+## Open en volgende stap
 
-src/tests/mcp_tests.rs bevat nu mcp_wait_helper: een ignored proceshelper die zijn PID schrijft naar het opgegeven commandhub-mcp-pid-file= pad en maximaal 30 seconden wacht. De bijbehorende annuleringstest is nog niet geschreven.
+Eerst een MCP-padtest toevoegen voor een geldig pad en afwijzing buiten allowed_roots, met vergelijking tegen REST. Daarna resterende acceptatiecriteria nalopen, de lokale controles na codewijzigingen herhalen en F05 via GitHub Actions op Windows, Linux en macOS verifiëren. Een zelfstandige Inspector-controle is nog niet uitgevoerd. De gebruikte echte SDK-client levert al clientbewijs.
 
-## Volgende stap
+## Aandachtspunten
 
-Schrijf de protocolannuleringstest: start de helper via een MCP-toolcall, wacht begrensd op een geldig PID-bestand, stuur een expliciet annuleringsbericht via de SDK-client en controleer procesbeëindiging met process_checks::assert_stopped. Controleer vooraf het SDK-gedrag bij annulering. Daarna resterende keten-/grenstests, volledige eindcontroles en CI. Geen Git-status, commit, push of merge geverifieerd tijdens deze documentatie-update.
+De shutdowntestclient gebruikt NeverRetry en schakelt sessieherinitialisatie uit. Met standaard SSE-herverbinden bleef de clientcall na serverafsluiting wachten. Deze testinstelling moet bij interpretatie van het shutdownbewijs worden meegenomen.
+
+rmcp 3.6.0 geeft 415 bij een niet-deserialiseerbare JSON-RPC-body. Een onbekende protocolversieheader geeft 400, onvolledige Accept 406 en een onbekende sessie 404. Dit SDK-gedrag staat in het API-contract.
+
+F05-platform-CI, definitieve review en merge zijn nog open. Oud F04-CI-bewijs geldt voor F04. Expliciet beleid voor onverwacht clientdisconnect blijft open. Padcanonicalisatie en beheerdersconfiguratie hebben de eerder vastgelegde grenzen. F05 blijft In uitvoering.

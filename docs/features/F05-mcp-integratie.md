@@ -29,8 +29,8 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [x] Registry vertalen naar MCP-tools en inputschema's.
 - [x] Toolcalls via dezelfde toolservice als REST uitvoeren.
 - [x] Kernfouten en procesresultaten naar MCP-resultaten vertalen.
-- [ ] Toepasselijke transportbeveiliging en sessiegedrag implementeren.
-- [ ] Met echte MCP-client en ongeldige protocolrequests testen.
+- [x] Toepasselijke transportbeveiliging en sessiegedrag implementeren.
+- [x] Met echte MCP-client en ongeldige protocolrequests testen.
 
 ## Acceptatiecriteria
 
@@ -44,18 +44,18 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - GitHub issue: nog aan te maken.
 - Branch: feature/F05-mcp-integratie.
 - Pull request: nog niet aangemaakt.
-- Tussenstand 2026-11-05: gerichte Windows-tests voor mapping, Host/Origin, bodygrens, streamannulering en SDK-clientontdekking/uitvoering slagen. De clientketen controleert ook extra parameters, onbekende tool en een geldige vervolgaanroep. Beide HTTP-integratiescenario's slagen na de shutdownwijziging. mcp_wait_helper compileert; de protocolannuleringstest staat open. Geen volledige F05-eindcontroles of CI bevestigd. Zie de featurenotitie.
+- Tussenstand 2026-11-09. Eigenaar bevestigt Windows-formatter en Clippy met -D warnings geslaagd, volledige suite 156 passed en 7 proceshelpers. SDK-client onderhandelt 2025-11-25. Annulering met PID-bewijs, productie-shutdown met MCP-procesboom, gemengde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn getest.
+- Open voor afronding zijn MCP-padvalidatie via de clientketen, definitieve beoordeling en F05-platform-CI.
 - [Featurenotitie](../../notities/F05-mcp-integratie.md).
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd.
-- [ ] Documentatie en notitie bijgewerkt.
-- [ ] Voortgang bijgewerkt.
+- [ ] Relevante controles geslaagd op de definitieve stand, inclusief platform-CI (lokale tussenstand groen).
+- [x] Documentatie en notitie bijgewerkt tot 2026-11-09.
+- [x] Voortgang bijgewerkt tot 2026-11-09.
 - [ ] PR gemerged; pas daarna status Klaar.
 
 
-## Tussenstand — 2026-11-05
+## Tussenstand op 2026-11-09
 
-SDK, toolbeschrijvingen en gedeelde uitvoering zijn via een echte SDK-client over TCP gecontroleerd voor een parameterloze testtool. Mapping, Host/Origin en bodylimiet zijn getest; een actieve MCP-stream sluit na tokenannulering. Requestannulering is aangesloten maar nog niet via protocol met PID-bewijs getest. Daarom blijven de transport-/sessietaak en de brede client-/protocoltesttaak open. Eerstvolgende stap is de annuleringstest met mcp_wait_helper. Dynamische REST/MCP-consistentie, productie-shutdown met MCP en eindcontroles blijven open.
-
+De implementatietaken zijn op Windows getest. De acceptatiecriteria voor volledige REST/MCP-consistentie en de definitieve protocol-/transportbeoordeling blijven open tot de MCP-padtest en eindbeoordeling zijn afgerond. De shutdownclient gebruikt expliciet NeverRetry. Platform-CI en merge volgen daarna.

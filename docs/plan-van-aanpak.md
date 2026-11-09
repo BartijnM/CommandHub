@@ -1,6 +1,6 @@
 # Plan van aanpak
 
-Status: realisatie tot en met parameterloze HTTP-uitvoering (F03); dynamische parameters en MCP-integratie volgen in F04/F05.
+Status op 2026-11-09. Dynamische parameters en padbeleid zijn geïmplementeerd. F05 koppelt MCP aan dezelfde kern, met geslaagde lokale Windows-controles. MCP-padtests en F05-platform-CI volgen nog.
 
 ## Doel
 
@@ -42,7 +42,7 @@ Code, README, ontwerp, configuratievoorbeelden, voorbeeldrequests en demonstrati
 
 - Deadline en beschikbare ontwikkeltijd.
 - Definitieve MCP-integratie en transportbeveiliging voor F05; de F00-proef staat in ADR-002.
-- Parameter- en padbeleid voor F04; REST biedt al GET /status, GET /tools en parameterloze POST /tools/{toolname}.
+- MCP-padvalidatie via de clientketen en definitieve F05-verificatie. REST en MCP delen het geïmplementeerde parameter- en padbeleid.
 - Platformvoorbeelden en volledige ketencontrole bij F06; F03 gebruikt al Unix-procesgroepen en Windows Job Objects.
 - Naamgeving van documenten conform de opleidingsafspraken.
 

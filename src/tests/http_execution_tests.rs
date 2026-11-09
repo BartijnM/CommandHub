@@ -287,3 +287,208 @@ fn http_tool_helper() {
 fn subprocess_leaf() {
     std::thread::sleep(Duration::from_secs(60));
 }
+
+#[tokio::test]
+async fn server_shutdown_stops_active_mcp_process_tree() {
+    use rmcp::{
+        ServiceExt,
+        model::CallToolRequestParams,
+        transport::{
+            StreamableHttpClientTransport,
+            streamable_http_client::StreamableHttpClientTransportConfig,
+        },
+    };
+
+    let fixture = Fixture::new();
+    let state = fixture.state(1);
+    let execution = state.execution.clone();
+    let mut server = TestServer::start(state).await;
+
+    let mut transport_config =
+        StreamableHttpClientTransportConfig::with_uri(format!("http://{}/mcp", server.address));
+
+    // De verbinding gebruikt een vrije testpoort. De Host-header voldoet
+    // aan de bestaande productie-allowlist.
+    transport_config.custom_headers.insert(
+        axum::http::header::HOST,
+        axum::http::HeaderValue::from_static("127.0.0.1:3000"),
+    );
+    transport_config.reinit_on_expired_session = false;
+
+    transport_config.retry_config =
+        Arc::new(rmcp::transport::common::client_side_sse::NeverRetry::default());
+
+    let transport = StreamableHttpClientTransport::from_config(transport_config);
+
+    let client = tokio::time::timeout(Duration::from_secs(5), ().serve(transport))
+        .await
+        .expect("MCP-client moet tijdig initialiseren")
+        .expect("MCP-client moet verbinden");
+
+    let (pids, response) = {
+        let request = client.call_tool(CallToolRequestParams::new("work_0"));
+        tokio::pin!(request);
+
+        let pids = tokio::select! {
+            result = &mut request => {
+                panic!("toolcall moet actief blijven tot shutdown: {result:?}");
+            }
+            pids = fixture.pids(0) => pids,
+        };
+
+        server.signal_shutdown();
+
+        let ((), response) = tokio::join!(server.finish(), async {
+            tokio::time::timeout(Duration::from_secs(10), &mut request)
+                .await
+                .expect("actieve MCP-call moet na shutdown afronden")
+        },);
+
+        (pids, response)
+    };
+
+    if let Ok(response) = response {
+        assert_eq!(response.is_error, Some(true));
+        assert_eq!(
+            response.structured_content.unwrap()["code"],
+            json!("execution_cancelled")
+        );
+    }
+
+    for pid in pids {
+        crate::process_checks::assert_stopped(pid).await;
+    }
+
+    tokio::time::timeout(Duration::from_secs(2), execution.shutdown())
+        .await
+        .expect("alle uitvoeringscapaciteit moet vrijgegeven zijn");
+
+    assert!(
+        !matches!(
+            tokio::time::timeout(Duration::from_secs(1), TcpStream::connect(server.address),).await,
+            Ok(Ok(_))
+        ),
+        "afgesloten server mag geen verbindingen accepteren"
+    );
+
+    tokio::time::timeout(Duration::from_secs(5), client.cancel())
+        .await
+        .expect("MCP-client moet tijdig afsluiten")
+        .expect("MCP-clienttaak moet zonder paniek afsluiten");
+}
+
+#[tokio::test]
+async fn rest_and_mcp_share_execution_capacity() {
+    use rmcp::{
+        ServiceExt,
+        model::CallToolRequestParams,
+        transport::{
+            StreamableHttpClientTransport,
+            streamable_http_client::StreamableHttpClientTransportConfig,
+        },
+    };
+
+    let fixture = Fixture::new();
+    let mut server = TestServer::start(fixture.state(4)).await;
+
+    let mut transport_config =
+        StreamableHttpClientTransportConfig::with_uri(format!("http://{}/mcp", server.address));
+    transport_config.custom_headers.insert(
+        axum::http::header::HOST,
+        axum::http::HeaderValue::from_static("127.0.0.1:3000"),
+    );
+    transport_config.reinit_on_expired_session = false;
+    transport_config.retry_config =
+        Arc::new(rmcp::transport::common::client_side_sse::NeverRetry::default());
+
+    let transport = StreamableHttpClientTransport::from_config(transport_config);
+    let client = tokio::time::timeout(Duration::from_secs(5), ().serve(transport))
+        .await
+        .expect("MCP-client moet tijdig initialiseren")
+        .expect("MCP-client moet verbinden");
+
+    let address = server.address;
+    let first_rest = tokio::spawn(async move { post(address, "work_0").await });
+    let second_rest = tokio::spawn(async move { post(address, "work_1").await });
+
+    let outcome = tokio::time::timeout(Duration::from_secs(15), async {
+        let (first_mcp, second_mcp, pids) = tokio::join!(
+            client.call_tool(CallToolRequestParams::new("work_2")),
+            client.call_tool(CallToolRequestParams::new("work_3")),
+            async {
+                let mut pids = Vec::new();
+
+                for index in 0..4 {
+                    pids.extend(fixture.pids(index).await);
+                }
+
+                let (status, body) =
+                    tokio::time::timeout(Duration::from_secs(2), post(address, "git_version"))
+                        .await
+                        .expect("extra REST-call moet direct worden afgewezen");
+
+                assert_eq!(status, 503);
+                assert_eq!(body["code"], json!("capacity_exceeded"));
+
+                let rejected = tokio::time::timeout(
+                    Duration::from_secs(2),
+                    client.call_tool(CallToolRequestParams::new("git_version")),
+                )
+                .await
+                .expect("extra MCP-call moet direct worden afgewezen")
+                .expect("capaciteitsgebrek moet een toolresultaat opleveren");
+
+                assert_eq!(rejected.is_error, Some(true));
+                assert_eq!(
+                    rejected.structured_content.unwrap()["code"],
+                    json!("capacity_exceeded")
+                );
+
+                std::fs::write(fixture.release(), b"stop").unwrap();
+
+                pids
+            },
+        );
+
+        for response in [first_mcp, second_mcp] {
+            let response = response.expect("actieve MCP-call moet afronden");
+            assert_eq!(response.is_error, Some(false));
+            assert_eq!(response.structured_content.unwrap()["success"], true);
+        }
+
+        for request in [first_rest, second_rest] {
+            let (status, body) = request.await.unwrap();
+            assert_eq!(status, 200);
+            assert_eq!(body["success"], json!(true));
+        }
+
+        let (status, body) = post(address, "git_version").await;
+        assert_eq!(status, 200);
+        assert_eq!(body["success"], json!(true));
+
+        let recovered = client
+            .call_tool(CallToolRequestParams::new("git_version"))
+            .await
+            .expect("MCP-uitvoering moet na vrijgave weer werken");
+
+        assert_eq!(recovered.is_error, Some(false));
+        assert_eq!(recovered.structured_content.unwrap()["success"], true);
+
+        pids
+    })
+    .await;
+
+    server.signal_shutdown();
+    server.finish().await;
+
+    tokio::time::timeout(Duration::from_secs(5), client.cancel())
+        .await
+        .expect("MCP-client moet tijdig afsluiten")
+        .expect("MCP-clienttaak moet zonder paniek afsluiten");
+
+    let pids = outcome.expect("gemengde capaciteitstest moet tijdig afronden");
+
+    for pid in pids {
+        crate::process_checks::assert_stopped(pid).await;
+    }
+}

@@ -6,7 +6,7 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 Actief is [F05 — MCP-integratie](docs/features/F05-mcp-integratie.md). Streamable HTTP op `/mcp` deelt registry, inputschemaopbouw en uitvoering met REST. Een echte SDK-client ontdekt en voert een geconfigureerde testtool via TCP uit. Foutmapping, Host/Origin, bodygrenzen en streamannulering zijn gericht getest op Windows.
 
-F05 is in uitvoering. Requestannulering is aangesloten, maar de protocoltest met PID-bewijs moet nog worden geschreven. De helper `mcp_wait_helper` is toegevoegd en compileert. Volledige formatter-/lint-/testcontroles, productie-shutdown met actieve MCP-tools en F05-CI zijn nog niet bevestigd. Zie [voortgang](docs/voortgang.md) en de [F05-notitie](notities/F05-mcp-integratie.md).
+F05 is in uitvoering. Protocolannulering, productie-shutdown met een MCP-procesboom, gedeelde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn op Windows getest. De SDK-client onderhandelt `2025-11-25`. De eigenaar bevestigt formatter, Clippy en 156 geslaagde tests met 7 proceshelpers. MCP-padtests en F05-platform-CI volgen nog. Zie [voortgang](docs/voortgang.md) en de [F05-notitie](notities/F05-mcp-integratie.md).
 
 De vorige F04-stand heeft geslaagde lokale controles en drieplatform-CI. Dit geldt niet als bewijs voor F05; review/merge is tijdens deze werksessie niet afzonderlijk bevestigd. De voorbeeldtools staan in [config/tools.json](config/tools.json); zie de [F04-testhandleiding](docs/F04-handmatig-testen.md).
 
