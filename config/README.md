@@ -1,74 +1,59 @@
-# Configuratievoorbeelden
+# Toolconfiguratie
 
-Deze documentatie beschrijft het JSON-formaat, uitgebreid tijdens F04 (Review). De applicatie leest en valideert dit configuratiebestand bij startup.
+CommandHub valideert bij het starten het JSON-bestand uit `COMMANDHUB_CONFIG`. De standaard is `config/tools.json`, relatief aan de serverwerkmap. Start vanuit de projecthoofdmap. Kies op macOS `export COMMANDHUB_CONFIG=config/tools.macos.json` vóór `cargo run --locked`. Herstart de server na wijzigingen aan de configuratie of de serveromgeving.
 
-Bij startup leest de server standaard `config/tools.json`, relatief aan de huidige werkdirectory. De beheerder kan een andere bestandslocatie instellen met de omgevingsvariabele `COMMANDHUB_CONFIG`.
+## Configuratieformaat
 
-Een tool heeft een naam, beschrijving, executable (`command`), lijst losse argumenten en parameters. Een placeholder verwijst naar een parameter en staat als volledig argument. `timeout` is optioneel, in milliseconden, met een standaard van 10.000 ms en een maximum van 60.000 ms.
-
-`command` kan een absoluut pad zijn of een executable-naam, zoals `git`, die via de `PATH` van het serverproces wordt gevonden. De configuratiebeheerder bepaalt deze waarde; een client kan die niet aanleveren of wijzigen.
+Een tool heeft een unieke naam, een beschrijving, een executable (`command`), losse argumenten en een lijst met parameters. De executable is een absoluut pad of een naam op het `PATH` van de server. Plaats een placeholder als volledig argument. Een parameterloze tool heeft een lege parameterslijst.
 
 ```json
 {
   "tools": [
     {
-      "name": "list_files",
-      "description": "List files in a directory",
-      "command": "ls",
-      "arguments": ["-la", "{path}"],
+      "name": "service_health",
+      "description": "Controleer de HTTP-status van een vooraf ingestelde lokale service.",
+      "command": "python",
+      "arguments": ["-I", "tools/personal_tools.py", "service_health", "{service}"],
       "parameters": [
         {
-          "name": "path",
+          "name": "service",
           "type": "string",
-          "required": true
+          "required": true,
+          "allowed_values": ["commandhub", "local_web"]
         }
       ]
-    },
-    {
-      "name": "git_status",
-      "description": "Show the status of a Git repository",
-      "command": "git",
-      "arguments": ["-C", "{repository}", "status"],
-      "parameters": [
-        {
-          "name": "repository",
-          "type": "string",
-          "required": true
-        }
-      ],
-      "timeout": 5000
     }
   ]
 }
 ```
 
-`timeout` weglaten betekent 10 seconden. Een ingestelde timeout moet groter zijn dan 0 en maximaal 60 seconden zijn. De applicatie leest het voorbeeldformaat strikt in en wijst onbekende velden en ongeldige configuraties af. De voorbeelden tonen configuratie; procesuitvoering en bijbehorende beveiligingsgrenzen vallen buiten F02. De genoemde `ls`-opdracht is niet op elk platform beschikbaar; kies bij uitvoering een platformgeschikte executable.
+`timeout` is optioneel en staat in milliseconden. De standaard is 10.000 en het toegestane bereik is 1–60.000. De executor begrenst gecombineerde stdout en stderr op 1 MiB en deelt vier uitvoeringsplekken tussen REST en MCP. De requestbody is begrensd op 16 KiB.
 
-De client kan `command` of vaste argumenten niet wijzigen. De huidige F04-code ondersteunt dynamische parametervervanging; parameterloze tools blijven een lege parameterslijst gebruiken.
+`allowed_values` begrenst een string tot een keuzelijst. Met `allowed_roots` valideert de kern een absoluut clientpad tegen bestaande absolute directorypaden. Een optionele placeholder mag maximaal één keer voorkomen, achteraan en zonder vaste argumenten die met `-` of `/` beginnen. Iedere parameter moet minimaal één volledige placeholder hebben. Zie het [API-contract](../docs/api-en-configuratie.md).
 
-F03 staat native executables en expliciet geconfigureerde interpreters toe. Voor een script configureert de beheerder de interpreter als `command` en het script als vast argument. De server start niet automatisch een shell en dispatcht niet impliciet naar Windows `.bat`- of `.cmd`-bestanden. Het childproces erft de omgeving en werkdirectory van de server.
+## Meegeleverde tools
 
-De F03-grenzen zijn maximaal 1 MiB gecombineerde stdout/stderr, 16 KiB requestbody en vier gelijktijdige uitvoeringen. Een volle capaciteit wordt direct afgewezen. De executor, process-wrap-platformwrappers, procesboomtests, HTTP-requestlimiet en POST-route zijn geïmplementeerd. POST /tools/{toolname} accepteert een JSON-object met gevalideerde parameters; een parameterloze tool verwacht een leeg object. Lege toolnamen, parameternamen en commands (ook uitsluitend witruimte) worden bij startup afgewezen.
+| Groep | Tools | Benodigd op de server |
+| --- | --- | --- |
+| Repository | `repo_status`, `git_recent`, `git_diff_view`, `git_version` | Git en een repository als serverwerkmap voor de inspectietools |
+| Project | `project_search`, `project_format_check` | Respectievelijk ripgrep (`rg`) en Cargo met rustfmt |
+| Bestanden | `folder_overview`, `document_search`, `file_sha256`, `csv_preview` | Python en een gegevensmap |
+| PDF | `pdf_info` | Python, de gegevensmap en `pdfinfo` van Poppler |
+| Media | `image_info`, `video_info` | Python, de gegevensmap en `ffprobe` van FFmpeg |
+| Notities | `notes_search`, `notes_recent` | Python en een submap `notes` in de gegevensmap |
+| Systeem | `disk_space`, `service_health` | Python |
+| Platformcontrole | `rust_details` in de standaardconfiguratie, `echo_ready` op macOS | Respectievelijk rustc en `/bin/echo` |
 
-## macOS (F07)
+Beide configuraties bevatten achttien tools. `git_recent` accepteert `count` als string (`"1"`, `"3"` of `"5"`). `git_diff_view` accepteert `view=--stat` of `view=--name-only`. De [README](../README.md#mcp-handmatig-testen) bevat aanroepen via MCP Inspector.
 
-Gebruik [tools.macos.json](tools.macos.json) op macOS. Kies het bestand vanuit de projectmap met `export COMMANDHUB_CONFIG=config/tools.macos.json` en start daarna `cargo run --locked`. De standaard tools.json blijft het bestaande Windows-voorbeeld; er is geen automatische OS-selectie.
+## Gegevensmap en persoonlijke tools
 
-De macOS-configuratie bevat git_version, echo_ready (/bin/echo met een vast argument), hostname, whoami en ping_localhost. macOS-ping gebruikt losse argumenten -c, 4 en 127.0.0.1; de Windows-configuratie gebruikt -n. De toegevoegde CI-test controleert configuratievalidatie en voert op macOS echo_ready uit. De macOS-CI-job is geslaagd; de andere voorbeeldtools zijn niet afzonderlijk geverifieerd.
+De configuraties starten [personal_tools.py](../tools/personal_tools.py) met een vaste toolnaam en losse argumenten. De standaardconfiguratie gebruikt `python`, de macOS-configuratie `python3`. Gebruik Python 3.10 of nieuwer en zet de benodigde programma’s op het `PATH` van de server.
 
-## F04-velden en beperkingen
+De gegevensmap is `CommandHub-data` in de thuismap van het account dat CommandHub draait. Met `COMMANDHUB_DATA_DIR` kan ik vooraf een andere bestaande absolute map kiezen. Bestandstools accepteren relatieve paden vanaf die map. Het script controleert het opgeloste pad op de mapgrens. Bij recursief doorzoeken slaat het symbolische links en Windows-junctions over. Ik plaats alleen bestanden in de gegevensmap die via MCP opgevraagd mogen worden.
 
-Parameterdefinities ondersteunen optioneel allowed_values (lijst strings) en allowed_roots (lijst absolute bestaande directorypaden). Zie [het API-contract](../docs/api-en-configuratie.md) voor de exacte validatieregels. De bovenstaande padvoorbeelden stammen uit F02 en bevatten nog geen roots; voeg voor werkelijk padbeleid expliciet allowed_roots met een bestaande beheerderslocatie toe. Zonder roots is de parameter gewone tekst. De meegeleverde tools.json en tools.macos.json bevatten nog geen nieuwe dynamische F04-voorbeeldtool.
-
-Een ontbrekende optionele placeholder wordt weggelaten. Maximaal één optionele placeholder, alleen als laatste argument en zonder vaste argumenten met prefix - of /, is toegestaan. De beheerder beoordeelt per executable de argumentbetekenis; prefixcontroles vormen geen volledige toolisolatie.
-
-## Geteste dynamische voorbeelden
-
-[tools.json](tools.json) bevat rust_details (detail: --version of -vV), git_recent (count als string 1/3/5) en git_diff_view (view: --stat of --name-only). Deze tools staan naast de bestaande tools in de standaardconfiguratie. Herstart de server om configuratiewijzigingen te laden. Alle drie zijn lokaal werkelijk uitgevoerd. Zie [de testhandleiding](../docs/F04-handmatig-testen.md) voor PowerShell-aanroepen en een optioneel padvoorbeeld.
-
-Iedere parameter moet minstens één volledige placeholder hebben. Het ontdekschema toont de waardelijsten en wijst extra velden af. F04 staat op Review: lokale formatter-, Clippy- en testcontroles zijn geslaagd; CI is geslaagd op Windows, Ubuntu en macOS voor 1fb8d71; alleen PR-review/merge volgt nog.
-
-## CI-afronding — 2026-11-04
-
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
-
+- `folder_overview` geeft maximaal 25 bestanden in de gekozen map. `notes_recent` geeft maximaal 25 tekst- en Markdown-notities uit de submap `notes` en onderliggende mappen.
+- Zoeken is hoofdletterongevoelig en beperkt tot 25 treffers. Tekstbestanden groter dan 1 MiB worden overgeslagen. Documenten mogen onder meer `.txt`, `.md`, `.log`, `.json` of `.csv` zijn. Notities gebruiken `.txt` of `.md`.
+- `csv_preview` toont de kopregel en maximaal tien gegevensrijen. De uitvoer is begrensd op 40 velden per rij en 160 tekens per veld. Het veld `truncated` geeft aan of de uitvoer is ingekort.
+- `service_health` gebruikt `commandhub` voor `127.0.0.1:3000/status` en `local_web` voor `127.0.0.1:80/`. De client kiest uit deze twee waarden.
+- Persoonlijke tools geven JSON op stdout. MCP levert die tekst in `structuredContent.stdout`. Een onbereikbare service kan een succesvolle toolaanroep opleveren met `reachable: false` en `healthy: false`.

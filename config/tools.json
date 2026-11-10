@@ -1,62 +1,41 @@
 {
   "tools": [
     {
-      "name": "git_version",
-      "description": "Show the installed Git version",
+      "name": "repo_status",
+      "description": "Toon de huidige Git-branch en welke bestanden staged, gewijzigd of nieuw zijn in de repository van de serverwerkmap.",
       "command": "git",
-      "arguments": ["--version"],
+      "arguments": ["--no-optional-locks", "--no-pager", "status", "--porcelain=v1", "--branch", "--untracked-files=normal"],
       "parameters": []
     },
     {
-      "name": "rust_version",
-      "description": "Toont de geïnstalleerde Rust-versie",
-      "command": "rustc",
-      "arguments": ["--version"],
-      "parameters": []
-    },
-    {
-      "name": "cargo_version",
-      "description": "Toont de geïnstalleerde Cargo-versie",
-      "command": "cargo",
-      "arguments": ["--version"],
-      "parameters": []
-    },
-    {
-      "name": "hostname",
-      "description": "Toont de computernaam",
-      "command": "hostname",
-      "arguments": [],
-      "parameters": []
-    },
-    {
-      "name": "whoami",
-      "description": "Toont de gebruiker waaronder CommandHub draait",
-      "command": "whoami",
-      "arguments": [],
-      "parameters": []
-    },
-    {
-      "name": "ping_localhost",
-      "description": "Ping localhost vier keer op Windows",
-      "command": "ping",
-      "arguments": ["-n", "4", "127.0.0.1"],
-      "parameters": [],
-      "timeout": 10000
-    },
-    {
-      "name": "rust_details",
-      "description": "Toon korte of uitgebreide Rust-versie-informatie",
-      "command": "rustc",
-      "arguments": ["{detail}"],
+      "name": "project_search",
+      "description": "Zoek hoofdlettergevoelig naar letterlijke tekst in src en docs van CommandHub. Geef bestandsnamen en regelnummers terug, maximaal tien treffende regels per bestand. Exitcode 1 zonder uitvoer betekent geen treffers.",
+      "command": "rg",
+      "arguments": [
+        "--no-config",
+        "--color", "never",
+        "--with-filename",
+        "--line-number",
+        "--fixed-strings",
+        "--max-count", "10",
+        "--max-columns", "240",
+        "--regexp", "{query}",
+        "--", "src", "docs"
+      ],
       "parameters": [
         {
-          "name": "detail",
+          "name": "query",
           "type": "string",
-          "required": true,
-          "allowed_values": ["--version", "-vV"]
+          "required": true
         }
-      ],
-      "timeout": 10000
+      ]
+    },
+    {
+      "name": "project_format_check",
+      "description": "Controleer de opmaak van de Rust-code in CommandHub en toon eventuele verschillen.",
+      "command": "cargo",
+      "arguments": ["fmt", "--all", "--check"],
+      "parameters": []
     },
     {
       "name": "git_recent",
@@ -102,6 +81,220 @@
         }
       ],
       "timeout": 10000
+    },
+    {
+      "name": "git_version",
+      "description": "Show the installed Git version",
+      "command": "git",
+      "arguments": ["--version"],
+      "parameters": []
+    },
+    {
+      "name": "rust_details",
+      "description": "Toon korte of uitgebreide Rust-versie-informatie",
+      "command": "rustc",
+      "arguments": ["{detail}"],
+      "parameters": [
+        {
+          "name": "detail",
+          "type": "string",
+          "required": true,
+          "allowed_values": ["--version", "-vV"]
+        }
+      ],
+      "timeout": 10000
+    },
+    {
+      "name": "folder_overview",
+      "description": "Toon de 25 laatst gewijzigde bestanden in een map, met grootte en wijzigingstijd. Gebruik een relatief pad binnen CommandHub-data of '.' voor de hoofdmap.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "folder_overview",
+        "{path}"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "document_search",
+      "description": "Zoek hoofdletterongevoelig in UTF-8-documenten onder CommandHub-data. Geef maximaal 25 treffers met pad, regelnummer en tekst terug.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "document_search",
+        "{query}"
+      ],
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "pdf_info",
+      "description": "Toon het pagina-aantal en de metadata van een PDF. Gebruik een relatief pad binnen CommandHub-data. Vereist pdfinfo.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "pdf_info",
+        "{path}"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "timeout": 15000
+    },
+    {
+      "name": "file_sha256",
+      "description": "Bereken de SHA-256-checksum van één bestand. Gebruik een relatief pad binnen CommandHub-data.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "file_sha256",
+        "{path}"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "timeout": 15000
+    },
+    {
+      "name": "csv_preview",
+      "description": "Toon de kopregel en de eerste tien gegevensrijen van een CSV- of TSV-bestand. Gebruik een relatief pad binnen CommandHub-data.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "csv_preview",
+        "{path}"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "disk_space",
+      "description": "Toon de vrije en totale opslagruimte op lokale volumes.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "disk_space"
+      ],
+      "parameters": []
+    },
+    {
+      "name": "service_health",
+      "description": "Controleer de HTTP-status van CommandHub (commandhub) of de lokale webserver op poort 80 (local_web).",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "service_health",
+        "{service}"
+      ],
+      "parameters": [
+        {
+          "name": "service",
+          "type": "string",
+          "required": true,
+          "allowed_values": [
+            "commandhub",
+            "local_web"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "image_info",
+      "description": "Toon het formaat, de breedte en de hoogte van een afbeelding. Gebruik een relatief pad binnen CommandHub-data. Vereist ffprobe.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "image_info",
+        "{path}"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "timeout": 15000
+    },
+    {
+      "name": "video_info",
+      "description": "Toon de speelduur indien beschikbaar, beeldresolutie en videocodec. Gebruik een relatief pad binnen CommandHub-data. Vereist ffprobe.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "video_info",
+        "{path}"
+      ],
+      "parameters": [
+        {
+          "name": "path",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "timeout": 15000
+    },
+    {
+      "name": "notes_search",
+      "description": "Zoek hoofdletterongevoelig in tekst- en Markdown-notities in CommandHub-data/notes. Geef maximaal 25 treffers terug.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "notes_search",
+        "{query}"
+      ],
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "notes_recent",
+      "description": "Toon de 25 laatst gewijzigde tekst- en Markdown-notities in CommandHub-data/notes.",
+      "command": "python",
+      "arguments": [
+        "-I",
+        "tools/personal_tools.py",
+        "notes_recent"
+      ],
+      "parameters": []
     }
   ]
 }
