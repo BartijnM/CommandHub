@@ -1,6 +1,12 @@
 # Toolconfiguratie
 
-CommandHub valideert bij het starten het JSON-bestand uit `COMMANDHUB_CONFIG`. De standaard is `config/tools.json`, relatief aan de serverwerkmap. Start vanuit de projecthoofdmap. Kies op macOS `export COMMANDHUB_CONFIG=config/tools.macos.json` vóór `cargo run --locked`. Herstart de server na wijzigingen aan de configuratie of de serveromgeving.
+CommandHub valideert bij het starten het JSON-bestand uit `COMMANDHUB_CONFIG`. De standaard is `config/tools.json`, relatief aan de serverwerkmap. Start vanuit de projecthoofdmap en herstart de server na wijzigingen aan de configuratie of serveromgeving.
+
+| Platform | Configuratie | Instelling vóór het starten |
+| --- | --- | --- |
+| Windows | [tools.json](tools.json) | Standaardprofiel |
+| Linux | [tools.linux.json](tools.linux.json) | `export COMMANDHUB_CONFIG=config/tools.linux.json` |
+| macOS | [tools.macos.json](tools.macos.json) | `export COMMANDHUB_CONFIG=config/tools.macos.json` |
 
 ## Configuratieformaat
 
@@ -44,11 +50,11 @@ Een tool heeft een unieke naam, een beschrijving, een executable (`command`), lo
 | Systeem | `disk_space`, `service_health` | Python |
 | Platformcontrole | `rust_details` in de standaardconfiguratie, `echo_ready` op macOS | Respectievelijk rustc en `/bin/echo` |
 
-Beide configuraties bevatten achttien tools. `git_recent` accepteert `count` als string (`"1"`, `"3"` of `"5"`). `git_diff_view` accepteert `view=--stat` of `view=--name-only`. De [README](../README.md#mcp-handmatig-testen) bevat aanroepen via MCP Inspector.
+Elk platformprofiel bevat achttien tools. `git_recent` accepteert `count` als string (`"1"`, `"3"` of `"5"`). `git_diff_view` accepteert `view=--stat` of `view=--name-only`. De [README](../README.md#mcp-handmatig-testen) bevat aanroepen via MCP Inspector.
 
 ## Gegevensmap en persoonlijke tools
 
-De configuraties starten [personal_tools.py](../tools/personal_tools.py) met een vaste toolnaam en losse argumenten. De standaardconfiguratie gebruikt `python`, de macOS-configuratie `python3`. Gebruik Python 3.10 of nieuwer en zet de benodigde programma’s op het `PATH` van de server.
+De configuraties starten [personal_tools.py](../tools/personal_tools.py) met een vaste toolnaam en losse argumenten. De standaardconfiguratie gebruikt `python`, de Linux- en macOS-configuraties `python3`. Gebruik Python 3.10 of nieuwer en zet de benodigde programma’s op het `PATH` van de server.
 
 De gegevensmap is `CommandHub-data` in de thuismap van het account dat CommandHub draait. Met `COMMANDHUB_DATA_DIR` kan ik vooraf een andere bestaande absolute map kiezen. Bestandstools accepteren relatieve paden vanaf die map. Het script controleert het opgeloste pad op de mapgrens. Bij recursief doorzoeken slaat het symbolische links en Windows-junctions over. Ik plaats alleen bestanden in de gegevensmap die via MCP opgevraagd mogen worden.
 

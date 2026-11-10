@@ -1,7 +1,7 @@
 ---
 id: F06
 prioriteit: Must
-status: Backlog
+status: In uitvoering
 milestone: "Oplevering"
 ---
 
@@ -25,8 +25,8 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 ## Todo
 
-- [ ] Voorbeeldconfiguraties voor Windows, Linux en macOS afronden; bouw voort op F07.
-- [ ] Schone installatie en volledige keten op alle drie platforms testen.
+- [x] Voorbeeldconfiguraties voor Windows, Linux en macOS afronden; bouw voort op F07.
+- [x] Schone installatie en volledige keten op alle drie platforms testen. De CI-basistest bouwt vanaf een schone checkout en controleert startup, ontdekking, uitvoering en validatiefout via Inspector.
 - [ ] README, technische documentatie en notities actualiseren.
 - [ ] Demo van configuratie, ontdekking, uitvoering, fouten, logging en timeout voorbereiden.
 - [ ] Requirementdekking en resterende beperkingen nalopen.
@@ -44,7 +44,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - GitHub issue: nog aan te maken.
 - Branch: feature/F06-oplevering.
 - Pull request: nog niet aangemaakt.
-- Tests/handmatige verificatie: nog vast te leggen.
+- CI op 2026-11-10: de meest recente getoonde run is groen op Windows, Ubuntu en macOS. Elke runner gebruikt het eigen toolprofiel en draait de MCP-basistest. Afzonderlijke verificatie van optionele tools en de onafhankelijke README-doorloop blijven open.
 - [Featurenotitie](../../notities/F06-oplevering.md).
 
 ## Afronden
@@ -53,4 +53,3 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [ ] Documentatie en notitie bijgewerkt.
 - [ ] Voortgang bijgewerkt.
 - [ ] PR gemerged; pas daarna status Klaar.
-

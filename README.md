@@ -4,11 +4,7 @@ CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe comman
 
 ## Huidige status
 
-Actief is [F05 — MCP-integratie](docs/features/F05-mcp-integratie.md). Streamable HTTP op `/mcp` deelt registry, inputschemaopbouw en uitvoering met REST. Een echte SDK-client ontdekt en voert een geconfigureerde testtool via TCP uit. Foutmapping, Host/Origin, bodygrenzen en streamannulering zijn gericht getest op Windows.
-
-F05 staat op Review. Protocolannulering, productie-shutdown met een MCP-procesboom, gedeelde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn op Windows getest. De SDK-client onderhandelt `2025-11-25`. Formatter, Clippy en 156 tests zijn geslaagd. Zeven genegeerde functies zijn proceshelpers. De uitgebreide ketentest vergelijkt ook geldige en afgewezen paden tussen REST en MCP. De laatste volledige Windows-suite slaagde in 9,77 s. F05-platform-CI is geslaagd op Ubuntu, macOS en Windows in run #50. PR-review/merge staat nog open. Zie [voortgang](docs/voortgang.md) en de [F05-notitie](notities/F05-mcp-integratie.md).
-
-De vorige F04-stand heeft geslaagde lokale controles en drieplatform-CI. Dit geldt niet als bewijs voor F05; review/merge is tijdens deze werksessie niet afzonderlijk bevestigd. De voorbeeldtools staan in [config/tools.json](config/tools.json); zie de [F04-testhandleiding](docs/F04-handmatig-testen.md).
+Actief is [F06 — Platformcontrole en demonstratie](docs/features/F06-oplevering.md). De CI-matrix bouwt en test CommandHub vanaf een schone checkout op Windows, Ubuntu en macOS. Een echte Inspector-client controleert op elke runner de toollijst, een geslaagde uitvoering en een validatiefout. De optionele toolafhankelijkheden hebben eigen installatievereisten. Zie de [voortgang](docs/voortgang.md) en de [F06-notitie](notities/F06-oplevering.md).
 
 ## Installeren en gebruiken
 
@@ -19,8 +15,8 @@ Benodigd: recente stabiele Rust-toolchain met ondersteuning voor editie 2024, Ca
 Voer vanuit de projecthoofdmap uit:
 
 ```powershell
-cargo build
-cargo run
+cargo build --locked
+.\target\debug\commandhub.exe
 ```
 
 Open [de statusroute](http://127.0.0.1:3000/status):
@@ -37,26 +33,40 @@ Voer met de server actief in een tweede PowerShell-terminal de geconfigureerde p
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3000/tools/git_version" -ContentType "application/json" -Body '{}' | ConvertTo-Json
 ```
 
-Op macOS kies je de aparte configuratie vanuit de projectmap:
+### Starten op Linux of macOS
+
+Kies vanuit de projecthoofdmap het profiel voor je platform.
+
+**Linux**
+
+```sh
+export COMMANDHUB_CONFIG=config/tools.linux.json
+```
+
+**macOS**
 
 ```sh
 export COMMANDHUB_CONFIG=config/tools.macos.json
-cargo run --locked
 ```
 
-Voer met de server actief in een tweede terminal de native voorbeeldtool uit:
+Bouw en start de server nadat je één profiel hebt gekozen.
+
+```sh
+cargo build --locked
+./target/debug/commandhub
+```
+
+Gebruik op macOS desgewenst de native voorbeeldtool vanuit een tweede terminal.
 
 ```sh
 curl -X POST http://127.0.0.1:3000/tools/echo_ready -H 'Content-Type: application/json' -d '{}'
 ```
 
-Kies op macOS expliciet de macOS-configuratie.
-
 De response bevat `success`, `stdout`, `stderr`, `exitCode` en `duration` in milliseconden. De route accepteert een JSON-object met de parameters van de gekozen tool; parameterloze tools verwachten een leeg object. De requestbody mag maximaal 16 KiB zijn. Zie [het API-contract](docs/api-en-configuratie.md) voor foutresponses.
 
 ## MCP handmatig testen
 
-Installeer Node.js met npm om de MCP Inspector CLI te gebruiken. Start vanuit de projecthoofdmap de server in de eerste terminal. Gebruik op macOS eerst de hierboven getoonde instelling voor COMMANDHUB_CONFIG.
+Installeer Node.js met npm om de MCP Inspector CLI te gebruiken. Start vanuit de projecthoofdmap de server in de eerste terminal. Kies op Linux en macOS eerst het platformprofiel zoals hierboven beschreven.
 
 ```sh
 cargo run --locked

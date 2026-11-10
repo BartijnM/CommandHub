@@ -104,3 +104,19 @@ De uitgebreide SDK-ketentest controleert geldige absolute paden, canonicalisatie
 ## Platformverificatie op 2026-11-09
 
 De eigenaar leverde een screenshot van CI-run #50 aan. De jobs Checks (ubuntu-latest), Checks (macos-latest) en Checks (windows-latest) zijn geslaagd. Op alle drie zijn cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings, cargo test --locked en cargo build --locked groen. Exacte CI-testtotalen, commit-SHA en run-URL zijn niet zichtbaar in de screenshot. De lokale testtotalen hierboven blijven afzonderlijk vastgelegd. PR-review/merge is nog open.
+
+## F06-platformcontrole op 2026-11-10
+
+De laatste CI-run is groen op alle drie de runners. De getoonde tijden zijn de looptijden van de volledige jobs.
+
+| Runner | Profiel | CI | Jobduur |
+| --- | --- | --- | --- |
+| Windows (`windows-latest`) | `config/tools.json` | Geslaagd | 4 min 47 s |
+| Ubuntu (`ubuntu-latest`) | `config/tools.linux.json` | Geslaagd | 2 min 5 s |
+| macOS (`macos-latest`) | `config/tools.macos.json` | Geslaagd | 3 min 14 s |
+
+Elke job begint met een schone checkout en draait formatter, Clippy, Rust-tests, build en de stap **MCP-basistest**. De MCP-stap start de gebouwde server met het platformprofiel, wacht op `/status`, vergelijkt de namen uit `tools/list` met de configuratie en controleert `git_version` via `tools/call`. Ook controleert de stap dat `git_diff_view` met `view=--patch` de toolfout `invalid_parameters` geeft. Inspector 2.11.0 gebruikt Streamable HTTP in legacy-modus. De stap ruimt het serverproces op bij afsluiten.
+
+Dit bewijs geldt voor de basisketen op gehoste runners. De profielen zijn alle drie geladen en ontdekt. De afzonderlijke aanroepen voor Python, `rg`, `pdfinfo` en `ffprobe` vallen buiten deze CI-basistest. Een onafhankelijke README-doorloop en de volledige opleveringsdemo staan nog open.
+
+De volgende stap voor R17 is het reproduceerbare demo-draaiboek en de onafhankelijke README-doorloop. Voor de voortgang en open onderdelen zie de [F06-notitie](../notities/F06-oplevering.md).
