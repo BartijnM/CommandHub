@@ -24,22 +24,21 @@ jobs:
       - run: cargo test --locked
       - run: cargo build --locked
       - name: Node.js voor MCP Inspector
-        if: runner.os == 'Linux' || runner.os == 'macOS'
         uses: actions/setup-node@v7
         with:
           node-version: '22'
 
-      - name: MCP-basistest op Ubuntu en macOS
-        if: runner.os == 'Linux' || runner.os == 'macOS'
+      - name: MCP-basistest
         shell: bash
         timeout-minutes: 5
         env:
-          COMMANDHUB_CONFIG: ${{ runner.os == 'macOS' && 'config/tools.macos.json' || 'config/tools.linux.json' }}
+          COMMANDHUB_CONFIG: ${{ runner.os == 'Windows' && 'config/tools.json' || (runner.os == 'macOS' && 'config/tools.macos.json' || 'config/tools.linux.json') }}
+          COMMANDHUB_BIN: ${{ runner.os == 'Windows' && './target/debug/commandhub.exe' || './target/debug/commandhub' }}
         run: |
           set -euo pipefail
 
-          output_dir="$(mktemp -d "$RUNNER_TEMP/commandhub-mcp.XXXXXX")"
-          ./target/debug/commandhub > "$output_dir/server.log" 2>&1 &
+          output_dir="$(mktemp -d "${TMPDIR:-/tmp}/commandhub-mcp.XXXXXX")"
+          "$COMMANDHUB_BIN" > "$output_dir/server.log" 2>&1 &
           server_pid=$!
 
           cleanup() {
