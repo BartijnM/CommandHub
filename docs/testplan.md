@@ -1,13 +1,13 @@
 # Testplan en requirementdekking
 
-Bijgewerkt op 2026-11-11 voor F06. Deze matrix koppelt iedere requirement aan implementatie en aanwezig bewijs. De code en testdefinities zijn bij de documentatiereview gelezen. De testresultaten hieronder komen uit de eerder vastgelegde controles en de bevestiging van de eigenaar.
+Bijgewerkt op 2026-11-11 voor F06. Deze matrix koppelt iedere requirement aan implementatie en aanwezig bewijs. De code en testdefinities zijn bij de documentatiereview gelezen. De testresultaten hieronder komen uit de eerder vastgelegde controles en de mijn bevestiging.
 
 ## Must-eisen
 
 | Eis | Implementatie en bewijs | Stand |
 | --- | --- | --- |
 | R01 Configuratie laden en valideren | config::load en ConfigFile::validate. config_tests controleert JSON, onbekende/ontbrekende velden, dubbele namen, timeouts, placeholders, roots en laadfouten. De CI-MCP-basistest start met ieder platformprofiel. | Aangetoond voor de beschreven configuratiecontroles |
-| R02 Toevoegen zonder rebuild | Immutable registry wordt bij startup opnieuw geladen. Handmatig bevestigd in F02 en opnieuw door de eigenaar met demo-stap 6. | Door eigenaar bevestigd |
+| R02 Toevoegen zonder rebuild | Immutable registry wordt bij startup opnieuw geladen. Handmatig bevestigd in F02 en opnieuw door mij met demo-stap 6. | Door mij bevestigd |
 | R03 Ontdekken en opzoeken | ToolRegistry::find, gedeelde input_schema, GET /tools en MCP tools/list. tools_route_returns_tool_metadata_and_input_schema en SDK-ketentest. CI vergelijkt toolnamen met JSON. | Automatische en handmatige dekking |
 | R04 Executable met losse argumenten | Command::new met args. starts_with_platform_wrapper_and_waits_for_success en dynamic_argument_preserves_spaces_quotes_and_shell_characters. Demo gebruikt Git en rg. | Automatische en handmatige dekking |
 | R05 Uitvoeringsresultaten | ExecutionResult en adaptermapping. converts_core_result_to_http_json, returns_result_for_unsuccessful_exit_code en process_results_preserve_fields_and_indicate_failure. | Automatische en handmatige dekking |
@@ -22,7 +22,7 @@ Bijgewerkt op 2026-11-11 voor F06. Deze matrix koppelt iedere requirement aan im
 | R14 Windows, Linux en macOS | process_checks gebruikt OS-specifieke API’s. De CI-matrix draait Rust-tests, build en MCP-basistest met drie platformprofielen. | Basisketen op drie platforms aangetoond. Optionele tools hebben eigen afhankelijkheden |
 | R15 Gedeelde kern | AppState deelt registry en ExecutionService. De kern gebruikt eigen fouttypen en serde_json. REST/MCP-consistentietest en gemengde capaciteitstest gebruiken dezelfde state. | Codecontrole en ketentests |
 | R16 Lokale binding en transportcontroles | main bindt aan 127.0.0.1:3000. transport_* controleert Host, Origin, contentonderhandeling, protocolheaders, sessies en bodygrenzen. | Codecontrole en automatische transporttests |
-| R17 Documentatie en demo | README, configuratiehandleiding, API, architectuur, security en demo zijn bijgewerkt. De eigenaar bevestigt de demo. De eigenaar keurt de README op 2026-11-11 goed. | Door eigenaar bevestigd |
+| R17 Documentatie en demo | README, configuratiehandleiding, API, architectuur, security en demo zijn bijgewerkt. Ik bevestig de demo. Ik heb de README op 2026-11-11 beoordeeld en goedgekeurd. | Door mij bevestigd |
 
 De testnamen verwijzen naar [src/tests](../src/tests). Details van de eisen staan in [requirements](requirements.md). R17 is op 2026-11-11 bevestigd met de goedgekeurde README en de werkende demo.
 
@@ -81,7 +81,7 @@ De screenshot van de laatste F06-run vermeldt geen exact runnummer, commit-SHA o
 
 ### Demo met Claude Code, 2026-11-11
 
-De eigenaar bevestigt dat het [draaiboek](demo.md) werkt. Daarmee zijn ontdekking, projectonderzoek, validatiefouten, logging, timeout met herstel en het toevoegen van een tool via JSON en herstart bevestigd. De bevestiging is als handmatig resultaat vastgelegd. Exacte duurmetingen, clientversie en gebruikte route voor de ongeldige call zijn daarbij niet gespecificeerd.
+Ik heb bevestigd dat het [draaiboek](demo.md) werkt. Daarmee zijn ontdekking, projectonderzoek, validatiefouten, logging, timeout met herstel en het toevoegen van een tool via JSON en herstart bevestigd. De bevestiging is als handmatig resultaat vastgelegd. Exacte duurmetingen, clientversie en gebruikte route voor de ongeldige call zijn daarbij niet gespecificeerd.
 
 ## Grenzen van het bewijs
 
@@ -95,7 +95,7 @@ De productgrenzen staan in [security](security.md). Historische resultaten, fout
 
 ## Laatste oplevercontroles
 
-De eigenaar heeft de README goedgekeurd. Controleer de definitieve branchstand met de volgende commando’s en de drieplatform-CI.
+Ik heb de README en de F06-merge naar develop bevestigd op 2026-11-11. F06 is afgerond. Voor de opleverings-PR naar main beoordeel ik de CI van de opleverstand. De bijbehorende lokale controles zijn hieronder reproduceerbaar opgenomen.
 
 ~~~sh
 cargo fmt --check
@@ -104,4 +104,4 @@ cargo test --locked
 cargo build --locked
 ~~~
 
-Werk het bewijs en de F06-checklist bij voordat de opleverings-PR naar main wordt afgerond.
+Leg aanvullend CI-bewijs voor de opleverstand vast wanneer dit beschikbaar is. De laatste vastgelegde F06-platformcontrole blijft die van 2026-11-10.

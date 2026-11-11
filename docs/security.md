@@ -66,4 +66,4 @@ De adapters geven vaste veilige foutcodes en berichten terug. Interne procesbehe
 
 ## Verificatie
 
-De Rust-suite bevat parameter-, pad-, procesboom-, transport-, foutmapping- en loggingtests. F05-run #50 en de F06-platformcontrole van 2026-11-10 zijn geslaagd op Windows, Ubuntu en macOS. De eigenaar bevestigt op 2026-11-11 dat de demo met Claude Code werkt. De README is door de eigenaar goedgekeurd. De eindcontrole van de opleveringsstand volgt. Zie het [testplan](testplan.md) en de [F06-notitie](../notities/F06-oplevering.md).
+De Rust-suite bevat parameter-, pad-, procesboom-, transport-, foutmapping- en loggingtests. F05-run #50 en de F06-platformcontrole van 2026-11-10 zijn geslaagd op Windows, Ubuntu en macOS. Ik bevestig op 2026-11-11 dat de demo met Claude Code werkt. De README is door mij goedgekeurd. Ik heb ook de F06-merge naar develop op 2026-11-11 bevestigd. Voor de opleverings-PR naar main wordt de CI van de opleverstand beoordeeld. Zie het [testplan](testplan.md) en de [F06-notitie](../notities/F06-oplevering.md).

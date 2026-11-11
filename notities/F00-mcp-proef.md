@@ -58,7 +58,7 @@ De hoofdcrate en de geïsoleerde proef zijn op Windows beide gecontroleerd met `
 
 - F00 onderzocht foutgedrag voor een onbekende tool en een extra veld. Een volledige foutmatrix en extra protocolnegatieve tests vallen buiten deze minimale proef en moeten bij F05 worden uitgebreid waar relevant.
 - De beveiligingsafbakening is alleen voor lokaal gebruik gedocumenteerd: loopback-binding en SDK-standaard Host-controle; Origin-validatie staat standaard uit. Er is geen Origin-aanvalstest uitgevoerd en dit is geen remote-security-audit.
-- F00 staat klaar voor review. Jij voert de Git-sync uit; de PR moet nog worden gemaakt/beoordeeld/gemerged voordat de feature de status Klaar krijgt.
+- F00 staat klaar voor review. Ik voer de Git-sync uit. De PR moet nog worden gemaakt/beoordeeld/gemerged voordat de feature de status Klaar krijgt.
 
 ## Werksessie
 
@@ -84,10 +84,10 @@ F00 is inhoudelijk klaar voor review. Bekijk de wijzigingen en voer zelf de Git-
 
 ## Opleverreview op 2026-11-11
 
-De geïsoleerde proef is historische ontwerpinput. Productie-MCP, transportcontroles en echte clienttests zijn in F05/F06 gerealiseerd. De eigenaar bevestigt op 2026-11-11 de historische merge van F00.
+De geïsoleerde proef is historische ontwerpinput. Productie-MCP, transportcontroles en echte clienttests zijn in F05/F06 gerealiseerd. Ik heb op 2026-11-11 de historische merge bevestigd van F00.
 
 De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.
 
 ## Mergebevestiging op 2026-11-11
 
-De eigenaar bevestigt de historische merge. De feature staat op Klaar. Eerdere open mergevermeldingen in de gedateerde werksessies beschrijven de toenmalige stand.
+Ik heb de historische merge bevestigd. De feature staat op Klaar. Eerdere open mergevermeldingen in de gedateerde werksessies beschrijven de toenmalige stand.

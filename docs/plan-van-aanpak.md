@@ -1,6 +1,6 @@
 # Plan van aanpak
 
-Bijgewerkt op 2026-11-11. F06 rondt de lokale oplevering af. De configuratiegestuurde kern, REST, MCP, drieplatform-CI en demo zijn aanwezig. De README is door de eigenaar goedgekeurd. De definitieve opleveringscontrole volgt.
+Bijgewerkt op 2026-11-11. F06 is afgerond en de merge naar develop is door mij bevestigd. De configuratiegestuurde kern, REST, MCP, drieplatform-CI en demo zijn aanwezig. De README is door mij goedgekeurd. De opleverings-PR van develop naar main volgt.
 
 ## Doel
 
@@ -30,13 +30,13 @@ Per feature onderbouw ik acceptatiecriteria met gerichte tests, volledige Cargo-
 
 ## Stand van de oplevering
 
-De platformprofielen en schone-checkout-MCP-basistest zijn op 2026-11-10 groen gemeld op Windows, Ubuntu en macOS. De eigenaar bevestigt op 2026-11-11 de volledige [demo](demo.md). De documentatie en requirementmatrix zijn bijgewerkt. De README is door de eigenaar goedgekeurd. De volgende stap is de eindcontrole en het voorbereiden van de opleverings-PR naar main.
+De platformprofielen en schone-checkout-MCP-basistest zijn op 2026-11-10 groen gemeld op Windows, Ubuntu en macOS. Ik bevestig op 2026-11-11 de volledige [demo](demo.md). De documentatie en requirementmatrix zijn bijgewerkt. De README is door mij goedgekeurd. F06 is naar develop gemerged. De volgende stap is de opleverings-PR van develop naar main en beoordeling van de CI van de opleverstand.
 
 ## Planning en Git-werkwijze
 
 Feature-ID’s en afhankelijkheden staan in de [roadmap](roadmap.md). GitHub Issues en Project bevatten planning, mijlpalen en eventuele datums. Per feature houd ik één [notitie](../notities/README.md) bij met keuzes, problemen en verificatie.
 
-Featurewerk gaat via review naar develop. De oplevering gaat via een PR naar main. De eigenaar voert Git-acties uit. Code, documentatie, configuratievoorbeelden en testbewijs horen bij dezelfde oplevering.
+Featurewerk gaat via review naar develop. De oplevering gaat via een PR naar main. Ik voer Git-acties uit. Code, documentatie, configuratievoorbeelden en testbewijs horen bij dezelfde oplevering.
 
 ## Opleveronderdelen
 

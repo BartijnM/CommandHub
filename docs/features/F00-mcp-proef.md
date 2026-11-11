@@ -40,7 +40,7 @@ Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eige
 
 - GitHub issue: nog aan te maken.
 - Branch: feature/F00-mcp-proef.
-- Pull request gemerged, door eigenaar bevestigd op 2026-11-11.
+- Pull request gemerged, door mij bevestigd op 2026-11-11.
 - Tests/handmatige verificatie: vanuit de repositoryroot en de proefmap zijn `cargo fmt --check`, `cargo clippy --all-targets --locked -- -D warnings` en `cargo test --locked` geslaagd op Windows. Beide testbuilds vonden 0 tests. MCP Inspector CLI 2.11.0 heeft `tools/list`, onbekende-toolaanroep en `hello` met extra argument getest; `initialize` en succesvolle `tools/call` zijn ook handmatig geverifieerd. Zie de F00-notitie.
 - Beslissingen: [ADR-002](../beslissingen/ADR-002-mcp-proef.md).
 - [Featurenotitie](../../notities/F00-mcp-proef.md).
@@ -50,8 +50,8 @@ Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eige
 - [x] Relevante formatterings-, Clippy- en testbuildcontroles geslaagd; er zijn nog geen automatische tests.
 - [x] Documentatie en notitie bijgewerkt.
 - [x] Voortgang bijgewerkt.
-- [x] PR gemerged, door eigenaar bevestigd op 2026-11-11.
+- [x] PR gemerged, door mij bevestigd op 2026-11-11.
 
 ## Oplevercontext op 2026-11-11
 
-Dit plan bewaart de scope en het bewijs van de geïsoleerde proef. De productie-MCP-integratie is aanwezig en F05 is afgerond. De eigenaar bevestigt op 2026-11-11 de historische merge van F00. De actuele demo en clientcontroles staan bij [F06](F06-oplevering.md).
+Dit plan bewaart de scope en het bewijs van de geïsoleerde proef. De productie-MCP-integratie is aanwezig en F05 is afgerond. Ik heb op 2026-11-11 de historische merge bevestigd van F00. De actuele demo en clientcontroles staan bij [F06](F06-oplevering.md).

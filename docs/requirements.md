@@ -39,4 +39,4 @@ De huidige oplevering gebruikt loopbackbinding. Remote gebruik vraagt een afzond
 
 ## Traceerbaarheid
 
-Het [testplan](testplan.md) bevat per requirement de implementatie, relevante tests, aanwezige resultaten en resterende verificatie. De Must-eisen hebben code- en testdekking. R17 is op 2026-11-11 bevestigd met de goedgekeurde README en werkende demo. De [demo](demo.md) is door de eigenaar als werkend bevestigd. Productgrenzen staan in [security](security.md).
+Het [testplan](testplan.md) bevat per requirement de implementatie, relevante tests, aanwezige resultaten en resterende verificatie. De Must-eisen hebben code- en testdekking. R17 is op 2026-11-11 bevestigd met de goedgekeurde README en werkende demo. De [demo](demo.md) is door mij als werkend bevestigd. Productgrenzen staan in [security](security.md).

@@ -15,7 +15,7 @@ Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvinge
 
 ## Wat en waarom?
 
-Ik voeg macOS-ondersteuning toe vóór F04. De feature krijgt het nieuwe ID F07; F04–F06 worden niet hernummerd. De hoofdapp had al een Unix-uitvoeringspad, maar de testhelper weigerde andere platforms dan Windows en Linux. De aangeleverde screenshot bevestigt de implementatie inmiddels via geslaagde jobs op macOS, Ubuntu en Windows. De bestaande featurechecklist bevestigt inmiddels review en merge. De gedateerde CI-waarnemingen hieronder blijven behouden.
+Ik voeg macOS-ondersteuning toe vóór F04. De feature krijgt het nieuwe ID F07; F04–F06 worden niet hernummerd. De hoofdapp had al een Unix-uitvoeringspad, maar de testhelper weigerde andere platforms dan Windows en Linux. De screenshot bevestigt de implementatie inmiddels via geslaagde jobs op macOS, Ubuntu en Windows. De bestaande featurechecklist bevestigt inmiddels review en merge. De gedateerde CI-waarnemingen hieronder blijven behouden.
 
 ## Ontwerp en Rust-uitleg
 

@@ -1,6 +1,6 @@
 # Roadmap
 
-Feature-ID’s zijn stabiel en de tabelvolgorde is de bouwvolgorde. F06 is actief op 2026-11-11. De featurebestanden bevatten de checklists en de [voortgang](voortgang.md) beschrijft de actuele opleverstand.
+Feature-ID’s zijn stabiel en de tabelvolgorde is de bouwvolgorde. Ik heb alle features, inclusief F06, afgerond en de merges naar develop op 2026-11-11 bevestigd. De featurebestanden bevatten de checklists en de [voortgang](voortgang.md) beschrijft de actuele opleverstand.
 
 | ID | Resultaat | Afhankelijkheid | Milestone |
 | --- | --- | --- | --- |
@@ -15,7 +15,7 @@ Feature-ID’s zijn stabiel en de tabelvolgorde is de bouwvolgorde. F06 is actie
 
 F07 is op verzoek vóór F04 ingevoegd. De macOS-ondersteuning is geïntegreerd en de platformcontroles zijn geslaagd op macOS, Ubuntu en Windows.
 
-F00 bewaart de oorspronkelijke MCP-proef. De productie-integratie uit F05 is afgerond. In F06 zijn de platformprofielen, CI-basisketen en demo bevestigd. De eigenaar heeft de README en historische merges bevestigd. Eindcontrole en opleverings-PR volgen.
+F00 bewaart de oorspronkelijke MCP-proef. De productie-integratie uit F05 is afgerond. In F06 zijn de platformprofielen, CI-basisketen en demo bevestigd. Ik heb de README en historische merges bevestigd. F06 is naar develop gemerged. De opleverings-PR van develop naar main volgt, inclusief beoordeling van de CI op die stand.
 
 ## GitHub Project
 

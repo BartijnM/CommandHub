@@ -147,6 +147,6 @@ Ik kan de nieuwe set via `tools/list` ontdekken en via `tools/call` aanroepen zo
 
 ## Opleverreview op 2026-11-11
 
-F05 is volgens de actuele voortgang afgerond bij de overgang naar F06. De MCP-keten wordt op alle drie platforms door Inspector gecontroleerd. De eigenaar bevestigt de volledige Claude Code-demo op 2026-11-11.
+F05 is volgens de actuele voortgang afgerond bij de overgang naar F06. De MCP-keten wordt op alle drie platforms door Inspector gecontroleerd. Ik bevestig de volledige Claude Code-demo op 2026-11-11.
 
 De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.

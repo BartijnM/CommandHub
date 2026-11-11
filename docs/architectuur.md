@@ -1,6 +1,6 @@
 # Architectuur
 
-Bijgewerkt op 2026-11-11 voor F06. REST en MCP gebruiken dezelfde configuratie, registry, schemaopbouw, validatie en uitvoeringsservice. De demo met Claude Code is door de eigenaar als werkend bevestigd. Het testbewijs staat in het [testplan](testplan.md).
+Bijgewerkt op 2026-11-11 voor F06. REST en MCP gebruiken dezelfde configuratie, registry, schemaopbouw, validatie en uitvoeringsservice. Ik heb bevestigd dat de demo met Claude Code werkt. Het testbewijs staat in het [testplan](testplan.md).
 
 ## Opstarten
 

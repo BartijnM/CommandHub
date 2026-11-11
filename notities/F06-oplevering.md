@@ -37,17 +37,17 @@ De screenshot toont een geslaagde pushrun, maar het runnummer, de commit-SHA en 
 
 ## Stoppunt na de platformcontrole
 
-De platformprofielen en schone-checkouttest van de MCP-basisketen zijn afgevinkt. F06 staat op **In uitvoering**. Het demo-draaiboek staat in docs/demo.md. Deze doorloop is later op 2026-11-11 door de eigenaar als werkend bevestigd. Ik toon daarin configuratie, ontdekking, uitvoering, validatiefouten, logging en een timeout. Ik voeg ook een tool toe via JSON en start dezelfde gebouwde executable opnieuw om te demonstreren dat er geen rebuild nodig is. Daarna werk ik de requirementdekking, beperkingen en de opleverings-PR naar `main` uit.
+De platformprofielen en schone-checkouttest van de MCP-basisketen zijn afgevinkt. F06 staat op **In uitvoering**. Het demo-draaiboek staat in docs/demo.md. Deze doorloop is later op 2026-11-11 door mij als werkend bevestigd. Ik toon daarin configuratie, ontdekking, uitvoering, validatiefouten, logging en een timeout. Ik voeg ook een tool toe via JSON en start dezelfde gebouwde executable opnieuw om te demonstreren dat er geen rebuild nodig is. Daarna werk ik de requirementdekking, beperkingen en de opleverings-PR naar `main` uit.
 
 ## Demo voorbereiden op 2026-11-11
 
-De eigenaar kiest de Claude Code-extensie als client en toont een geslaagde verbinding met de achttien oorspronkelijke tools. Het [draaiboek](../docs/demo.md) beschrijft voorbereiding per platform, exacte Claude-prompts, verwachte MCP-resultaten en logvelden, timeout en een configuratiewijziging met herstart van dezelfde executable. Voor timeout is een tijdelijke vaste Python-call gekozen die tien seconden wacht met een serverlimiet van 1000 ms. Een tweede tijdelijke tool gebruikt git --version om uitbreiding zonder rebuild te tonen. De lezer voegt deze objecten tijdens de demo aan het bestaande platformprofiel toe en verwijdert ze na afloop.
+Ik kies de Claude Code-extensie als client en toon een geslaagde verbinding met de achttien oorspronkelijke tools. Het [draaiboek](../docs/demo.md) beschrijft voorbereiding per platform, exacte Claude-prompts, verwachte MCP-resultaten en logvelden, timeout en een configuratiewijziging met herstart van dezelfde executable. Voor timeout is een tijdelijke vaste Python-call gekozen die tien seconden wacht met een serverlimiet van 1000 ms. Een tweede tijdelijke tool gebruikt git --version om uitbreiding zonder rebuild te tonen. De lezer voegt deze objecten tijdens de demo aan het bestaande platformprofiel toe en verwijdert ze na afloop.
 
-Claude kan de ongeldige enumwaarde zelf afwijzen. Het draaiboek bevat daarom een aanvullende Inspector-call om de serverresponse reproduceerbaar op te vragen. Verwachte uitkomsten zijn tegen configuratie, foutmapping en loggingcode gecontroleerd. Tijdens het schrijven van het draaiboek moesten de volledige Claude-demo en timeoutconfiguratie nog worden uitgevoerd. De eigenaar heeft de demo daarna als werkend bevestigd.
+Claude kan de ongeldige enumwaarde zelf afwijzen. Het draaiboek bevat daarom een aanvullende Inspector-call om de serverresponse reproduceerbaar op te vragen. Verwachte uitkomsten zijn tegen configuratie, foutmapping en loggingcode gecontroleerd. Tijdens het schrijven van het draaiboek moesten de volledige Claude-demo en timeoutconfiguratie nog worden uitgevoerd. Ik heb de demo daarna als werkend bevestigd.
 
 ## Demo bevestigd en documentatie gecontroleerd op 2026-11-11
 
-De eigenaar bevestigt dat de demo werkt. Die bevestiging is voldoende als handmatig bewijs voor ontdekking, projectonderzoek, validatiefout, logging, timeout/herstel en toevoegen van een tool zonder rebuild. Exacte meetwaarden, clientversie en de gebruikte route voor de ongeldige call zijn niet aangeleverd. Het draaiboek registreert de bevestiging zonder extra meetgegevens toe te voegen.
+Ik heb bevestigd dat de demo werkt. Die bevestiging is voldoende als handmatig bewijs voor ontdekking, projectonderzoek, validatiefout, logging, timeout/herstel en toevoegen van een tool zonder rebuild. Exacte meetwaarden, clientversie en de gebruikte route voor de ongeldige call zijn niet vastgelegd. Het draaiboek registreert de bevestiging zonder extra meetgegevens toe te voegen.
 
 ### Documentatiereview
 
@@ -60,7 +60,7 @@ Alle 33 Markdown-bestanden in de repository zijn gelezen. De primaire documenten
 | docs/architectuur.md | Bestaande modules, gedeelde state, procesbeheer, annulering en Python-tools beschreven |
 | docs/security.md | Maatregelen en expliciete opleveringsbeperkingen samengebracht |
 | docs/testplan.md en docs/requirements.md | R01–R21 gekoppeld aan code, tests, bewijs en resterende README-verificatie |
-| docs/demo.md | Demo als door eigenaar bevestigd geregistreerd |
+| docs/demo.md | Demo als door mij bevestigd geregistreerd |
 | docs/voortgang.md, docs/plan-van-aanpak.md en docs/roadmap.md | Huidige F06-stand en concrete vervolgstappen bijgewerkt |
 | docs/features/F00 t/m F07 | Checklists en actuele context gecontroleerd, tegenstrijdige statusvelden gecorrigeerd waar afronding bevestigd is |
 | docs/features/README.md en notities/README.md | Indeling en relatieve verwijzingen blijven toepasbaar |
@@ -86,6 +86,16 @@ Alle lokale Markdown-links en kopankers zijn gecontroleerd. De codeblokken zijn 
 
 ## README en historische merges bevestigd op 2026-11-11
 
-De eigenaar bevestigt alle historische featuremerges tot en met F05, inclusief F07, en keurt de README goed met een verzoek om de CI-slottekst te actualiseren. F00, F01 en F04 staan nu eveneens op Klaar. De eerdere administratieve open mergevelden zijn hiermee afgehandeld.
+Ik heb alle historische featuremerges tot en met F05, inclusief F07, bevestigd. Ik heb ook de README goedgekeurd en de CI-slottekst laten actualiseren. F00, F01 en F04 staan nu eveneens op Klaar. De eerdere administratieve open mergevelden zijn hiermee afgehandeld.
 
 De README-slottekst beschrijft de geslaagde F06-platformcontrole van 2026-11-10 en de bevestigde demo en documentatiereview. R17 en alle F06-acceptatiecriteria zijn bevestigd. De volgende stap is de eindcontrole van de definitieve stand en de opleverings-PR naar main. F06 blijft In uitvoering totdat deze afronding is bevestigd. De Cargo-controles zijn bij deze documentatie-update niet herhaald.
+
+## F06 gemerged naar develop op 2026-11-11
+
+Ik heb F06 naar develop gemerged. De feature staat op Klaar. README, voortgang, roadmap, plan van aanpak, testplan en de featurechecklist zijn hierop afgestemd. De bestaande resultaten van de platformcontrole van 2026-11-10 en de bevestigde demo/README blijven de onderbouwing. Bij deze update zijn geen nieuwe testresultaten vastgelegd of controles herhaald.
+
+De opleverings-PR van develop naar main volgt na het vastleggen van deze documentatie. De resterende releasechecklist staat onder Oplevering naar main in het featureplan. Ik beoordeel de CI van de opleverstand en voer de merge uit.
+
+## Schrijfwijze van de documentatie op 2026-11-11
+
+Ik heb de projectbeschrijvingen, voortgang, featureplannen en notities naar mijn perspectief laten herschrijven. Mijn bevestigingen van demo, README en merges staan in de ik-vorm. De vastgelegde CI-resultaten en open opleveringsstappen behouden hun oorspronkelijke betekenis.

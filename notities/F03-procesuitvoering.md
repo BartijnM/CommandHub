@@ -72,7 +72,7 @@ De twee nieuwe HTTP-helpers verklaren de stijging van 2 naar 4 genegeerde functi
 
 De OS-signaalbron zelf is niet tijdens actieve uitvoering geautomatiseerd aangeroepen: de integratietest gebruikt een kanaal om hetzelfde `server::serve`-afsluitpad te activeren. Eerder is echte Ctrl+C zonder actieve tools handmatig gecontroleerd. Op 2026-10-30 is tevens een echte POST naar `git_version` vastgelegd (succes, exitcode 0, 61 ms).
 
-De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests en build uit. Er is een jobtimeout van 15 minuten toegevoegd; de aangeleverde push-run #20 is op beide platforms geslaagd. Er zijn bij deze documentatie-update geen Git-commando's uitgevoerd. Review/merge zijn nog niet bevestigd.
+De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests en build uit. Er is een jobtimeout van 15 minuten toegevoegd; de vastgelegde push-run #20 is op beide platforms geslaagd. Er zijn bij deze documentatie-update geen Git-commando's uitgevoerd. Review/merge zijn nog niet bevestigd.
 
 ## Problemen en oplossingen
 
@@ -158,10 +158,10 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 
 ### 2026-11-02 — CI-platformbewijs en overdracht naar review
 
-- Bewijs: aangeleverde GitHub Actions-screenshot van run #20, getriggerd door een push op `feature/F03-procesuitvoering`. Runstatus Success; `Checks (ubuntu-latest)` en `Checks (windows-latest)` zijn groen.
+- Bewijs: GitHub Actions-screenshot van run #20, getriggerd door een push op `feature/F03-procesuitvoering`. Runstatus Success; `Checks (ubuntu-latest)` en `Checks (windows-latest)` zijn groen.
 - Zichtbare duur: Ubuntu 51 s, Windows 1 m 45 s, totale run 1 m 48 s. Geen exacte testtotalen uit de screenshot afgeleid.
 - De lokale workflow voert formatter, Clippy met warnings als errors, tests en build uit. Door de geslaagde Ubuntu-job zijn de Linux-specifieke status-/procesboomtests en compilatie via CI aangetoond.
-- Niet-blokkerende annotaties over Node.js 20 bij actions zijn zichtbaar. De volledige annotatietekst is niet aangeleverd; action-onderhoud staat los van een mislukte test, want beide jobs zijn geslaagd.
+- Niet-blokkerende annotaties over Node.js 20 bij actions zijn zichtbaar. De volledige annotatietekst is niet vastgelegd; action-onderhoud staat los van een mislukte test, want beide jobs zijn geslaagd.
 - Linux-todo en platformacceptatie afgevinkt. Status naar Review; geen bewijs van review of merge, dus nog niet Klaar.
 - Alleen algemene documentatie aangepast. Geen Rust-/workflowwijzigingen, tests of Git-commando's uitgevoerd.
 
@@ -177,7 +177,7 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 
 ### 2026-11-02 — ESRCH-correctie bevestigd in CI-run #22
 
-- Bewijs: aangeleverde screenshot van run #22 op `feature/F03-procesuitvoering`. Ubuntu en Windows hebben status Success.
+- Bewijs: screenshot van run #22 op `feature/F03-procesuitvoering`. Ubuntu en Windows hebben status Success.
 - Zichtbare duur: Ubuntu 45 s, Windows 2 m 51 s, totaal 2 m 55 s. Geen exacte testtotalen uit de screenshot afgeleid.
 - De nieuwe run bevestigt de eerder open Linux-hercontrole na de gerichte ESRCH-correctie en drie regressietests. Status terug naar Review; de eerdere fout uit #21 blijft als historie bewaard.
 - De screenshot toont Node.js-verouderingswaarschuwingen en een aankondiging over migratie van het ubuntu-latest-label. Die annotaties verhinderen geen geslaagde run; onderhoud kan afzonderlijk worden beoordeeld.
@@ -185,7 +185,7 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 
 ## Vervolg
 
-Commit en push de documentatie-update, controleer de laatste CI en bevestig daarna review en merge naar develop; de gebruikersmelding dat F03 af is, is geen afzonderlijk gecontroleerd mergebewijs. Daarna volgt F04. Git-acties voer ik afzonderlijk zelf uit.
+Commit en push de documentatie-update, controleer de laatste CI en bevestig daarna review en merge naar develop; de afrondingsmelding voor F03 was op dat moment nog niet gekoppeld aan vastgelegd mergebewijs. Daarna volgt F04. Git-acties voer ik afzonderlijk zelf uit.
 
 ### 2026-11-03 — Review en opruiming na F03
 
@@ -206,7 +206,7 @@ Eindcontrole (2026-11-03): cargo fmt --check en cargo clippy --all-targets --loc
 
 ## CI-bevestiging refactor — 2026-11-03
 
-De aangeleverde screenshot toont een geslaagde push-run voor commit `105e69b` op `refactor/na-feature-3`:
+De screenshot toont een geslaagde push-run voor commit `105e69b` op `refactor/na-feature-3`:
 
 - Runstatus: Success; totale duur 1 m 50 s.
 - Checks (ubuntu-latest): Success, 42 s.
@@ -214,7 +214,7 @@ De aangeleverde screenshot toont een geslaagde push-run voor commit `105e69b` op
 - De lokale workflow voert formatter, Clippy met warnings als errors, tests en build uit. Exacte CI-testtotalen zijn niet zichtbaar en worden niet uit de screenshot afgeleid.
 - Twee Node.js 20-verouderingswaarschuwingen bij actions/checkout@v4 en een Ubuntu-labelmelding zijn zichtbaar; de jobs zijn geslaagd. Workflowonderhoud blijft een afzonderlijk punt.
 - Hiermee is de eerder open Linux-/CI-controle van de refactor bevestigd. Review/merge is niet zichtbaar en blijft te bevestigen. Deze documentatie-update volgt na de getoonde codecommit; controleer na push de CI van de laatste branchstand.
-- Alleen documentatie aangepast op basis van het aangeleverde bewijs; geen tests opnieuw uitgevoerd en geen Git-commando’s uitgevoerd.
+- Alleen documentatie aangepast op basis van het vastgelegde bewijs; geen tests opnieuw uitgevoerd en geen Git-commando’s uitgevoerd.
 
 ### 2026-11-03 — Overdracht naar F07
 

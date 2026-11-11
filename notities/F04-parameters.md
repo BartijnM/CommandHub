@@ -62,7 +62,7 @@ De commando’s zijn uitgevoerd en als geslaagd vastgelegd. Er zijn geen volledi
 | cargo test --locked | Herhaald geslaagd gemeld; één tussenstand 107 tests, geen actueel eindtotaal bekend |
 | cargo test --locked routes::tests:: | Laatste stap geslaagd gemeld: dynamische uitvoering, 400-fouten en 16 KiB/16 KiB + 1 |
 | cargo fmt --check en cargo clippy --all-targets --locked -- -D warnings | Nog niet bevestigd voor F04-eindstand |
-| F04-CI Windows/Linux/macOS | Nog niet aangeleverd; Unix-symlinktest lokaal niet uitgevoerd |
+| F04-CI Windows/Linux/macOS | Nog niet vastgelegd; Unix-symlinktest lokaal niet uitgevoerd |
 
 De ongeldige-invoertest gebruikt een niet-bestaande executable en verwacht InvalidParameters in plaats van ProcessStartFailed. Capaciteit blijft beschikbaar. Padtests controleren binnen/buiten root, .., relatieve en onoplosbare paden en data-extra naast data. De Unix-only test controleert symlinks naar binnen en buiten. Routertests gebruiken Axum oneshot en starten werkelijk rustc bij geldige invoer; ze zijn geen nieuwe TCP-tests.
 
@@ -120,15 +120,15 @@ Plan voor 2026-11-05: Re-run failed jobs, macOS-resultaat beoordelen. Bij groen 
 
 ## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+De screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
 
 
 ## Opleverreview op 2026-11-11
 
-Parameter- en padvalidatie worden door REST en MCP gedeeld. F04-CI is geslaagd op drie platforms. De huidige configuraties bevatten elk achttien tools. De eigenaar bevestigt op 2026-11-11 de historische merge van F04.
+Parameter- en padvalidatie worden door REST en MCP gedeeld. F04-CI is geslaagd op drie platforms. De huidige configuraties bevatten elk achttien tools. Ik heb op 2026-11-11 de historische merge bevestigd van F04.
 
 De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.
 
 ## Mergebevestiging op 2026-11-11
 
-De eigenaar bevestigt de historische merge. De feature staat op Klaar. Eerdere open mergevermeldingen in de gedateerde werksessies beschrijven de toenmalige stand.
+Ik heb de historische merge bevestigd. De feature staat op Klaar. Eerdere open mergevermeldingen in de gedateerde werksessies beschrijven de toenmalige stand.

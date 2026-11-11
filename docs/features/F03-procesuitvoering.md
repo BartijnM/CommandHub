@@ -81,7 +81,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - GitHub issue: nog vast te leggen.
 - Branch: feature/F03-procesuitvoering.
 - PR-merge is in de bestaande afrondingschecklist bevestigd. Een exact PR-nummer is hier niet vastgelegd.
-- Historische verificatie (2026-11-02): run #21 Ubuntu faalt in `stopt_subproces_bij_annulering` op ESRCH tijdens `/proc`-lezen; Windows groen. Na de lokale correctie slagen op Windows formatter, Clippy, build en 62 tests (4 proceshelpers genegeerd). Drie nieuwe regressietests bewaken verdwenen processen, statussen en het behouden van echte fouten. Daarna bevestigt de aangeleverde screenshot van run #22 Success op beide platforms (Ubuntu 45 s, Windows 2 m 51 s; totale run 2 m 55 s). Exacte CI-testtotalen zijn niet zichtbaar.
+- Historische verificatie (2026-11-02): run #21 Ubuntu faalt in `stopt_subproces_bij_annulering` op ESRCH tijdens `/proc`-lezen; Windows groen. Na de lokale correctie slagen op Windows formatter, Clippy, build en 62 tests (4 proceshelpers genegeerd). Drie nieuwe regressietests bewaken verdwenen processen, statussen en het behouden van echte fouten. Daarna bevestigt de screenshot van run #22 Success op beide platforms (Ubuntu 45 s, Windows 2 m 51 s; totale run 2 m 55 s). Exacte CI-testtotalen zijn niet zichtbaar.
 - [Featurenotitie](../../notities/F03-procesuitvoering.md).
 
 ## Afronden

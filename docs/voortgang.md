@@ -2,9 +2,9 @@
 
 Bijgewerkt op 2026-11-11.
 
-## Actief
+## Huidige status
 
-[F06 — Platformcontrole en demonstratie](features/F06-oplevering.md) staat op **In uitvoering**. De platformprofielen, schone-checkoutcontrole, demo en README-review zijn afgerond. De eigenaar bevestigt dat het demo-draaiboek met Claude Code werkt.
+[F06 — Platformcontrole en demonstratie](features/F06-oplevering.md) staat op **Klaar**. Ik heb de merge naar develop op 2026-11-11 bevestigd. De platformprofielen, schone-checkoutcontrole, demo en README-review zijn afgerond. Ik heb bevestigd dat het demo-draaiboek met Claude Code werkt.
 
 ## Afgerond voor F06
 
@@ -12,7 +12,7 @@ Bijgewerkt op 2026-11-11.
 - CI bouwt en test op drie platforms. De Inspector-basistest controleert startup, toollijst, git_version en een validatiefout met het gekozen profiel.
 - De [demo](demo.md) toont ontdekking, projectonderzoek, foutafhandeling, logging, timeout met herstel en toevoegen van een tool zonder rebuild.
 - De documentatiereview heeft README, configuratiehandleiding, API-contract, architectuur, security, testplan, requirements, planning, featureplannen en notities gecontroleerd en actuele afwijkingen verwerkt.
-- De eigenaar heeft op 2026-11-11 de README en de historische featuremerges bevestigd.
+- Ik heb op 2026-11-11 de README en de historische featuremerges bevestigd.
 - Het [testplan](testplan.md) koppelt alle requirements aan implementatie, bewijs en resterende verificatie. [Security](security.md) bevat de opleveringsbeperkingen.
 
 ## Verificatie
@@ -22,14 +22,15 @@ Bijgewerkt op 2026-11-11.
 | Windows F05-eindcontrole op 2026-11-09 | Formatter en Clippy geslaagd, 156 tests geslaagd en 7 proceshelpers, 9,77 s |
 | F05 CI-run #50 | Ubuntu, macOS en Windows geslaagd |
 | F06 CI op 2026-11-10 | Windows 4 min 47 s, Ubuntu 2 min 5 s, macOS 3 min 14 s, alle jobs geslaagd |
-| Claude Code-demo op 2026-11-11 | Door eigenaar als werkend bevestigd |
-| README en historische featuremerges op 2026-11-11 | Door eigenaar goedgekeurd en bevestigd |
+| Claude Code-demo op 2026-11-11 | Door mij als werkend bevestigd |
+| README en historische featuremerges op 2026-11-11 | Door mij goedgekeurd en bevestigd |
+| F06-merge naar develop op 2026-11-11 | Door mij bevestigd |
 
 De F06-CI omvat formatter, Clippy, tests, build en Inspector vanaf schone checkout. De laatste screenshot bevat geen exact runnummer, commit-SHA of CI-testtotalen. De lokale aantallen hierboven zijn historische Windows-resultaten.
 
 ## Volgende stap
 
-Voer de eindcontroles uit op de definitieve opleverstand en beoordeel de drieplatform-CI. Bereid daarna de opleverings-PR naar main voor. De eigenaar voert commits, push en merge uit. F06 krijgt status Klaar na bevestigde review en merge.
+Ik commit de bijgewerkte afrondingsdocumentatie op develop en bereid de opleverings-PR van develop naar main voor. Ik beoordeel de CI van die opleverstand en voer daarna de merge naar main uit.
 
 ## Aandachtspunten
 

@@ -44,7 +44,7 @@ Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eige
 - GitHub issue: nog aan te maken.
 - Branch: feature/F05-mcp-integratie.
 - Afronding is vastgelegd in docs/voortgang.md bij de start van F06. Het exacte PR-nummer is niet vastgelegd.
-- Tussenstand 2026-11-09. Eigenaar bevestigt Windows-formatter en Clippy met -D warnings geslaagd, volledige suite 156 passed en 7 proceshelpers. SDK-client onderhandelt 2025-11-25. Annulering met PID-bewijs, productie-shutdown met MCP-procesboom, gemengde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn getest.
+- Tussenstand 2026-11-09. Op Windows slagen formatter en Clippy met -D warnings. De volledige suite geeft 156 passed en 7 proceshelpers. SDK-client onderhandelt 2025-11-25. Annulering met PID-bewijs, productie-shutdown met MCP-procesboom, gemengde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn getest.
 - De uitgebreide SDK-ketentest vergelijkt ook padvalidatie met REST. Laatste lokale suite geeft 156 passed, 0 failed en 7 helpers in 9,77 s. F05-platform-CI is geslaagd in run #50. F05 is afgerond bij de overgang naar F06.
 - [Featurenotitie](../../notities/F05-mcp-integratie.md).
 

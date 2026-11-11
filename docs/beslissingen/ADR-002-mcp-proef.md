@@ -31,6 +31,6 @@ Gebruik deze proef als bewijs dat `rmcp` 3.6.0 en Streamable HTTP technisch gesc
 
 ## Productie-integratie bevestigd bij F05
 
-Aanvulling op 2026-11-11. De hoofdapplicatie gebruikt rmcp 3.6.0 met Streamable HTTP op 127.0.0.1:3000/mcp. De gedeelde kern valideert parameters en paden. Host/Origin-controles, de bodylimiet van 16 KiB en legacy-sessiemodus zijn expliciet ingesteld. De SDK-ketentest rapporteert protocol 2025-11-25. F05-CI en de F06-Inspector-basistest zijn geslaagd op Windows, Ubuntu en macOS. De eigenaar bevestigt de Claude Code-demo.
+Aanvulling op 2026-11-11. De hoofdapplicatie gebruikt rmcp 3.6.0 met Streamable HTTP op 127.0.0.1:3000/mcp. De gedeelde kern valideert parameters en paden. Host/Origin-controles, de bodylimiet van 16 KiB en legacy-sessiemodus zijn expliciet ingesteld. De SDK-ketentest rapporteert protocol 2025-11-25. F05-CI en de F06-Inspector-basistest zijn geslaagd op Windows, Ubuntu en macOS. Ik bevestig de Claude Code-demo.
 
 Deze aanvulling legt de latere integratie vast. De oorspronkelijke proefwaarnemingen hierboven blijven behouden. Het [API-contract](../api-en-configuratie.md), de [architectuur](../architectuur.md) en [security](../security.md) beschrijven de actuele instellingen en grenzen.

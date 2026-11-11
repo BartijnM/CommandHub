@@ -40,7 +40,7 @@ Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eige
 
 - GitHub issue: nog aan te maken.
 - Branch: feature/F01-projectbasis.
-- Pull request gemerged, door eigenaar bevestigd op 2026-11-11.
+- Pull request gemerged, door mij bevestigd op 2026-11-11.
 - Tests/handmatige verificatie staan in de [F01-notitie](../../notities/F01-projectbasis.md). De latere F06-CI bevestigt de basis op Windows, Ubuntu en macOS.
 - [Featurenotitie](../../notities/F01-projectbasis.md).
 
@@ -49,9 +49,9 @@ Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eige
 - [x] Relevante controles geslaagd.
 - [x] Documentatie en notitie bijgewerkt.
 - [x] Voortgang bijgewerkt.
-- [x] PR gemerged, door eigenaar bevestigd op 2026-11-11.
+- [x] PR gemerged, door mij bevestigd op 2026-11-11.
 
 
 ## Oplevercontext op 2026-11-11
 
-De projectbasis is in gebruik en de platform-CI controleert formatter, Clippy, tests en build. De eigenaar bevestigt op 2026-11-11 de historische merge van F01. Status Klaar.
+De projectbasis is in gebruik en de platform-CI controleert formatter, Clippy, tests en build. Ik heb op 2026-11-11 de historische merge bevestigd van F01. Status Klaar.

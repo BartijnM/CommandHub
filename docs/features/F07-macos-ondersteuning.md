@@ -21,7 +21,7 @@ De bestaande Unix-executor gebruikt ook op macOS procesgroepen. Deze uitbreiding
 - [x] Voorbeeldconfiguratie en een macOS-uitvoeringstest met `/bin/echo` toevoegen.
 - [x] `macos-latest` opnemen in dezelfde CI-matrix als Ubuntu en Windows.
 - [x] Documentatie, voortgang en featurenotitie bijwerken.
-- [x] CI van deze branch op alle drie platforms controleren; aangeleverde screenshot toont drie geslaagde jobs; resultaten vastgelegd in de featurenotitie.
+- [x] CI van deze branch op alle drie platforms controleren; screenshot toont drie geslaagde jobs; resultaten vastgelegd in de featurenotitie.
 
 ## Acceptatiecriteria
 
@@ -33,7 +33,7 @@ De bestaande Unix-executor gebruikt ook op macOS procesgroepen. Deze uitbreiding
 
 ## Verificatie en afronding
 
-Lokaal op Windows zijn alleen `cargo fmt --check` en `cargo metadata --locked --offline --no-deps --format-version 1` gecontroleerd. Geen tests, Clippy of build uitgevoerd: ik voer de verificatie via GitHub Actions uit. macOS is lokaal niet beschikbaar. De later aangeleverde screenshot bevestigt de CI op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). De workflow bevat formatter, Clippy, tests en build. Exacte CI-testtotalen en commit-/run-ID zijn niet zichtbaar. De platformacceptatiecriteria zijn daarmee aangetoond. De bestaande afrondingschecklist bevestigt review en merge naar develop.
+Lokaal op Windows zijn alleen `cargo fmt --check` en `cargo metadata --locked --offline --no-deps --format-version 1` gecontroleerd. Geen tests, Clippy of build uitgevoerd: ik voer de verificatie via GitHub Actions uit. macOS is lokaal niet beschikbaar. De latere screenshot bevestigt de CI op macOS (56 s), Ubuntu (44 s) en Windows (1 m 54 s). De workflow bevat formatter, Clippy, tests en build. Exacte CI-testtotalen en commit-/run-ID zijn niet zichtbaar. De platformacceptatiecriteria zijn daarmee aangetoond. De bestaande afrondingschecklist bevestigt review en merge naar develop.
 
 - [x] CI-resultaten vastgelegd.
 - [x] PR beoordeeld en gemerged naar develop; pas daarna status Klaar.

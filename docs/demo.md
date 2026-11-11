@@ -222,18 +222,18 @@ Verwacht `isError: false`, `success: true`, `exitCode: 0` en de Git-versie in st
 
 Stop de server met Ctrl+C. Verwijder na de demonstratie de twee toegevoegde objecten `demo_timeout` en `demo_git_version` uit het gekozen profiel. Controleer de komma’s. Bij een volgende start wordt het oorspronkelijke profiel geladen.
 
-Onderstaande tabel bevat de door de eigenaar bevestigde doorloop. Bij herhaling kun je de werkelijke uitkomsten aanvullen met toolresponses en relevante logcategorieën.
+Ik heb de doorloop van deze demo bevestigd. De onderstaande tabel bevat de resultaten. Bij herhaling kun je de werkelijke uitkomsten aanvullen met toolresponses en relevante logcategorieën.
 
 | Onderdeel | Verwacht resultaat | Werkelijke uitkomst |
 | --- | --- | --- |
-| Startup en ontdekking | Status ok, Connected, timeouttool zichtbaar | Bevestigd door eigenaar op 2026-11-11 |
-| Projectonderzoek | Drie MCP-calls met succesvolle resultaten | Bevestigd door eigenaar op 2026-11-11 |
-| Validatiefout | invalid_parameters via servercall, of vastgelegde clientafwijzing met aanvullende Inspector-call | Bevestigd door eigenaar op 2026-11-11 |
-| Logging | Genoemde metadata bij succes en fouten | Bevestigd door eigenaar op 2026-11-11 |
-| Timeout en herstel | execution_timeout, daarna succesvolle git_version | Bevestigd door eigenaar op 2026-11-11 |
-| Uitbreiding zonder rebuild | Nieuwe tool zichtbaar en uitvoerbaar na herstart | Bevestigd door eigenaar op 2026-11-11 |
+| Startup en ontdekking | Status ok, Connected, timeouttool zichtbaar | Bevestigd door mij op 2026-11-11 |
+| Projectonderzoek | Drie MCP-calls met succesvolle resultaten | Bevestigd door mij op 2026-11-11 |
+| Validatiefout | invalid_parameters via servercall, of vastgelegde clientafwijzing met aanvullende Inspector-call | Bevestigd door mij op 2026-11-11 |
+| Logging | Genoemde metadata bij succes en fouten | Bevestigd door mij op 2026-11-11 |
+| Timeout en herstel | execution_timeout, daarna succesvolle git_version | Bevestigd door mij op 2026-11-11 |
+| Uitbreiding zonder rebuild | Nieuwe tool zichtbaar en uitvoerbaar na herstart | Bevestigd door mij op 2026-11-11 |
 
-Noteer ook datum, besturingssysteem, commit, gebruikt profiel en Claude Code-versie bij de resultaten. De bestaande screenshot bevestigt de verbinding met Claude Code en de oorspronkelijke toollijst. Op 2026-11-11 bevestigt de eigenaar dat de demo werkt. De tabel legt die bevestiging vast. Exacte meetwaarden, clientversie en de gebruikte route voor de ongeldige call zijn daarbij niet gespecificeerd.
+Noteer ook datum, besturingssysteem, commit, gebruikt profiel en Claude Code-versie bij de resultaten. De bestaande screenshot bevestigt de verbinding met Claude Code en de oorspronkelijke toollijst. Op 2026-11-11 heb ik bevestigd dat de demo werkt. De tabel legt die bevestiging vast. Exacte meetwaarden, clientversie en de gebruikte route voor de ongeldige call zijn daarbij niet gespecificeerd.
 
 ## Koppeling aan requirements
 
@@ -245,4 +245,4 @@ Noteer ook datum, besturingssysteem, commit, gebruikt profiel en Claude Code-ver
 | R13 | Veilige foutcategorieën en uitvoeringslogging |
 | R17 | Reproduceerbaar draaiboek met verwachte en vast te leggen werkelijke uitkomsten |
 
-Het [testplan](testplan.md) koppelt de demo en automatische tests aan alle Must-eisen. De eigenaar heeft de README op 2026-11-11 goedgekeurd. R17 is daarmee bevestigd. De platformresultaten en open opleverpunten staan in [voortgang](voortgang.md). De instellingen van de client staan beschreven in de [officiële Claude Code-documentatie](https://code.claude.com/docs/en/mcp) en de [VS Code-handleiding](https://code.claude.com/docs/en/vs-code).
+Het [testplan](testplan.md) koppelt de demo en automatische tests aan alle Must-eisen. Ik heb de README op 2026-11-11 goedgekeurd. R17 is daarmee bevestigd. De platformresultaten en open opleverpunten staan in [voortgang](voortgang.md). De instellingen van de client staan beschreven in de [officiële Claude Code-documentatie](https://code.claude.com/docs/en/mcp) en de [VS Code-handleiding](https://code.claude.com/docs/en/vs-code).
