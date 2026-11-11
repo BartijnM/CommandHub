@@ -1,7 +1,7 @@
 ---
 id: F05
 prioriteit: Must
-status: Review
+status: Klaar
 milestone: "MCP-keten"
 ---
 
@@ -21,7 +21,7 @@ R11, R13, R15, R16.
 
 ## Scope
 
-Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot de scope niet stilzwijgend. Bij F01 is de minimale codebasis al aanwezig, maar lokale controle blijft nodig.
+Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eigen implementatiestap. Het actuele productcontract staat in [API en configuratie](../api-en-configuratie.md) en de opleverstand in [voortgang](../voortgang.md).
 
 ## Todo
 
@@ -43,9 +43,9 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 
 - GitHub issue: nog aan te maken.
 - Branch: feature/F05-mcp-integratie.
-- Pull request: nog niet aangemaakt.
+- Afronding is vastgelegd in docs/voortgang.md bij de start van F06. Het exacte PR-nummer is niet vastgelegd.
 - Tussenstand 2026-11-09. Eigenaar bevestigt Windows-formatter en Clippy met -D warnings geslaagd, volledige suite 156 passed en 7 proceshelpers. SDK-client onderhandelt 2025-11-25. Annulering met PID-bewijs, productie-shutdown met MCP-procesboom, gemengde REST/MCP-capaciteit, dynamische stringconsistentie en negatieve transportrequests zijn getest.
-- De uitgebreide SDK-ketentest vergelijkt ook padvalidatie met REST. Laatste lokale suite geeft 156 passed, 0 failed en 7 helpers in 9,77 s. F05-platform-CI is geslaagd in run #50. Open voor afronding is PR-review/merge.
+- De uitgebreide SDK-ketentest vergelijkt ook padvalidatie met REST. Laatste lokale suite geeft 156 passed, 0 failed en 7 helpers in 9,77 s. F05-platform-CI is geslaagd in run #50. F05 is afgerond bij de overgang naar F06.
 - [Featurenotitie](../../notities/F05-mcp-integratie.md).
 
 ## Afronden
@@ -53,9 +53,9 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [x] Relevante controles geslaagd, inclusief platform-CI op Ubuntu, macOS en Windows (run #50).
 - [x] Documentatie en notitie bijgewerkt tot 2026-11-09.
 - [x] Voortgang bijgewerkt tot 2026-11-09.
-- [ ] PR gemerged; pas daarna status Klaar.
+- [x] F05 afgerond en overgedragen aan F06 volgens de actuele voortgang.
 
 
 ## Tussenstand op 2026-11-09
 
-De implementatietaken en acceptatiecriteria zijn lokaal op Windows aangetoond, inclusief padvalidatie via een echte SDK-client en vergelijking met REST. Formatter, Clippy met -D warnings en de volledige suite zijn na de uitbreiding als geslaagd bevestigd. Status Review wacht op PR-review/merge. F05-platform-CI is geslaagd op alle drie platforms in run #50. De shutdownclient gebruikt expliciet NeverRetry. De algemene README bevat handmatige Inspector-controles waarvan nog geen uitvoer is aangeleverd.
+De implementatietaken en acceptatiecriteria zijn lokaal op Windows aangetoond, inclusief padvalidatie via een echte SDK-client en vergelijking met REST. Formatter, Clippy met -D warnings en de volledige suite zijn na de uitbreiding als geslaagd bevestigd. De Review-vermelding hoorde bij deze tussenstand. F05 is inmiddels afgerond. F05-platform-CI is geslaagd op alle drie platforms in run #50. De shutdownclient gebruikt expliciet NeverRetry. De F06-CI voert inmiddels Inspector-controles op alle drie platforms uit.

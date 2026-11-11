@@ -9,6 +9,10 @@ tags:
 
 [Featureplan](../docs/features/F01-projectbasis.md)
 
+## Leeswijzer bij de oplevering
+
+Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvingen van oude ingangen, configuraties en open punten horen bij hun gedateerde stand. Het actuele gedrag staat in het [API-contract](../docs/api-en-configuratie.md), de [architectuur](../docs/architectuur.md) en de [voortgang](../docs/voortgang.md).
+
 ## Wat bouw ik en waarom?
 
 F01 controleert de bestaande minimale Axum-applicatie en legt de basis vast voor verdere ontwikkeling. Er is geen nieuwe Rust-functionaliteit toegevoegd. De actuele checklist staat in het featureplan.
@@ -19,11 +23,11 @@ F01 controleert de bestaande minimale Axum-applicatie en legt de basis vast voor
 
 ## Keuzes en alternatieven
 
-Beschrijf de reden van keuzes en verwijs bij blijvende architectuurbesluiten naar docs/beslissingen/.
+De bestaande Axum/Tokio-basis is behouden. Het leerdoel en de technologiekeuze staan in [ADR-001](../docs/beslissingen/ADR-001-rust-en-axum.md).
 
 ## Problemen en oplossingen
 
-Noteer concrete oorzaak, oplossing en hoe de oplossing is gecontroleerd.
+Tijdens deze basiscontrole zijn geen aanvullende problemen vastgelegd.
 
 ## Verificatie
 
@@ -52,5 +56,11 @@ Linux is lokaal niet gecontroleerd. De CI-matrix moet dat na publicatie van de b
 
 ## Vervolg
 
-Link naar het featureplan en de eerstvolgende concrete stap. Houd geen tweede afvinklijst bij.
+De basis wordt inmiddels in de volledige applicatie gebruikt. De actuele oplevering staat bij [F06](../docs/features/F06-oplevering.md).
 
+
+## Opleverreview op 2026-11-11
+
+De projectbasis wordt gebruikt door de huidige applicatie. Cargo.lock staat in de repository en de F06-CI bouwt vanaf schone checkout op drie platforms. Het historische F01-mergeveld is nog niet afzonderlijk vastgelegd.
+
+De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.

@@ -1,7 +1,7 @@
 ---
 id: F03
 prioriteit: Must
-status: Review
+status: Klaar
 milestone: "Uitvoeren"
 ---
 
@@ -21,7 +21,7 @@ R04, R05, R06, R07, R12, R14.
 
 ## Scope
 
-Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot de scope niet stilzwijgend. Bij F01 is de minimale codebasis al aanwezig, maar lokale controle blijft nodig.
+Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eigen implementatiestap. Het actuele productcontract staat in [API en configuratie](../api-en-configuratie.md) en de opleverstand in [voortgang](../voortgang.md).
 
 ## Werkaanpak
 
@@ -36,7 +36,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 - stdout en stderr worden samen begrensd op 1 MiB. Bij overschrijding wordt de procesboom beëindigd en volgt een expliciete fout.
 - Requestbody maximaal 16 KiB; maximaal vier gelijktijdige uitvoeringen. Bij volle capaciteit direct afwijzen.
 - `process-wrap` 10.0.1 is toegevoegd met de Tokio-feature. De executor gebruikt Unix `ProcessGroup`, Windows `JobObject` en `KillOnDrop`. Gerichte Windows-tests controleren dat subprocessen verdwijnen na timeout, outputoverschrijding en annulering, ook bij een eerder afgerond direct child. Linux slaagt na de ESRCH-correctie in CI-run #22; run #21 blijft als historisch foutbewijs vastgelegd.
-- Expliciete annulering per uitvoering loopt via `oneshot::Receiver<()>`. Alleen een ontvangen bericht annuleert; het droppen van de zender zonder bericht niet. Shutdown gebruikt een gedeeld `watch`-signaal en wacht op capaciteitsvrijgave. HTTP vertaalt annulering naar 503; MCP en clientdisconnectbeleid blijven open.
+- Expliciete annulering per uitvoering loopt via `oneshot::Receiver<()>`. Alleen een ontvangen bericht annuleert; het droppen van de zender zonder bericht niet. Shutdown gebruikt een gedeeld `watch`-signaal en wacht op capaciteitsvrijgave. HTTP vertaalt annulering naar 503. MCP-annulering is vervolgens in F05 aangesloten. Clientdisconnectbeleid blijft open.
 - HTTP-mapping: 400 invoerfout, 404 onbekende tool, 413 te grote requestbody, 503 volle capaciteit, 504 timeout, 502 outputlimiet. Een proces met niet-nul exitcode geeft HTTP 200 met `success: false`.
 
 ## Todo
@@ -80,7 +80,7 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 
 - GitHub issue: nog vast te leggen.
 - Branch: feature/F03-procesuitvoering.
-- Pull request/review en merge: nog te bevestigen; de aangeleverde screenshot toont een push-run, geen mergebewijs.
+- PR-merge is in de bestaande afrondingschecklist bevestigd. Een exact PR-nummer is hier niet vastgelegd.
 - Historische verificatie (2026-11-02): run #21 Ubuntu faalt in `stopt_subproces_bij_annulering` op ESRCH tijdens `/proc`-lezen; Windows groen. Na de lokale correctie slagen op Windows formatter, Clippy, build en 62 tests (4 proceshelpers genegeerd). Drie nieuwe regressietests bewaken verdwenen processen, statussen en het behouden van echte fouten. Daarna bevestigt de aangeleverde screenshot van run #22 Success op beide platforms (Ubuntu 45 s, Windows 2 m 51 s; totale run 2 m 55 s). Exacte CI-testtotalen zijn niet zichtbaar.
 - [Featurenotitie](../../notities/F03-procesuitvoering.md).
 
@@ -94,9 +94,13 @@ Bouw F03 iteratief: begin met een kleine werkende verticale slice die een geconf
 
 ## Reviewcorrecties — 2026-11-03
 
-De review verwerkt lege configuratiewaarden, enkele toollookup, Engelse testnamen en gedeelde testhelpers. Windows-proceschecks gebruiken nu handles in plaats van tasklist; geen verhoogde timeout. De Windows-suite slaagt met 64 tests en 4 proceshelpers. De eerdere CI-run #22 is historisch bewijs; Linux-controle van deze reviewstand is via de aangeleverde CI-screenshot voor commit 105e69b bevestigd. F03 is als afgerond vastgelegd, maar review/merge is niet afzonderlijk gecontroleerd. De featurestatus blijft daarom Review. Details en eindcontrole staan in de featurenotitie.
+De review verwerkt lege configuratiewaarden, enkele toollookup, Engelse testnamen en gedeelde testhelpers. Windows-proceschecks gebruiken nu handles in plaats van tasklist; geen verhoogde timeout. De Windows-suite slaagt met 64 tests en 4 proceshelpers. De eerdere CI-run #22 is historisch bewijs; Linux-controle van deze reviewstand is via de aangeleverde CI-screenshot voor commit 105e69b bevestigd. F03 is als afgerond vastgelegd en de PR-merge is in de afrondingschecklist bevestigd. De featurestatus is daarmee Klaar. Details en eindcontrole staan in de featurenotitie.
 
 ## Platformuitbreiding vóór F04
 
 De aparte [F07-macOS-uitbreiding](F07-macos-ondersteuning.md) hergebruikt deze uitvoeringskern. De eigen checklist en het geslaagde macOS-CI-bewijs staan bij F07; het eerdere Ubuntu/Windows-bewijs wordt daarmee niet als macOS-bewijs gepresenteerd.
 
+
+## Oplevercontext op 2026-11-11
+
+Parameterloze toelating en de oorspronkelijke productie-ingangen beschrijven de F03-scope. Sinds F04 gebruiken ook deze tools de generieke parameter- en argumentopbouw. MCP is via F05 aangesloten. Het [actuele contract](../api-en-configuratie.md) en het [testplan](../testplan.md) beschrijven de huidige keten.

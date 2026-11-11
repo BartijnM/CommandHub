@@ -21,7 +21,7 @@ R11, R16.
 
 ## Scope
 
-Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot de scope niet stilzwijgend. Bij F01 is de minimale codebasis al aanwezig, maar lokale controle blijft nodig.
+Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eigen implementatiestap. Het actuele productcontract staat in [API en configuratie](../api-en-configuratie.md) en de opleverstand in [voortgang](../voortgang.md).
 
 ## Todo
 
@@ -33,7 +33,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 ## Acceptatiecriteria
 
 - [x] Echte MCP-client kan één testtool ontdekken en aanroepen.
-- [x] Geverifieerde keuzes en beperkingen zijn vastgelegd in een beslisdocument; definitieve F05-keuzes blijven open.
+- [x] Geverifieerde keuzes en beperkingen zijn vastgelegd in een beslisdocument; definitieve integratiekeuzes zijn vervolgens in F05 getoetst.
 - [x] De proef is duidelijk gescheiden van definitieve functionaliteit.
 
 ## Bewijs en koppelingen
@@ -51,3 +51,7 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [x] Documentatie en notitie bijgewerkt.
 - [x] Voortgang bijgewerkt.
 - [ ] PR gemerged; pas daarna status Klaar.
+
+## Oplevercontext op 2026-11-11
+
+Dit plan bewaart de scope en het bewijs van de geïsoleerde proef. De productie-MCP-integratie is aanwezig en F05 is afgerond. De historische PR-merge van F00 is in deze documentatie niet bevestigd. De actuele demo en clientcontroles staan bij [F06](F06-oplevering.md).

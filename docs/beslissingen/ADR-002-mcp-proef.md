@@ -1,6 +1,6 @@
 # ADR-002 — Bevindingen uit de F00-MCP-proef
 
-Status: proefresultaat; gereed voor review, geen definitieve keuze voor de MCP-integratie.
+Status van de oorspronkelijke proef op 2026-10-20. De productie-integratie is hieronder aangevuld met de bevestigde F05-keuzes.
 
 ## Context
 
@@ -28,3 +28,9 @@ REST-endpoints zijn applicatiespecifieke HTTP-routes met zelfgekozen URL's, meth
 ## Besluit en vervolg
 
 Gebruik deze proef als bewijs dat `rmcp` 3.6.0 en Streamable HTTP technisch geschikt zijn voor verder onderzoek. Leg de SDK-versie, het transport, de protocolwaarneming en de expliciet gebruikte Inspector-versie vast; behandel ze niet als definitieve F05-keuzes totdat integratie en beveiligingseisen zijn getoetst. De parameterloze proefhandler wees het extra invoerveld niet af; vertrouw dus niet op deze proef als bewijs van inputvalidatie. De proef documenteert de foutwaarnemingen voor `tool_not_found` en het extra argument, niet een volledige foutmatrix. Implementeer daadwerkelijke parametercontrole in de gedeelde kern wanneer die feature aan bod komt.
+
+## Productie-integratie bevestigd bij F05
+
+Aanvulling op 2026-11-11. De hoofdapplicatie gebruikt rmcp 3.6.0 met Streamable HTTP op 127.0.0.1:3000/mcp. De gedeelde kern valideert parameters en paden. Host/Origin-controles, de bodylimiet van 16 KiB en legacy-sessiemodus zijn expliciet ingesteld. De SDK-ketentest rapporteert protocol 2025-11-25. F05-CI en de F06-Inspector-basistest zijn geslaagd op Windows, Ubuntu en macOS. De eigenaar bevestigt de Claude Code-demo.
+
+Deze aanvulling legt de latere integratie vast. De oorspronkelijke proefwaarnemingen hierboven blijven behouden. Het [API-contract](../api-en-configuratie.md), de [architectuur](../architectuur.md) en [security](../security.md) beschrijven de actuele instellingen en grenzen.

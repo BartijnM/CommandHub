@@ -1,86 +1,79 @@
 # Architectuur
 
-Status op 2026-11-09. REST en MCP zijn aangesloten op dezelfde registry, schemaopbouw, validatie en uitvoeringsservice. De F05-tussenstand is lokaal op Windows gecontroleerd met 156 geslaagde tests en 7 proceshelpers. MCP-padvalidatie is met REST vergeleken via een echte SDK-client. F05-platform-CI is geslaagd op alle drie platforms in run #50. PR-review/merge blijft open. Historische verificatie van F03/F04 staat verderop en in de featurenotities.
+Bijgewerkt op 2026-11-11 voor F06. REST en MCP gebruiken dezelfde configuratie, registry, schemaopbouw, validatie en uitvoeringsservice. De demo met Claude Code is door de eigenaar als werkend bevestigd. Het testbewijs staat in het [testplan](testplan.md).
 
-## Beoogde gegevensstroom
+## Opstarten
 
-HTTP-handler of MCP-adapter → gedeelde toolservice → registry → parameter- en beleidsvalidatie → process executor → uitvoeringsresultaat → transportresponse.
+main initialiseert tracing met RUST_LOG, laadt het JSON-bestand via config::load en valideert het vóór het openen van de listener. COMMANDHUB_CONFIG kiest het bestand. De standaard is config/tools.json, relatief aan de serverwerkmap. De gevalideerde tools gaan naar ToolRegistry. Daarna bevat AppState gedeelde Arc-verwijzingen naar de registry en één ExecutionService.
 
-Bij het starten: configuratie laden → configuratie valideren → registry bouwen → gedeelde state samenstellen → server starten.
+De listener bindt aan 127.0.0.1:3000. server::serve bouwt de router en koppelt Ctrl+C aan het gedeelde afsluitpad. Een configuratiewijziging wordt actief na herstart van dezelfde executable.
 
-## Onderdelen
+## Modules
 
-| Module | Verantwoordelijkheid |
+| Bestand | Verantwoordelijkheid |
 | --- | --- |
-| HTTP/routes en controllers | Requests uitlezen en HTTP-responses maken |
-| MCP-adapter | Protocolafhandeling via SDK en vertaling naar gedeelde kern |
-| Toolservice | Opzoeken, valideren en uitvoering coördineren |
-| Registry | Gevalideerde tooldefinities op naam beschikbaar maken |
-| Config loader | JSON lezen en controleren; ongeldige configuratie stopt startup |
-| Validation | Parameters en uitvoeringsbeleid controleren |
-| Process executor | Proces, uitvoer, tijdslimiet, capaciteit, expliciete annulering en opruimen beheren; subprocessopruiming en shutdown zijn in Windows-tests gecontroleerd; Linux-hercontrole na ESRCH-correctie geslaagd in #22 |
-| Logging | Context, uitkomst en duur vastleggen zonder gevoelige inhoud |
+| [main.rs](../src/main.rs) | Logging, configuratie laden, state bouwen, listener en Ctrl+C |
+| [config.rs](../src/config.rs) | Serde-types, JSON laden en startupvalidatie |
+| [registry.rs](../src/registry.rs) | Tooldefinities opzoeken en gedeeld inputSchema opbouwen |
+| [app_state.rs](../src/app_state.rs) | Arc-verwijzingen naar registry en uitvoeringsservice |
+| [validation.rs](../src/validation.rs) | Parameters controleren, paden canonicaliseren en argumenten opbouwen |
+| [execution.rs](../src/execution.rs) | Processtart, capaciteit, outputbudget, timeout, annulering, opruimen en uitvoeringslogging |
+| [routes.rs](../src/routes.rs) | REST-routes, POST-bodylimiet en MCP-service aansluiten |
+| [controllers](../src/controllers) en [models](../src/models) | HTTP-extractie, statuscodes en serialiseerbare responses |
+| [mcp.rs](../src/mcp.rs) | rmcp-handler, transportinstellingen en MCP-resultaatmapping |
+| [server.rs](../src/server.rs) | Axum-server en gecoördineerde shutdown |
+| [personal_tools.py](../tools/personal_tools.py) | Geconfigureerde bestands-, notitie-, media- en diagnosetools |
 
-## Structuur groeit met de features
+## Gegevensstroom
 
-De basis bevat src/main.rs, routes.rs, controllers/ en models/. Voeg services/, config/, registry/, validation/ en mcp/ pas toe wanneer daar werkende code voor komt. Vermijd lege lagen zonder functie.
+Een REST- of MCP-call gaat via de adapter naar execute_with_parameters_with_cancellation. De service zoekt de tool eenmaal op en gebruikt die definitie voor logging en uitvoering. build_arguments valideert de invoer en vervangt volledige placeholders vóór processtart. Het resultaat gaat via de adapter terug naar de client.
 
-Models voor HTTP/MCP zijn transportmodellen. Gedeelde kernresultaten en fouttypen mogen niet afhankelijk zijn van Axum of HTTP-statuscodes.
+De registry en executor zijn gedeeld tussen requests en MCP-sessies. Arc::clone maakt een extra gedeelde verwijzing. De registry wordt na startup gelezen. input_schema levert voor beide adapters properties, required, enum en additionalProperties met waarde false.
 
-## State en concurrency
+De kern gebruikt serde_json als invoermodel en eigen ExecutionResult/ExecutionError-types. Axum-statuscodes en MCP-responsemodellen worden door de adapters bepaald. De HTTP-ontdekcontroller ontvangt via FromRef uitsluitend de registry.
 
-De server maakt één `AppState` met `Arc<ToolRegistry>` en `Arc<ExecutionService>`. Klonen van die state kopieert gedeelde verwijzingen, geen registries of executors. `FromRef<AppState> for Arc<ToolRegistry>` laat de ontdekcontroller alleen de registry opvragen. De uitvoercontroller gebruikt de volledige state. ToolRegistry::find leent de tooldefinitie; dezelfde lookup levert zowel de veilige loggingnaam als de uitvoeringsdefinitie. Eén gedeelde executor bewaakt serverbreed vier uitvoeringsplekken en wijst volle capaciteit direct af.
+## Parameters en paden
 
-`execute_with_parameters` delegeert naar `execute_with_parameters_with_cancellation`. Die wacht met `tokio::select!` op uitvoering met timeout, een expliciet `oneshot`-bericht of een wijziging van het shutdown-`watch`-kanaal. Alleen een expliciet bericht annuleert via `oneshot`; sluiten zonder bericht niet. De shutdownontvanger wordt vóór processtart aangemaakt om een wijziging tijdens toelating niet te missen.
+Iedere placeholder beslaat één argument. De kern bouwt een Vec<String> en geeft een geleende argumentenslice aan Command::args. De executable komt uit de registry. Spaties, quotes en shelltekens binnen een waarde blijven deel van hetzelfde argument.
 
-`try_acquire` controleert de shutdownstatus en houdt de leesbewaker vast tijdens capaciteitsreservering. `begin_shutdown` bewaart `true` via `send_replace`, ook zonder ontvangers. Nieuwe uitvoeringen krijgen daarna `Cancelled`. `shutdown().await` signaleert shutdown en wacht op alle vier permits. Dat bewijst afronding van de uitvoeringsfutures en hun opruimpogingen, maar verzamelt geen opruimfouten en is op zichzelf geen processtatuscontrole.
+Alleen stringparameters zijn ondersteund. allowed_values vergelijkt exact. Vrije strings hebben prefixbeperkingen. allowed_roots vereist een bestaand absoluut clientpad en bestaande absolute directories als roots. Pad en roots worden gecanonicaliseerd en per component vergeleken. Het canonieke pad wordt het procesargument. De configuratie staat één optionele placeholder als laatste argument toe, met beperkingen op vaste opties. Het volledige contract staat in [API en configuratie](api-en-configuratie.md).
 
-`main.rs` geeft de Ctrl+C-future aan `server::serve`. Die signaleert eerst `begin_shutdown`, laat Axum graceful afsluiten en wacht daarna op `shutdown().await` voordat een serverfout wordt doorgegeven. De signaalbron kan in TCP-tests door een kanaal worden vervangen; productie en test gebruiken hetzelfde serverafsluitpad. Normaal stoppen verloopt via expliciete annulering of shutdown. Future-drop en `JoinHandle::abort` gebruiken `KillOnDrop` als vangnet. Omdat die Tokio-vlag op Unix alleen de directe child stopt, bewaart `ProcessGuard` de wrapper en vraagt bij drop een groepssignaal via `start_kill` aan. Op Unix probeert `stop_child` de groep ook te beëindigen nadat de leider is afgerond; ESRCH betekent dat de groep al verdwenen is. Bij drop kan geen normaal uitvoeringsresultaat of afgewachte opruimfout worden teruggegeven. Dit vangnet wordt door de tests op beide CI-platforms gecontroleerd; run #20 toont geslaagde Ubuntu- en Windows-jobs.
+## Procesuitvoering
 
-## HTTP-adapter en tests
+ExecutionService deelt vier uitvoeringsplekken met een semaphore. try_acquire_owned wijst volle capaciteit direct af. De permit blijft bij de uitvoeringsfuture en komt bij drop vrij. Bij startfout komt de gereserveerde capaciteit eveneens vrij.
 
-De uitvoercontroller vangt JSON-extractiefouten op, leent via input_object een JSON-object en roept execute_with_parameters aan. execute_with_parameters_with_cancellation zoekt de tool op en deelt logging en validatie voor parameterloze en dynamische tools. build_arguments in src/validation.rs valideert parameters en controleert gebruikte padplaceholders vóór execute_tool_inner een proces start. De kern gebruikt serde_json als invoermodel, maar geen HTTP-statuscodes. `DefaultBodyLimit` begrenst deze POST-route op 16 KiB vóór JSON-deserialisatie. `ExecutionResponse::from` vertaalt het kernresultaat naar JSON met `exitCode` en milliseconden. De kern kent geen HTTP-statuscodes; de controller bepaalt foutmapping en vaste teksten zonder OS-details.
+Command::new en args houden programma en argumenten afzonderlijk. Stdin is gesloten. Stdout en stderr worden met try_join! gelijktijdig gelezen. Beide readers reserveren bytes uit één budget van 1 MiB per uitvoering. CapturedOutput bewaart de budgetpermits zolang de verzamelde bytes aanwezig zijn. Overschrijding wordt een fout en activeert procesopruiming. De response zet bytes met UTF-8-vervanging om naar tekst.
 
-Tests staan fysiek in `src/tests/`, maar blijven via `#[cfg(test)]` en `#[path = "..."]` submodules van hun oorspronkelijke module. Alle test- en helperfuncties hebben Engelse namen. De subprocessscenario’s delen helpers voor configuratie, PID-bestanden, startbevestiging en capaciteitscontrole; de routetests delen POST-opbouw en JSON-uitlezen. Daardoor blijven private toegang, `super`-imports en helperselecties zoals `execution::tests::subprocess_timeout_helper` geldig. Dit zijn geen zelfstandige integratiecrates onder een projectmap `tests/`.
+De timeout is standaard 10.000 ms en configureerbaar van 1 tot 60.000 ms. tokio::select! wacht op uitvoering, een expliciet oneshot-bericht of een wijziging van de shutdownstatus. Een gesloten oneshot-zender zonder bericht laat de uitvoering doorlopen.
 
-## Fouten
+process-wrap 10.0.1 gebruikt JobObject op Windows en ProcessGroup op Unix. KillOnDrop en de Unix ProcessGuard vragen ook bij future-drop of taakafbreking beëindiging aan. Bij gecontroleerde stop probeert stop_child de procesboom op te ruimen. Unix signaleert de groep ook na afloop van de leider. ESRCH geldt daar als een reeds verdwenen groep. Een opruimfout kan de oorspronkelijke timeout- of annuleringsfout vervangen.
 
-Maak onderscheid tussen ongeldige invoer, onbekende tool, capaciteitsgebrek, startfout, niet-succesvolle exitcode, timeout, outputlimiet, annulering en opruimfout. HTTP vertaalt dezelfde kernfout naar vaste statuscodes en JSON-foutcodes. Annulering/shutdown wordt HTTP 503; interne procesbeheerfouten worden 500. MCP vertaalt kernfouten naar protocolfouten of veilige toolresultaten. Clientdisconnects zijn nog niet als expliciet annuleringsbeleid gekoppeld.
+## Shutdown
 
-## Platformbeleid
+Elke uitvoering abonneert zich vóór processtart op de watch-status. De toelatingscontrole houdt een leesbewaker vast tijdens capaciteitsreservering. begin_shutdown gebruikt send_replace(true), waardoor de status ook zonder actieve ontvanger behouden blijft.
 
-Cross-platform code betekent niet dat elke executable op ieder OS bestaat. Lever platformgeschikte configuratievoorbeelden. [`process-wrap`](https://docs.rs/process-wrap/) 10.0.1 gebruikt Tokio `ProcessGroup` op Unix en `JobObject` op Windows. De testhelper start `ping` op Windows of `sleep` op Unix. Windows controleert het stoppen rechtstreeks via OpenProcess en WaitForSingleObject met timeout 0. De Windows-only dev-dependency windows-sys levert de API; OwnedHandle sluit het handle automatisch. Er wordt geen tasklist-proces gestart. Ontbreken of een gesignaleerd proceshandle betekent gestopt; overige API-fouten blijven fouten. Linux heeft nu een `/proc/<pid>/stat`-controle; ontbreken en zombie/exitstatus betekenen beëindigd, niet noodzakelijk al gereaped. Windows is lokaal uitgevoerd; de Unix-groepsopruiming en dropbewaker zijn daarna via de geslaagde Ubuntu-CI gecontroleerd. De bron voor het CI-resultaat is de aangeleverde screenshot van run #20.
+server::serve signaleert eerst uitvoeringsshutdown en annuleert daarna het MCP-transporttoken. Axum sluit graceful af. Vervolgens wacht execution.shutdown op alle vier permits. Dat toont dat uitvoeringsfutures zijn afgerond. Processtatuscontroles in de tests leveren het aanvullende PID-bewijs.
 
-### macOS-uitbreiding (F07)
+MCP-contextannulering wordt door de adapter naar een oneshot-bericht vertaald. Een onverwacht clientdisconnect heeft nog geen afzonderlijk vastgelegd annuleringsbeleid. De timeout en server-shutdown blijven beschikbaar als begrenzing.
 
-macOS gebruikt hetzelfde cfg(unix)-pad met ProcessGroup en de bestaande groepsbewaker. Alleen de teststatuscontrole is OS-specifiek: proc_pidinfo (PROC_PIDTBSDINFO) levert de processtatus rechtstreeks aan. De buffer wordt pas na een volledige API-return uitgelezen. ESRCH en zombie-status betekenen gestopt; API-/toegangsfouten en onbekende statussen blijven fouten. libc is hiervoor uitsluitend een macOS-dev-dependency. Er is geen /proc-bestand of extern statusprogramma nodig.
+## Transporten
 
-De CI-matrix omvat nu ubuntu-latest, windows-latest en macos-latest met dezelfde controles. De aangeleverde screenshot toont alle drie jobs geslaagd: macOS 56 s, Ubuntu 44 s en Windows 1 m 54 s. Exacte CI-testtotalen zijn niet zichtbaar. Het voorbeeld config/tools.macos.json wordt expliciet gekozen via COMMANDHUB_CONFIG. Zie [F07](features/F07-macos-ondersteuning.md).
+REST biedt GET /status, GET /tools en POST /tools/{toolname}. De POST-extractor begrenst de body op 16 KiB, vereist een JSON-object en vertaalt kernfouten naar vaste HTTP-statuscodes en foutcodes.
 
-## Aanvullende verificatie en logging
+MCP gebruikt rmcp 3.6.0 met Streamable HTTP op /mcp en een gedeelde LocalSessionManager. legacy_session_mode is ingeschakeld. De getoetste protocolonderhandeling levert 2025-11-25. De MCP-service heeft eigen Host/Origin-controles en een bodylimiet van 16 KiB. Resultaten staan in structuredContent en als JSON-tekst in content. Details staan in het [API-contract](api-en-configuratie.md).
 
-`src/tests/http_execution_tests.rs` start echte loopbackservers en TCP-clients. Gecontroleerde tools starten een eigen subprocess en schrijven beide PID's weg; een bestandssignaal geeft ze vrij. Daardoor bewijzen de tests vier gelijktijdige uitvoeringen, een vijfde afwijzing, capaciteitsherstel en shutdown tijdens een actieve procesboom. De minimale testclient gebruikt HTTP/1.0 met connection-close zodat geen chunked decoder of extra dependency nodig is.
+## Geconfigureerde Python-tools
 
-`src/tests/process_checks.rs` deelt platformafhankelijke processtatuscontroles. Logging blijft in de kernwrapper: alleen registry-toolnaam (anders `<unknown>`), resultaat, exitcode/foutcategorie en duur. Er worden geen argumenten, executablepaden of stdout/stderr opgenomen. De tijdelijke tracing-subscribers van loggingtests zijn in childprocessen geïsoleerd om parallelle testinteractie te vermijden.
-## Linux-statusleesrace
+De platformprofielen starten tools/personal_tools.py via een vaste interpreter en vaste actie. Deze executable gebruikt dezelfde uitvoeringsgrenzen als andere tools. Eigen Python-validatie beperkt relatieve bestandsnamen tot CommandHub-data of COMMANDHUB_DATA_DIR. Dit beleid staat naast het absolute allowed_roots-beleid van de Rust-kern.
 
-Een proces kan verdwijnen nadat de /proc-statfile is geopend maar voordat lezen klaar is. Naast NotFound/ENOENT kan dan ESRCH optreden. De gedeelde testhelper scheidt het lezen van de classificatie van `io::Result<String>`, zodat die race deterministisch getest kan worden. Afwezigheid betekent beëindigd; toegangs- en formaatfouten blijven fouten. De correctie is op Windows getest met gesimuleerde Linux-leesresultaten; CI-run #22 heeft de echte platformroute daarna op Ubuntu succesvol gecontroleerd.
+Git- en projecttools gebruiken de serverwerkmap. Persoonlijke bestandstools gebruiken de gegevensmap. De server moet daarom vanuit de projecthoofdmap worden gestart. Afhankelijkheden en uitvoergrenzen staan in de [configuratiehandleiding](../config/README.md).
 
-## F04-overdracht
+## Tests en platformcontrole
 
-ParameterDefinition bevat optionele allowed_values en allowed_roots. De command-opbouw ontvangt een aparte &[String]; executable en argumenten blijven gescheiden. De gedeelde uitvoeringskern bewaart het bestaande procesbeheer. Configuratie beperkt optionele argumenten tot één laatste placeholder zonder vaste opties. Zie het API-contract en de F04-notitie voor padregels en resterende grenzen. Tests voor validation staan in src/tests/validation_tests.rs. De ontdekcontroller toont waardelijsten als enum en additionalProperties: false. Iedere parameter moet een placeholder hebben. De oude parameterloze productie-ingangen zijn verwijderd; compatibiliteitshelpers bestaan uitsluitend in de testmodule. De eindcontrole op Windows slaagt met formatter, Clippy en 138 tests plus 5 proceshelpers.
+Testcode staat in src/tests en is via cfg(test) en path gekoppeld als submodule van de oorspronkelijke module. De router-wrapper voor tests staat in routes_tests.rs en wordt onder cfg(test) geherexporteerd. Productie gebruikt router_with_shutdown.
 
-## CI-afronding — 2026-11-04
+Processtatuschecks gebruiken Windows-handles, Linux /proc/<pid>/stat of macOS proc_pidinfo. De helper controleert maximaal vijf seconden met intervallen van 50 ms. Verdwenen processen en zombies tellen als beëindigd. API-, toegangs- en formaatfouten blijven testfouten.
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+Routertests gebruiken Axum oneshot. TCP-tests starten echte loopbackservers, bevestigen processtart met PID-bestanden en controleren capaciteit, shutdown en herstel. De MCP-shutdownclient gebruikt NeverRetry en schakelt sessieherinitialisatie uit om streamsluiting begrensd waar te nemen. De CI-matrix bouwt en test op Windows, Ubuntu en macOS en voert een Inspector-basistest uit vanaf schone checkout.
 
-
-## F05-tussenstand op 2026-11-09
-
-McpServer deelt AppState, registry, input_schema en de annuleerbare ExecutionService met REST. context.ct bereikt via select! en oneshot de kern. De protocoltest controleert procesbeëindiging en herhaalde vervolgaanroepen. server::serve is gecontroleerd met een actieve MCP-procesboom, processtatuschecks en capaciteitsvrijgave. Een gemengde TCP-test controleert de vier gedeelde uitvoeringsplekken over REST en MCP.
-
-De kleine router-wrapper staat in src/tests/routes_tests.rs. routes.rs herexporteert hem onder cfg(test). Productie gebruikt router_with_shutdown. De tests voor de productierouter gebruiken een vrije TCP-poort en een Host-header uit de productie-allowlist.
-
-De shutdowntestclient gebruikt NeverRetry om SSE-herverbinden uit te schakelen en heeft reinit_on_expired_session op false. De eerdere clienttimeout verdween na die instelling. Het afwachten van serverafsluiting, beide PID-checks en de capaciteitscontrole blijven onderdeel van de test.
-
-De SDK-ketentest rapporteert protocol 2025-11-25. REST en MCP vergelijken dynamische stringwaarden, validatiefouten en resultaatvelden, met afzonderlijke duurmetingen. De uitgebreide ketentest vergelijkt ook geldige paden, canonicalisatie binnen de root en afwijzing van paden buiten de root, relatieve paden en onoplosbare paden. Zie de F05-notitie voor verificatie en resterende punten.
+Historische ontwerpstappen en meetresultaten staan in de [featurenotities](../notities/README.md). Resterende grenzen staan in [security](security.md).

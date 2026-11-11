@@ -1,122 +1,107 @@
-# Testplan
+# Testplan en requirementdekking
 
-Historisch bewijs vóór F04: 2026-11-03. De laatste geverifieerde Windows-suite vóór F07 bevatte 64 geslaagde tests en 4 genegeerde proceshelpers. F07 voegt macOS-tests toe; de aangeleverde screenshot toont de nieuwe jobs op macOS, Ubuntu en Windows geslaagd. Exacte testtotalen zijn niet zichtbaar. De Windows-statuscontrole is vervangen; de aangeleverde CI-screenshot bevestigt de reviewstand op Ubuntu en Windows (commit 105e69b).
+Bijgewerkt op 2026-11-11 voor F06. Deze matrix koppelt iedere requirement aan implementatie en aanwezig bewijs. De code en testdefinities zijn bij de documentatiereview gelezen. De testresultaten hieronder komen uit de eerder vastgelegde controles en de bevestiging van de eigenaar.
 
-| Eisen | Aanwezig bewijs en resterende controles |
-| --- | --- |
-| R01–R03 | Configuratie-, laadfout- en ontdekkingstests; lege namen/commands worden afgewezen. Herstart zonder rebuild is eerder handmatig gecontroleerd |
-| R04–R06 | Succes, niet-nul exit, startfout, output, timeout, annulering en shutdown; PID-controles bij stoproutes, future-drop en taakafbreking |
-| R07 | Gedeeld outputbudget, capaciteitsgrens/vrijgave, body exact 16 KiB en overschrijding; vier echte actieve TCP-uitvoeringen en vijfde 503, daarna capaciteitsherstel |
-| R08–R10 | F04: lokale configuratie-, validatie-, argument- en servicetests als geslaagd gemeld; HTTP-padtests en voorbeeldtoolreview geslaagd; Unix-symlinktests geslaagd in F04-CI op Ubuntu en macOS |
-| R11/R16 | F05 SDK-client over TCP, protocol 2025-11-25, Host/Origin, sessie- en negatieve transporttests op Windows |
-| R12 | Routertests voor resultaat en fouten; echte TCP-tests voor capaciteit en actieve shutdown |
-| R13 | Vaste foutcodes en geen OS-details in JSON; geïsoleerde loggingtests bewaken het ontbreken van argumentwaarden en procesoutput |
-| R14/R15 | Kern zonder HTTP-afhankelijkheid; Windows-suite slaagt. Historische CI-run #22 controleerde Ubuntu/Windows na ESRCH-correctie. De reviewstand van commit 105e69b is eveneens op Ubuntu en Windows via CI geslaagd |
-| R17 | README-start-/POST-voorbeeld; volledige demo en schone-checkoutcontrole bij F06 |
+## Must-eisen
 
-## Aanvullende macOS-verificatie (F07)
+| Eis | Implementatie en bewijs | Stand |
+| --- | --- | --- |
+| R01 Configuratie laden en valideren | config::load en ConfigFile::validate. config_tests controleert JSON, onbekende/ontbrekende velden, dubbele namen, timeouts, placeholders, roots en laadfouten. De CI-MCP-basistest start met ieder platformprofiel. | Aangetoond voor de beschreven configuratiecontroles |
+| R02 Toevoegen zonder rebuild | Immutable registry wordt bij startup opnieuw geladen. Handmatig bevestigd in F02 en opnieuw door de eigenaar met demo-stap 6. | Door eigenaar bevestigd |
+| R03 Ontdekken en opzoeken | ToolRegistry::find, gedeelde input_schema, GET /tools en MCP tools/list. tools_route_returns_tool_metadata_and_input_schema en SDK-ketentest. CI vergelijkt toolnamen met JSON. | Automatische en handmatige dekking |
+| R04 Executable met losse argumenten | Command::new met args. starts_with_platform_wrapper_and_waits_for_success en dynamic_argument_preserves_spaces_quotes_and_shell_characters. Demo gebruikt Git en rg. | Automatische en handmatige dekking |
+| R05 Uitvoeringsresultaten | ExecutionResult en adaptermapping. converts_core_result_to_http_json, returns_result_for_unsuccessful_exit_code en process_results_preserve_fields_and_indicate_failure. | Automatische en handmatige dekking |
+| R06 Timeout, annulering en opruimen | stops_subprocess_on_timeout, stops_subprocess_on_cancellation, stops_subprocess_on_shutdown, drop/abort-scenario’s en protocol_cancellation_stops_process_and_preserves_capacity. Actieve REST/MCP-shutdowntests controleren child en subprocess. Demo toont timeout en herstel. | Rust-suite op drie platforms en bevestigde demo |
+| R07 Uitvoer, requestgrootte en capaciteit | limits_stdout_and_stderr_with_shared_budget, rejects_output_above_limit, REST/MCP-tests voor exact 16 KiB en overschrijding. five_real_http_requests_enforce_limit_and_restore_capacity en rest_and_mcp_share_execution_capacity. | Automatische grensgevallen en capaciteitstests |
+| R08 Parametercontrole | validation_tests voor verplicht/optioneel, typen, onbekende velden, NUL, enum en prefixes. invalid_parameters_are_rejected_before_process_start. Demo en CI tonen invalid_parameters. | Automatische en handmatige dekking |
+| R09 Dynamische argumenten | build_arguments behoudt afzonderlijke strings. Argument-echohelper controleert spaties, quotes, Unicode en shelltekens. Configuratietests controleren volledige placeholders en optionele argumentregels. | Automatische dekking en gecontroleerde voorbeeldtools |
+| R10 Padbeleid | validate_path canonicaliseert en vergelijkt componenten. validation_tests controleert roots, vergelijkbare prefixes, traversal, ontbrekende/relatieve paden en Unix-symlinks. HTTP-padtests en MCP-ketentest vergelijken uitvoering en fouten. | Aangetoond voor bestaande absolute paden. Windows-links blijven een testbeperking |
+| R11 Echte MCP-client via HTTP | mcp_client_discovers_and_executes_configured_tool, protocol 2025-11-25. F06-CI gebruikt Inspector op drie platforms. Demo gebruikt Claude Code. | Automatische en handmatige clientdekking |
+| R12 HTTP-routes | Handmatige statuscontrole uit F01 en routes_tests voor ontdekking, uitvoering en foutmapping. TCP-tests voor capaciteit en actieve shutdown. | Automatische en handmatige dekking |
+| R13 Logging en fouten | Geïsoleerde logs_results_without_arguments_or_process_output en logs_dynamic_execution_without_sensitive_values. Controller- en MCP-mappingtests controleren veilige fouten. Demo toont logs. | Automatische en handmatige dekking |
+| R14 Windows, Linux en macOS | process_checks gebruikt OS-specifieke API’s. De CI-matrix draait Rust-tests, build en MCP-basistest met drie platformprofielen. | Basisketen op drie platforms aangetoond. Optionele tools hebben eigen afhankelijkheden |
+| R15 Gedeelde kern | AppState deelt registry en ExecutionService. De kern gebruikt eigen fouttypen en serde_json. REST/MCP-consistentietest en gemengde capaciteitstest gebruiken dezelfde state. | Codecontrole en ketentests |
+| R16 Lokale binding en transportcontroles | main bindt aan 127.0.0.1:3000. transport_* controleert Host, Origin, contentonderhandeling, protocolheaders, sessies en bodygrenzen. | Codecontrole en automatische transporttests |
+| R17 Documentatie en demo | README, configuratiehandleiding, API, architectuur, security en demo zijn bijgewerkt. De eigenaar bevestigt de demo. De gezamenlijke README-doorloop volgt hierna. | Deels afgerond, README-doorloop nog open |
 
-Dezelfde volledige suite draait nu ook op macos-latest in GitHub Actions. De bestaande procesboom- en TCP-scenario’s gebruiken daar de nieuwe proc_pidinfo-controle. Toegevoegd zijn drie pure classificatietests (actief/zombie, verdwenen PID en echte fouten), een macOS-only levenscyclustest, validatie van tools.macos.json op alle platforms en een macOS-only uitvoering van echo_ready uit dat bestand. De overige voorbeeldtools zijn niet afzonderlijk getest.
+De testnamen verwijzen naar [src/tests](../src/tests). Details van de eisen staan in [requirements](requirements.md). R17 wordt afgerond nadat de geplande README-doorloop is bevestigd.
 
-Ik laat Clippy, tests en build via Actions uitvoeren. Deze wijziging heeft lokaal alleen formatterings- en manifestcontrole gehad. De aangeleverde screenshot bevestigt nu alle drie jobs: macOS 56 s, Ubuntu 44 s en Windows 1 m 54 s. Daarmee zijn de F07-platformcriteria aangetoond; review/merge blijft open. Het eerdere bewijs voor 105e69b geldt uitsluitend voor de refactor vóór F07.
+## Overige requirements
+
+| Eis | Prioriteit | Stand |
+| --- | --- | --- |
+| R18 Remote API-key-authenticatie | Should | Later, met afzonderlijk ontwerp voor authenticatie, autorisatie en transportbeveiliging |
+| R19 CI op drie platforms | Should | Aanwezig en als geslaagd vastgelegd, inclusief Inspector-basistest |
+| R20 YAML en hot-reload | Could | Later, huidige configuratie is JSON bij startup |
+| R21 Dashboard, database, jobqueue, WebSockets en distributed execution | Won’t | Buiten de eerste oplevering |
 
 ## Testindeling
 
-Tests staan in src/tests/, maar zijn via cfg(test) en path submodules van hun oorspronkelijke module, met behoud van private toegang. Er zijn zeven bestanden: config_tests.rs, execution_tests.rs, routes_tests.rs, execution_controller_tests.rs, execution_model_tests.rs, http_execution_tests.rs en process_checks.rs.
+Testcode staat in negen Rust-bestanden onder src/tests. cfg(test) en path koppelen de bestanden als submodules aan de oorspronkelijke modules. Daardoor blijven private toegang en super-imports beschikbaar.
 
-Alle functies hebben Engelse namen. Exacte helperselecties zijn mee hernoemd. De vier genegeerde helpers worden met --exact en --ignored als child gestart. De subprocessscenario’s delen helpers voor toolopbouw, PID-bestanden, startbevestiging en gelijktijdig reserveren van alle permits. Routertests delen POST-opbouw en JSON-uitlezen; scenariospecifieke assertions blijven zichtbaar.
-
-## Procesopruiming
-
-Windows gebruikt OpenProcess met alleen PROCESS_SYNCHRONIZE en WaitForSingleObject met timeout 0. OwnedHandle sluit het handle automatisch; een gesignaleerd proceshandle of ontbrekend positief PID geldt als gestopt. Andere API-/toegangsfouten blijven fouten. De regressietest controleert de eigen actieve PID, een ontbrekende PID en een echt gestart en beëindigd childproces. Er wordt geen tasklist gestart.
-
-Linux leest /proc/<pid>/stat. NotFound/ENOENT en ESRCH betekenen verdwenen; Z/X betekenen beëindigd, niet noodzakelijk gereaped. Echte lees-/formaatfouten blijven fouten. Drie pure regressietests draaien ook op Windows. assert_stopped controleert maximaal 5 s met 50 ms tussenpozen. Dit is geen sandbox of harde garantie voor blokkerende OS-processtart.
-
-## HTTP en shutdown
-
-Routertests gebruiken oneshot; TCP-tests starten echte loopbackservers op vrije poorten. PID-bestanden bevestigen processtart voordat capaciteit of shutdown wordt beoordeeld. De TCP-client gebruikt HTTP/1.0 met connection-close.
-
-De actieve shutdowntest injecteert een kanaalsignaal in hetzelfde serverpad als Ctrl+C. Hij controleert 503, afgesloten listener en gestopte processen. Een echt OS-Ctrl+C-signaal tijdens actieve uitvoering is niet opnieuw getest. Historisch is Ctrl+C zonder actieve tools handmatig gecontroleerd, evenals een echte POST naar git_version.
-
-## Controles en historie
-
-Voer cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en cargo test --locked uit. De CI-matrix voert ook cargo build --locked uit op Ubuntu, Windows en macOS.
-
-- Voor de review: 62 geslaagde Windows-tests, 4 helpers; latere runs faalden wisselend op externe tasklist-aanroepen en HTTP-tijdslimieten.
-- Na de correcties: gerichte configuratiesuite 14 geslaagd; processtatussuite 4 geslaagd; volledige parallelle suite 64 geslaagd, 4 helpers.
-- Run #21: historische Ubuntu-fout door ESRCH tijdens /proc-lezen; drie regressietests toegevoegd.
-- Run #22: eerder aangeleverde screenshot met Ubuntu en Windows Success (45 s en 2 m 51 s). Exacte CI-testtotalen zijn onbekend.
-- De huidige refactor is lokaal op Windows en via CI op Ubuntu/Windows gecontroleerd voor commit 105e69b. Actuele externe links en mergestatus zijn niet geverifieerd.
-
-De [F03-notitie](../notities/F03-procesuitvoering.md) bevat de actuele eindcontrole en eerdere werksessies.
-
-## Demo bij oplevering
-
-Toon configuratie laden, ontdekking, parameterloze uitvoering, niet-nul exit, invoerfouten, outputlimiet, timeout, capaciteit, logging en shutdown. Voeg bij F04/F05 dynamische parameters en MCP toe; rond bij F06 de volledige demo op alle drie platforms af.
-
-CI-bewijs refactor: aangeleverde screenshot voor 105e69b op refactor/na-feature-3 toont Ubuntu Success (42 s), Windows Success (1 m 47 s) en run Success (1 m 50 s). Exacte CI-testtotalen zijn onbekend. De documentatie-update zelf is nog niet gepusht; review/merge blijft open.
-
-## Historische F04-tussenstand — 2026-11-04
-
-De volgende lokale Windows-controles zijn als geslaagd vastgelegd: config::tests::, validation::tests::, execution::tests::, controllers::execution_controller::tests:: en routes::tests::. De volledige suite is tijdens de implementatie herhaald geslaagd gemeld. Eén tussenstand telde 107 tests; geen actueel eindtotaal aangeleverd. Na de laatste drie dynamische routetests is alleen de gerichte routes-suite bevestigd. Bij deze documentatie-update zijn geen controles herhaald.
-
-Nieuw bewijs omvat vereiste/optionele velden, typen, NUL/Unicode, toegestane waarden, prefixes, optionele argumentregels, canonicalisatie/roots/traversal, een echte rustc-call via service en router en bodies van exact 16 KiB en 16 KiB + 1. De routertests gebruiken geen TCP. De Unix-only symlinktest is op Windows niet uitgevoerd.
-
-Resterend: HTTP-padtests, dynamische logging zonder invoerwaarden/output, ontdekschema, laatste veiligheidsreview en aanvullende padgrenzen. Daarna cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings en cargo test --locked en CI op drie platforms. Oudere CI-resultaten gelden niet voor F04.
-
-## Actuele F04-eindcontrole op Windows
-
-Formatter, Clippy met -D warnings en de volledige suite zijn uitgevoerd: 138 passed, 0 failed, 5 ignored; 2,83 s. De extra ignored helper controleert in een childproces dat quotes, Unicode, spaties en shelltekens één argument blijven. De oude test die parameters geheel verbood is verwijderd, omdat dat gedrag niet meer bij F04 hoort.
-
-Ook aanwezig en geslaagd: HTTP-padscenario’s, enum/additionalProperties in toolontdekking, geïsoleerde dynamische logging, verplichte placeholderkoppeling en ontbrekende root. Alle drie F04-voorbeeldtools zijn werkelijk uitgevoerd. Oude procestests gebruiken via testadapters het actuele generieke productiepad.
-
-Nog open: Actions op Windows/Linux/macOS, met Unix-symlinktest. Windows-symlinks/junctions hebben geen afzonderlijke test. Handmatige voorbeelden zijn beschreven, nog niet als uitgevoerd vastgelegd. Historische open punten hierboven zijn hiermee vervangen door deze actuele stand.
-
-## Laatste F04-CI-bewijs
-
-Screenshots voor commit 2d02834: Ubuntu Success (41 s), Windows Success (1 m 30 s). De workflow omvat formatter, Clippy, tests en build, inclusief de Unix-symlinktest op Ubuntu. macOS kreeg na meerdere pogingen geen hosted runner en eindigde na 15 m 2 s; macOS-tests zijn niet uitgevoerd. Alleen macOS-platformverificatie ontbreekt. Geen exacte run-URL of CI-testtotalen aangeleverd. Volgende stap: Re-run failed jobs, daarna bewijs vastleggen en PR-review/merge.
-
-## CI-afronding — 2026-11-04
-
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
-
-
-## F05-verificatie op Windows, 2026-11-09
-
-De eigenaar heeft de controles uitgevoerd en uitvoer gedeeld. Bij deze documentatie-update heeft de assistent de actuele code gelezen.
-
-| Controle | Gedeeld resultaat |
+| Bestand | Onderwerp |
 | --- | --- |
-| cargo fmt --check | Geslaagd, geen verschillen |
-| cargo clippy --all-targets --locked -- -D warnings | Geslaagd in 0,25 s |
-| cargo test --locked | 156 passed, 0 failed, 7 ignored, 0 filtered, 9,77 s |
-| Tien transporttests | 10 passed in 0,07 s |
-| SDK-clientketen inclusief padvalidatie | Geslaagd in 0,61 s, protocol 2025-11-25 |
+| [config_tests.rs](../src/tests/config_tests.rs) | Configuratie, laden, beleidsvelden en profielvalidatie |
+| [validation_tests.rs](../src/tests/validation_tests.rs) | Parameter- en padcontrole, argumentopbouw |
+| [execution_tests.rs](../src/tests/execution_tests.rs) | Executor, output, timeout, procesbomen, logging en voorbeeldtools |
+| [execution_controller_tests.rs](../src/tests/execution_controller_tests.rs) | Objectvorm en veilige HTTP-foutmapping |
+| [execution_model_tests.rs](../src/tests/execution_model_tests.rs) | JSON-resultaatmodel |
+| [routes_tests.rs](../src/tests/routes_tests.rs) | REST-router, schema’s, bodygrenzen, dynamische invoer en paden |
+| [http_execution_tests.rs](../src/tests/http_execution_tests.rs) | Echte TCP-calls, gedeelde capaciteit en actieve REST/MCP-shutdown |
+| [mcp_tests.rs](../src/tests/mcp_tests.rs) | MCP-resultaten, SDK-client, annulering, invoerconsistentie en transport |
+| [process_checks.rs](../src/tests/process_checks.rs) | Platformstatus en begrensde PID-controle |
 
-Aanwezig bewijs omvat expliciete MCP-annulering met PID-check, vier annuleringsrondes met herstel, productie-shutdown met actieve MCP-procesboom en een gemengde belasting van twee REST- en twee MCP-procesbomen. Extra calls via beide protocollen worden afgewezen. Na vrijgave herstellen beide protocollen.
+De zeven ignored functies zijn subprocesshelpers die expliciet met --ignored en --exact worden gestart. Het gaat om subprocess_timeout_helper, writes_output_above_limit, argument_echo_helper, http_tool_helper, subprocess_leaf, mcp_echo_helper en mcp_wait_helper.
 
-De SDK-ketentest vergelijkt dynamische stringinvoer, verplichte/extra velden, typen, allowed_values en resultaatvelden met REST. De duur wordt per aanroep op type gecontroleerd. De transporttests dekken ongeldige JSON-RPC-bodies, contentonderhandeling, onbekende protocolversie en sessie naast Host/Origin en bodygrens. De SDK gebruikt 415 voor deserialisatiefouten.
+## Vastgelegde resultaten
 
-De zeven ignored functies zijn expliciete proceshelpers. De shutdownclient gebruikt NeverRetry en heeft sessieherinitialisatie uitgeschakeld, zodat streamsluiting tijdig aan de client wordt doorgegeven.
+### Lokale F05-eindcontrole op Windows, 2026-11-09
 
-De uitgebreide SDK-ketentest controleert geldige absolute paden, canonicalisatie met .. binnen de root, paden buiten de root, relatieve paden en onoplosbare paden. MCP en REST leveren inhoudelijk gelijke resultaten en foutcodes. De gerichte ketentest slaagde in 0,61 s. F05-CI op Windows, Ubuntu en macOS is geslaagd in run #50. De [README](../README.md#mcp-handmatig-testen) bevat handmatige Inspector-controles. Daarvan is nog geen resultaat aangeleverd. De lokale eindcontroles zijn door de eigenaar bevestigd na de laatste codewijziging.
+| Controle | Resultaat |
+| --- | --- |
+| cargo fmt --check | Geslaagd |
+| cargo clippy --all-targets --locked -- -D warnings | Geslaagd |
+| cargo test --locked | 156 passed, 0 failed, 7 ignored, 0 filtered out, 9,77 s |
+| SDK-ketentest inclusief padvalidatie | 1 passed, 162 filtered out, 0,61 s, protocol 2025-11-25 |
+| Transporttests | 10 passed, 0,07 s |
 
-## Platformverificatie op 2026-11-09
+Deze aantallen horen bij de vastgelegde Windows-run. F05-CI-run #50 was geslaagd op Ubuntu, macOS en Windows.
 
-De eigenaar leverde een screenshot van CI-run #50 aan. De jobs Checks (ubuntu-latest), Checks (macos-latest) en Checks (windows-latest) zijn geslaagd. Op alle drie zijn cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings, cargo test --locked en cargo build --locked groen. Exacte CI-testtotalen, commit-SHA en run-URL zijn niet zichtbaar in de screenshot. De lokale testtotalen hierboven blijven afzonderlijk vastgelegd. PR-review/merge is nog open.
+### F06-platformcontrole, 2026-11-10
 
-## F06-platformcontrole op 2026-11-10
-
-De laatste CI-run is groen op alle drie de runners. De getoonde tijden zijn de looptijden van de volledige jobs.
-
-| Runner | Profiel | CI | Jobduur |
+| Runner | Profiel | Resultaat | Volledige jobduur |
 | --- | --- | --- | --- |
-| Windows (`windows-latest`) | `config/tools.json` | Geslaagd | 4 min 47 s |
-| Ubuntu (`ubuntu-latest`) | `config/tools.linux.json` | Geslaagd | 2 min 5 s |
-| macOS (`macos-latest`) | `config/tools.macos.json` | Geslaagd | 3 min 14 s |
+| Windows | config/tools.json | Geslaagd | 4 min 47 s |
+| Ubuntu | config/tools.linux.json | Geslaagd | 2 min 5 s |
+| macOS | config/tools.macos.json | Geslaagd | 3 min 14 s |
 
-Elke job begint met een schone checkout en draait formatter, Clippy, Rust-tests, build en de stap **MCP-basistest**. De MCP-stap start de gebouwde server met het platformprofiel, wacht op `/status`, vergelijkt de namen uit `tools/list` met de configuratie en controleert `git_version` via `tools/call`. Ook controleert de stap dat `git_diff_view` met `view=--patch` de toolfout `invalid_parameters` geeft. Inspector 2.11.0 gebruikt Streamable HTTP in legacy-modus. De stap ruimt het serverproces op bij afsluiten.
+Elke job begint met een schone checkout en draait formatter, Clippy met -D warnings, Rust-tests en build. De MCP-basistest start de gebouwde executable met het platformprofiel, wacht op /status, vergelijkt tools/list met de configuratie, voert git_version uit en controleert invalid_parameters bij git_diff_view met view=--patch. Inspector 2.11.0 gebruikt HTTP met legacy-protocolmodus. De stap ruimt het serverproces op bij afsluiten.
 
-Dit bewijs geldt voor de basisketen op gehoste runners. De profielen zijn alle drie geladen en ontdekt. De afzonderlijke aanroepen voor Python, `rg`, `pdfinfo` en `ffprobe` vallen buiten deze CI-basistest. Een onafhankelijke README-doorloop en de volledige opleveringsdemo staan nog open.
+De screenshot van de laatste F06-run vermeldt geen exact runnummer, commit-SHA of testtotalen. De genoemde jobduren komen uit de vastgelegde terugkoppeling. De warning over de Node-runtime van actions/checkout@v4 blijft een CI-onderhoudspunt.
 
-De volgende stap voor R17 is het reproduceerbare demo-draaiboek en de onafhankelijke README-doorloop. Voor de voortgang en open onderdelen zie de [F06-notitie](../notities/F06-oplevering.md).
+### Demo met Claude Code, 2026-11-11
+
+De eigenaar bevestigt dat het [draaiboek](demo.md) werkt. Daarmee zijn ontdekking, projectonderzoek, validatiefouten, logging, timeout met herstel en het toevoegen van een tool via JSON en herstart bevestigd. De bevestiging is als handmatig resultaat vastgelegd. Exacte duurmetingen, clientversie en gebruikte route voor de ongeldige call zijn daarbij niet gespecificeerd.
+
+## Grenzen van het bewijs
+
+- De CI-basistest ontdekt de volledige profielen en voert de Git-basisketen uit. Afzonderlijke succesaanroepen van alle Python-, rg-, Poppler- en FFmpeg-tools op iedere runner zijn nog niet vastgelegd.
+- De persoonlijke Python-tools zijn eerder deels gecontroleerd met tijdelijke gegevens en een gebundelde Python-runtime. De mediatests bevestigden de fout bij ontbrekende ffprobe. De gezondheidscheck gebruikte gesimuleerde HTTP-antwoorden in die testomgeving.
+- Procesboomtests gebruiken gecontroleerde helpers en PID-bestanden. De actieve shutdowntests injecteren een signaal in hetzelfde serverpad als Ctrl+C. De MCP-testclient gebruikt NeverRetry en schakelt sessieherinitialisatie uit.
+- De Unix-symlinktest draait op Linux/macOS. Een afzonderlijke Windows-symlink/junctiontest ontbreekt.
+- De onderbouwing van R15 bevat ook een codecontrole. Modulescheiding is een ontwerpkenmerk dat naast gedragstests wordt beoordeeld.
+
+De productgrenzen staan in [security](security.md). Historische resultaten, fouten en correcties staan in de bijbehorende [notities](../notities/README.md).
+
+## Laatste oplevercontroles
+
+Loop de README gezamenlijk vanaf de vereisten door en noteer eventuele verbeteringen. Controleer daarna de definitieve branchstand met de volgende commando’s en de drieplatform-CI.
+
+~~~sh
+cargo fmt --check
+cargo clippy --all-targets --locked -- -D warnings
+cargo test --locked
+cargo build --locked
+~~~
+
+Werk het bewijs en de F06-checklist bij voordat de opleverings-PR naar main wordt afgerond.

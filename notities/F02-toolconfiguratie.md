@@ -9,6 +9,10 @@ tags:
 
 [Featureplan](../docs/features/F02-toolconfiguratie.md)
 
+## Leeswijzer bij de oplevering
+
+Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvingen van oude ingangen, configuraties en open punten horen bij hun gedateerde stand. Het actuele gedrag staat in het [API-contract](../docs/api-en-configuratie.md), de [architectuur](../docs/architectuur.md) en de [voortgang](../docs/voortgang.md).
+
 ## Wat bouw ik en waarom?
 
 Ik laad bij startup een beheerdersconfiguratie met toolbeschrijvingen en maak die beschikbaar voor ontdekking via `GET /tools`. Nieuwe tools moeten door configuratie en een herstart toegevoegd kunnen worden, zonder de applicatie opnieuw te compileren. De actuele checklist staat in het [featureplan](../docs/features/F02-toolconfiguratie.md).
@@ -30,7 +34,7 @@ De gevalideerde configuratie wordt verplaatst naar de immutable [ToolRegistry](.
 
 ## Problemen en oplossingen
 
-Noteer concrete oorzaak, oplossing en hoe de oplossing is gecontroleerd.
+Configuratie- en laadfouten staan bij de verificatie en de gedateerde werksessies hieronder.
 
 ## Verificatie
 
@@ -95,3 +99,9 @@ F02 is gemerged en staat op Klaar; de merge is op 2026-10-26 bevestigd. De volge
 - Lege toolnamen, parameternamen en commands (ook alleen witruimte) worden nu afgewezen. trim() wordt alleen voor controle gebruikt; waarden worden niet stilzwijgend aangepast.
 - Gerichte configuratiesuite: 14 geslaagde tests op Windows, inclusief de nieuwe regressietest.
 - De F02-checklist beschrijft nu placeholdercontrole, geen al geïmplementeerde F04-vervanging; de dubbele controlecheckbox is verwijderd. Geen Git-commando’s uitgevoerd.
+
+## Opleverreview op 2026-11-11
+
+F02 is gemerged en afgerond. F04 heeft parameters en paden toegevoegd en F05 deelt registry en schemaopbouw met MCP. De huidige configuratie- en startupregels staan in het API-contract.
+
+De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.

@@ -1,33 +1,55 @@
 # CommandHub
 
-CommandHub wordt een configuratiegestuurde MCP-server in Rust die externe commandline-tools via HTTP toegankelijk maakt. De server moet parameters controleren, processen begrenzen en resultaten teruggeven zonder maatwerk per tool.
+CommandHub is een configuratiegestuurde MCP-server in Rust die externe commandline-tools via HTTP toegankelijk maakt. De server valideert parameters, begrenst processen en geeft resultaten terug. Nieuwe tools worden via JSON-configuratie en een herstart toegevoegd.
 
 ## Huidige status
 
-Actief is [F06 — Platformcontrole en demonstratie](docs/features/F06-oplevering.md). De CI-matrix bouwt en test CommandHub vanaf een schone checkout op Windows, Ubuntu en macOS. Een echte Inspector-client controleert op elke runner de toollijst, een geslaagde uitvoering en een validatiefout. De optionele toolafhankelijkheden hebben eigen installatievereisten. Zie de [voortgang](docs/voortgang.md) en de [F06-notitie](notities/F06-oplevering.md).
+Actief is [F06 — Platformcontrole en demonstratie](docs/features/F06-oplevering.md). De eigenaar heeft de demo met Claude Code als werkend bevestigd. De gezamenlijke README-doorloop en definitieve opleveringscontrole volgen. De CI-matrix bouwt en test CommandHub vanaf een schone checkout op Windows, Ubuntu en macOS. Een echte Inspector-client controleert op elke runner de toollijst, een geslaagde uitvoering en een validatiefout. De optionele toolafhankelijkheden hebben eigen installatievereisten. Zie de [voortgang](docs/voortgang.md) en de [F06-notitie](notities/F06-oplevering.md).
 
 ## Installeren en gebruiken
 
 Zie de instructies hieronder voor installatie en Cargo-commando's. De featurevolgorde en branchwerkwijze staan in [de roadmap](docs/roadmap.md).
 
-Benodigd: recente stabiele Rust-toolchain met ondersteuning voor editie 2024, Cargo en een platformgeschikte linker. Gebruik op Windows de MSVC-buildtools en op macOS de Xcode Command Line Tools. Git is ook nodig voor de Git-voorbeeldtool en de bestaande tests. De macOS-verificatie is via GitHub Actions geslaagd.
+Clone deze repository en open de projecthoofdmap. Gebruik een recente stabiele Rust-toolchain met Cargo en ondersteuning voor editie 2024. Installeer op Windows de MSVC-buildtools, op Linux een C-linker met de gebruikelijke buildtools en op macOS de Xcode Command Line Tools. Installeer Git voor de voorbeeldtools en tests.
 
-Voer vanuit de projecthoofdmap uit:
+Voeg de componenten voor de ontwikkelcontroles toe.
+
+```sh
+rustup component add rustfmt clippy
+```
+
+De server zelf gebruikt de Rust-dependencies uit Cargo.lock. Aanvullende programma’s zijn nodig voor de tools die je aanroept.
+
+| Gebruik | Vereiste |
+| --- | --- |
+| MCP via Inspector | Node.js 22 met npm |
+| MCP via Claude Code | VS Code met de Claude Code-extensie en een geschikt account |
+| Project zoeken | ripgrep (`rg`) op server-PATH |
+| Persoonlijke tools | Python 3.10 of nieuwer op server-PATH |
+| PDF-metadata | Poppler met `pdfinfo` |
+| Afbeeldings- en video-informatie | FFmpeg met `ffprobe` |
+
+Zie de [configuratiehandleiding](config/README.md) voor de vereisten per tool.
+
+### Starten op Windows
+
+Kies expliciet het Windows-profiel in PowerShell en bouw en start vanuit de projecthoofdmap.
 
 ```powershell
+$env:COMMANDHUB_CONFIG = "config/tools.json"
 cargo build --locked
 .\target\debug\commandhub.exe
 ```
 
-Open [de statusroute](http://127.0.0.1:3000/status):
+Open [de statusroute](http://127.0.0.1:3000/status). Verwacht het volgende antwoord.
 
 ```json
 {"status":"ok","applicatie":"commandhub"}
 ```
 
-De server luistert alleen lokaal op poort 3000. Stop met Ctrl+C. Apache, PHP en MySQL zijn niet nodig.
+De server luistert op 127.0.0.1:3000. Stop met Ctrl+C. Startup toont het aantal geladen tools en het luisteradres.
 
-Voer met de server actief in een tweede PowerShell-terminal de geconfigureerde parameterloze tool uit:
+Voer met de server actief in een tweede PowerShell-terminal de geconfigureerde parameterloze tool uit.
 
 ```powershell
 Invoke-RestMethod -Method Post -Uri "http://127.0.0.1:3000/tools/git_version" -ContentType "application/json" -Body '{}' | ConvertTo-Json
@@ -64,9 +86,21 @@ curl -X POST http://127.0.0.1:3000/tools/echo_ready -H 'Content-Type: applicatio
 
 De response bevat `success`, `stdout`, `stderr`, `exitCode` en `duration` in milliseconden. De route accepteert een JSON-object met de parameters van de gekozen tool; parameterloze tools verwachten een leeg object. De requestbody mag maximaal 16 KiB zijn. Zie [het API-contract](docs/api-en-configuratie.md) voor foutresponses.
 
+## MCP met Claude Code
+
+De repository bevat [.mcp.json](.mcp.json) met CommandHub als HTTP-server op http://127.0.0.1:3000/mcp. Start CommandHub met het profiel voor je platform. Open het project in VS Code en open `/mcp` in het chatpaneel van de Claude Code-extensie. Sta de projectserver toe wanneer de client daarom vraagt en gebruik **Reconnect**. Verwacht **Connected** en de geconfigureerde toollijst.
+
+Vraag Claude vervolgens het volgende.
+
+```text
+Roep git_version van de CommandHub MCP-server aan met {} en toon het resultaat.
+```
+
+Open de toolaanroep. Verwacht een succesvolle call met de Git-versie in stdout. De volledige demo met verwachte uitkomsten staat in het [draaiboek](docs/demo.md). De eigenaar heeft die demo op 2026-11-11 als werkend bevestigd. [Claude Code-documentatie](https://code.claude.com/docs/en/vs-code#connect-to-external-tools-with-mcp).
+
 ## MCP handmatig testen
 
-Installeer Node.js met npm om de MCP Inspector CLI te gebruiken. Start vanuit de projecthoofdmap de server in de eerste terminal. Kies op Linux en macOS eerst het platformprofiel zoals hierboven beschreven.
+Installeer Node.js 22 met npm om de MCP Inspector CLI te gebruiken. Start vanuit de projecthoofdmap de server in de eerste terminal. Kies op Linux en macOS eerst het platformprofiel zoals hierboven beschreven.
 
 ```sh
 cargo run --locked
@@ -78,7 +112,7 @@ Vraag in een tweede terminal de geconfigureerde tools en hun inputschema’s op.
 npx --yes @modelcontextprotocol/inspector@2.11.0 --cli http://127.0.0.1:3000/mcp --transport http --protocol-era legacy --method tools/list
 ```
 
-Voer daarna de parameterloze Git-tool uit. Deze staat in beide meegeleverde configuraties. Git moet geïnstalleerd zijn.
+Voer daarna de parameterloze Git-tool uit. Deze staat in alle drie de meegeleverde configuraties. Git moet geïnstalleerd zijn.
 
 ```sh
 npx --yes @modelcontextprotocol/inspector@2.11.0 --cli http://127.0.0.1:3000/mcp --transport http --protocol-era legacy --method tools/call --tool-name git_version
@@ -86,16 +120,16 @@ npx --yes @modelcontextprotocol/inspector@2.11.0 --cli http://127.0.0.1:3000/mcp
 
 Verwacht een toolresultaat met isError gelijk aan false en uitvoervelden success, stdout, stderr, exitCode en duration in structuredContent en als JSON-tekst. stdout bevat de Git-versie.
 
-De standaardconfiguratie config/tools.json bevat ook rust_details. Test daarmee een toegestane parameterwaarde en daarna een afgewezen waarde.
+De Windows- en Linux-profielen bevatten ook rust_details. Test daarmee een toegestane parameterwaarde en daarna een afgewezen waarde.
 
 ```sh
 npx --yes @modelcontextprotocol/inspector@2.11.0 --cli http://127.0.0.1:3000/mcp --transport http --protocol-era legacy --method tools/call --tool-name rust_details --tool-arg detail=-vV
 npx --yes @modelcontextprotocol/inspector@2.11.0 --cli http://127.0.0.1:3000/mcp --transport http --protocol-era legacy --method tools/call --tool-name rust_details --tool-arg detail=--help
 ```
 
-De eerste call toont uitgebreide Rust-versie-informatie. De tweede levert isError gelijk aan true met code invalid_parameters. rust_details staat in de standaardconfiguratie.
+De eerste call toont uitgebreide Rust-versie-informatie. De tweede levert isError gelijk aan true met code invalid_parameters. Gebruik op macOS de gedeelde Git-voorbeelden of de native echo_ready-tool.
 
-Deze stappen zijn reproduceerbare handmatige controles. Voor de huidige F05-stand is nog geen Inspector-resultaat aangeleverd. De automatische tests gebruiken een echte rmcp-client via TCP. De CLI ondersteunt ontdekking en toolcalls via Streamable HTTP. [Inspector CLI-documentatie](https://github.com/modelcontextprotocol/inspector/blob/main/clients/cli/README.md).
+De CI-MCP-basistest voert met Inspector op Windows, Ubuntu en macOS ontdekking, git_version en een afgewezen git_diff_view-call uit. De Rust-tests gebruiken daarnaast een echte rmcp-client via TCP. Bij een toolfout zoals invalid_parameters sluit Inspector af met exitcode 5. [Inspector CLI-documentatie voor 2.11.0](https://github.com/modelcontextprotocol/inspector/blob/2.11.0/clients/cli/README.md).
 
 ### Projecttools
 
@@ -119,7 +153,7 @@ npx.cmd --% --yes @modelcontextprotocol/inspector@2.11.0 --cli http://127.0.0.1:
 
 ### Bestanden, notities, media en systeem
 
-Gebruik Python 3.10 of nieuwer. Zorg dat de terminal waarin de server draait op Windows `python` kan starten en op macOS `python3`. Controleer dat met `python --version` of `python3 --version`. Installeer voor PDF-metadata `pdfinfo` (Poppler) en voor media-informatie `ffprobe` (FFmpeg) en zet ze op het `PATH` van de server.
+Gebruik Python 3.10 of nieuwer. Zorg dat de terminal waarin de server draait op Windows `python` kan starten en op Linux en macOS `python3`. Controleer dat met `python --version` of `python3 --version`. Installeer voor PDF-metadata `pdfinfo` (Poppler) en voor media-informatie `ffprobe` (FFmpeg) en zet ze op het `PATH` van de server.
 
 Maak `CommandHub-data` in je thuismap en plaats daarin de bestanden die je via MCP wilt opvragen. Maak voor de notitietools een submap `notes` met UTF-8-bestanden (`.md` of `.txt`). Kies eventueel een andere bestaande gegevensmap door vóór het starten van de server `COMMANDHUB_DATA_DIR` op een absoluut pad te zetten.
 
@@ -151,7 +185,8 @@ De voorbeelden gebruiken expliciet de legacy-protocolmodus van Inspector. Comman
 | [Requirements](docs/requirements.md) | Eisen met MoSCoW en koppeling naar features |
 | [Architectuur](docs/architectuur.md) | Modules en gegevensstroom |
 | [Security](docs/security.md) | Vertrouwensgrenzen en beveiligingskeuzes |
-| [API en configuratie](docs/api-en-configuratie.md) | Voorlopige contracten en open keuzes |
+| [API en configuratie](docs/api-en-configuratie.md) | Actuele REST-, MCP- en configuratiecontracten |
+| [Demo met Claude Code](docs/demo.md) | Draaiboek met prompts, commando’s en verwachte uitkomsten |
 | [Testplan](docs/testplan.md) | Bewijs per requirement |
 | [Roadmap](docs/roadmap.md) | Bouwvolgorde en afhankelijkheden |
 | [Voortgang](docs/voortgang.md) | Korte actuele overdracht |
@@ -180,7 +215,7 @@ cargo test --locked
 
 De features voegen gerichte automatische tests toe. `cargo test --locked` voert de huidige tests uit; bekijk de testuitvoer om te zien welke tests daadwerkelijk zijn uitgevoerd.
 
-Commit `Cargo.lock` na de eerste build. Dit is een applicatie, dus de lockfile hoort bij de repository.
+Cargo.lock hoort bij de applicatie en is opgenomen in de repository. Gebruik --locked voor reproduceerbare dependencyselectie.
 
 ## Bronnen
 
@@ -189,6 +224,9 @@ Commit `Cargo.lock` na de eerste build. Dit is een applicatie, dus de lockfile h
 - [Axum](https://docs.rs/axum/0.8/axum/)
 - [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk)
 
-## CI-afronding — 2026-11-04
 
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
+## Opleverstatus en beperkingen
+
+De F06-platformcontrole van 2026-11-10 is geslaagd op Windows, Ubuntu en macOS met formatter, Clippy, tests, build en Inspector-basistest. De demo met Claude Code is bevestigd. De gezamenlijke README-doorloop, controles van de definitieve stand en opleverings-PR volgen nog. Zie het [testplan en de requirementdekking](docs/testplan.md).
+
+CommandHub is ingericht voor lokaal gebruik met de rechten van het serveraccount. Beheer executables, serveromgeving en gegevensmap zorgvuldig. Padcanonicalisatie kent bestandssysteemraces. Onverwacht clientdisconnect heeft nog geen afzonderlijk annuleringsbeleid. De optionele tools vragen eigen dependencies en bestandsformaten. De volledige grenzen staan in [security en beperkingen](docs/security.md).

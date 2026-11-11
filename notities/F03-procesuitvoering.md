@@ -9,11 +9,15 @@ tags:
 
 [Featureplan](../docs/features/F03-procesuitvoering.md)
 
+## Leeswijzer bij de oplevering
+
+Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvingen van oude ingangen, configuraties en open punten horen bij hun gedateerde stand. Het actuele gedrag staat in het [API-contract](../docs/api-en-configuratie.md), de [architectuur](../docs/architectuur.md) en de [voortgang](../docs/voortgang.md).
+
 ## Wat bouw ik en waarom?
 
-F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Na de reviewcorrecties van 2026-11-03 slagen op Windows 64 tests; 4 genegeerde functies zijn expliciete proceshelpers. Formatter en Clippy slagen eveneens. CI-run #22 bevestigde eerder Ubuntu en Windows na de ESRCH-correctie. De huidige reviewwijzigingen zijn via CI op Ubuntu en Windows gecontroleerd voor commit 105e69b; review/merge blijven te bevestigen.
+F03 bevat een gedeelde, begrensde uitvoeringskern en parameterloze POST-route. Na de reviewcorrecties van 2026-11-03 slagen op Windows 64 tests; 4 genegeerde functies zijn expliciete proceshelpers. Formatter en Clippy slagen eveneens. CI-run #22 bevestigde eerder Ubuntu en Windows na de ESRCH-correctie. De huidige reviewwijzigingen zijn via CI op Ubuntu en Windows gecontroleerd voor commit 105e69b; deze resultaten horen bij de historische reviewstand. De merge is in de featurechecklist bevestigd.
 
-## Hoe werkt de code?
+## Hoe werkte de code in F03?
 
 `src/execution.rs` bevat `ExecutionResult`, `ExecutionError` en `ExecutionService`. Toolselectie weigert onbekende tools en tooldefinities met parameters/placeholders. ToolRegistry::find zoekt eenmaal op naam; logging en uitvoering gebruiken dezelfde geleende definitie. De referentie kopieert de tool niet en mag niet langer leven dan de registry.
 
@@ -216,3 +220,9 @@ De aangeleverde screenshot toont een geslaagde push-run voor commit `105e69b` op
 
 Ik ben na de refactor terug op develop gegaan en heb daarna feature/macos-ondersteuning aangemaakt. De volgende actieve uitbreiding is [F07](F07-macos-ondersteuning.md), vóór F04. Die gebruikt dezelfde Unix-executor; macOS-verificatie moet nog via Actions gebeuren. De eerdere CI-resultaten in deze notitie blijven historie van F03/de refactor.
 
+
+## Opleverreview op 2026-11-11
+
+De bestaande featurechecklist bevestigt de merge van F03. De actuele productie-ingang is execute_with_parameters_with_cancellation met gedeelde parameteropbouw. Parameterloze methoden uit deze notitie zijn historische F03-beschrijvingen. MCP en macOS zijn vervolgens toegevoegd.
+
+De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.

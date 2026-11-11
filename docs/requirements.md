@@ -1,6 +1,6 @@
 # Requirements en MoSCoW
 
-Concept voor de eerste oplevering. Prioriteit bepaalt de scope, niet de bouwvolgorde. Must = noodzakelijk; Should = belangrijk maar uitstelbaar; Could = optioneel; Won't = buiten deze oplevering.
+Requirements voor de eerste lokale oplevering, bijgewerkt op 2026-11-11. De prioriteit bepaalt de scope en de roadmap bepaalt de bouwvolgorde. Must = noodzakelijk; Should = belangrijk maar uitstelbaar; Could = optioneel; Won't = buiten deze oplevering.
 
 | ID | Eis | Prioriteit | Feature |
 | --- | --- | --- | --- |
@@ -26,7 +26,7 @@ Concept voor de eerste oplevering. Prioriteit bepaalt de scope, niet de bouwvolg
 | R20 | YAML en hot-reload | Could | Later |
 | R21 | Dashboard, database, jobqueue, WebSockets en distributed execution | Won't | Buiten eerste versie |
 
-Remote exposure wordt niet aangezet voordat passende authenticatie, transportbeveiliging en autorisatie zijn ontworpen. Dat is geen optionele beveiliging voor een publiek uitvoerendpoint.
+De huidige oplevering gebruikt loopbackbinding. Remote gebruik vraagt een afzonderlijk ontwerp voor authenticatie, transportbeveiliging en autorisatie bij R18.
 
 ## Definitie van klaar
 
@@ -35,9 +35,8 @@ Remote exposure wordt niet aangezet voordat passende authenticatie, transportbev
 - Geen onbehandelde blokkades of bekende ernstige fouten.
 - Documentatie en featurenotitie actueel.
 - Relevante formatterings-, lint- en testcontroles geslaagd.
-- PR beoordeeld en gemerged naar develop.
+- Feature-PR beoordeeld en gemerged naar develop. Bij F06 wordt ook de opleverings-PR naar main afgerond.
 
 ## Traceerbaarheid
 
-Gebruik requirement-ID's in featurebestanden en tests/documentatie. In docs/testplan.md staat het geplande bewijs.
-
+Het [testplan](testplan.md) bevat per requirement de implementatie, relevante tests, aanwezige resultaten en resterende verificatie. De Must-eisen hebben code- en testdekking. Voor R17 resteert de gezamenlijke README-doorloop. De [demo](demo.md) is door de eigenaar als werkend bevestigd. Productgrenzen staan in [security](security.md).

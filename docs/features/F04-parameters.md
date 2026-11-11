@@ -21,7 +21,7 @@ R07, R08, R09, R10.
 
 ## Scope
 
-Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot de scope niet stilzwijgend. Bij F01 is de minimale codebasis al aanwezig, maar lokale controle blijft nodig.
+Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eigen implementatiestap. Het actuele productcontract staat in [API en configuratie](../api-en-configuratie.md) en de opleverstand in [voortgang](../voortgang.md).
 
 ## Todo
 
@@ -59,11 +59,15 @@ Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot d
 - [ ] PR gemerged; pas daarna status Klaar.
 
 
-## Laatste CI-stand en vervolg
+## Historische CI-tussenstand
 
-Screenshot voor 2d02834: Ubuntu 41 s en Windows 1 m 30 s geslaagd. macOS kreeg geen runner en eindigde na 15 m 2 s; geen testfout aangetoond. Op 2026-11-05 de mislukte job opnieuw uitvoeren, daarna bewijs bijwerken en PR-review/merge afronden. Exacte run-URL en testtotalen zijn niet aangeleverd.
+Screenshot voor 2d02834: Ubuntu 41 s en Windows 1 m 30 s geslaagd. macOS kreeg geen runner en eindigde na 15 m 2 s; geen testfout aangetoond. Deze runnerfout is vervolgens opgelost door de geslaagde run #39 hieronder. Exacte run-URL en testtotalen zijn niet aangeleverd.
 
 ## CI-afronding — 2026-11-04
 
 De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
 
+
+## Oplevercontext op 2026-11-11
+
+De parameter- en padfunctionaliteit maakt deel uit van de huidige REST/MCP-keten en wordt in F06 opnieuw door de platform-CI gecontroleerd. Het [testplan](../testplan.md) bevat het huidige bewijs. Het historische PR-mergeveld blijft te bevestigen.

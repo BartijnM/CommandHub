@@ -9,9 +9,13 @@ tags:
 
 [Featureplan](../docs/features/F07-macos-ondersteuning.md)
 
+## Leeswijzer bij de oplevering
+
+Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvingen van oude ingangen, configuraties en open punten horen bij hun gedateerde stand. Het actuele gedrag staat in het [API-contract](../docs/api-en-configuratie.md), de [architectuur](../docs/architectuur.md) en de [voortgang](../docs/voortgang.md).
+
 ## Wat en waarom?
 
-Ik voeg macOS-ondersteuning toe vóór F04. De feature krijgt het nieuwe ID F07; F04–F06 worden niet hernummerd. De hoofdapp had al een Unix-uitvoeringspad, maar de testhelper weigerde andere platforms dan Windows en Linux. De aangeleverde screenshot bevestigt de implementatie inmiddels via geslaagde jobs op macOS, Ubuntu en Windows. Status: Review; review/merge is nog niet bevestigd.
+Ik voeg macOS-ondersteuning toe vóór F04. De feature krijgt het nieuwe ID F07; F04–F06 worden niet hernummerd. De hoofdapp had al een Unix-uitvoeringspad, maar de testhelper weigerde andere platforms dan Windows en Linux. De aangeleverde screenshot bevestigt de implementatie inmiddels via geslaagde jobs op macOS, Ubuntu en Windows. De bestaande featurechecklist bevestigt inmiddels review en merge. De gedateerde CI-waarnemingen hieronder blijven behouden.
 
 ## Ontwerp en Rust-uitleg
 
@@ -23,7 +27,7 @@ Ik voeg macOS-ondersteuning toe vóór F04. De feature krijgt het nieuwe ID F07;
 
 De C-API schrijft naar een buffer. `MaybeUninit<libc::proc_bsdinfo>` reserveert daarvoor correct uitgelijnd geheugen. De `unsafe`-aanroep krijgt exact de buffergrootte. Pas als de API die volledige grootte teruggeeft, wordt `assume_init()` gebruikt; een gedeeltelijk gevuld resultaat wordt afgewezen. Deze controle gebruikt geen shell of extern statusprogramma.
 
-`config/tools.macos.json` bevat uitsluitend vaste argumenten. `ping` gebruikt daar `-c 4`; de bestaande standaardconfiguratie bevat een Windows-pingvoorbeeld met `-n 4`. De macOS-configuratie wordt expliciet gekozen met `COMMANDHUB_CONFIG`; er is geen stilzwijgende platformdetectie. Een nieuwe test valideert het bestand op alle platforms; de macOS-job voert `/bin/echo` uit via dezelfde registry en executor als andere tools. De overige voorbeeldtools zijn niet afzonderlijk getest.
+De oorspronkelijke F07-configuratie bevatte uitsluitend vaste argumenten. `ping` gebruikt daar `-c 4`; de bestaande standaardconfiguratie bevat een Windows-pingvoorbeeld met `-n 4`. De macOS-configuratie wordt expliciet gekozen met `COMMANDHUB_CONFIG`; er is geen stilzwijgende platformdetectie. Een nieuwe test valideert het bestand op alle platforms; de macOS-job voert `/bin/echo` uit via dezelfde registry en executor als andere tools. De overige voorbeeldtools zijn niet afzonderlijk getest.
 
 ## Bronnen
 
@@ -41,7 +45,7 @@ De C-API schrijft naar een buffer. `MaybeUninit<libc::proc_bsdinfo>` reserveert 
 - Nog geen testtotalen of geslaagde macOS-acceptatie geclaimd. De eerdere groene CI van refactorcommit 105e69b is geen bewijs voor F07.
 - Geen Git-commando's, commits, pushes of merges uitgevoerd.
 
-## Volgende stap
+## Historische volgende stap vóór F04
 
 Commit en push de documentatie-update en controleer de CI van de laatste branchstand. Daarna PR-review en merge naar develop; vervolgens F04. De actuele checklist staat uitsluitend in het featureplan.
 
@@ -61,3 +65,9 @@ Er staan drie waarschuwingen en twee notices bij de run. Zichtbaar zijn Node.js 
 
 Alleen documentatie aangepast op basis van dit bewijs; geen tests opnieuw uitgevoerd en geen Git-commando’s uitgevoerd. Status naar Review. PR-review/merge is niet zichtbaar en blijft open. Deze documentatie-update volgt op de getoonde run; controleer na push de CI van de laatste branchstand.
 
+
+## Opleverreview op 2026-11-11
+
+De bestaande featurechecklist bevestigt merge naar develop. Het huidige macOS-profiel bevat achttien tools en gebruikt python3 voor de persoonlijke tools. F06 controleert de basisketen met dit profiel via Inspector.
+
+De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.

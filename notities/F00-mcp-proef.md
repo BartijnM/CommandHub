@@ -9,6 +9,10 @@ tags:
 
 [Featureplan](../docs/features/F00-mcp-proef.md) · [Beslisdocument](../docs/beslissingen/ADR-002-mcp-proef.md)
 
+## Leeswijzer bij de oplevering
+
+Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvingen van oude ingangen, configuraties en open punten horen bij hun gedateerde stand. Het actuele gedrag staat in het [API-contract](../docs/api-en-configuratie.md), de [architectuur](../docs/architectuur.md) en de [voortgang](../docs/voortgang.md).
+
 ## Doel en resultaat
 
 Deze aparte proef controleert of de officiële Rust-SDK een kleine MCP-server via HTTP kan aanbieden, zonder de CommandHub-server al met MCP te integreren. Een MCP-client kon de vaste tool `hello` ontdekken en aanroepen. De proef gaf als resultaat `De MCP-testtool werkt.`.
@@ -77,3 +81,9 @@ De hoofdcrate en de geïsoleerde proef zijn op Windows beide gecontroleerd met `
 ## Vervolg
 
 F00 is inhoudelijk klaar voor review. Bekijk de wijzigingen en voer zelf de Git-sync uit. Na beoordeling en merge van de PR kan de status van F00 naar Klaar; zie het [featureplan](../docs/features/F00-mcp-proef.md).
+
+## Opleverreview op 2026-11-11
+
+De geïsoleerde proef is historische ontwerpinput. Productie-MCP, transportcontroles en echte clienttests zijn in F05/F06 gerealiseerd. Het historische F00-mergeveld is nog niet bevestigd.
+
+De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.
