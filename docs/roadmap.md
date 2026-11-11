@@ -15,7 +15,7 @@ Feature-ID’s zijn stabiel en de tabelvolgorde is de bouwvolgorde. F06 is actie
 
 F07 is op verzoek vóór F04 ingevoegd. De macOS-ondersteuning is geïntegreerd en de platformcontroles zijn geslaagd op macOS, Ubuntu en Windows.
 
-F00 bewaart de oorspronkelijke MCP-proef. De productie-integratie uit F05 is afgerond. In F06 zijn de platformprofielen, CI-basisketen en demo bevestigd. De README-doorloop, eindcontrole en opleverings-PR volgen nog.
+F00 bewaart de oorspronkelijke MCP-proef. De productie-integratie uit F05 is afgerond. In F06 zijn de platformprofielen, CI-basisketen en demo bevestigd. De eigenaar heeft de README en historische merges bevestigd. Eindcontrole en opleverings-PR volgen.
 
 ## GitHub Project
 

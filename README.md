@@ -4,7 +4,7 @@ CommandHub is een configuratiegestuurde MCP-server in Rust die externe commandli
 
 ## Huidige status
 
-Actief is [F06 — Platformcontrole en demonstratie](docs/features/F06-oplevering.md). De eigenaar heeft de demo met Claude Code als werkend bevestigd. De gezamenlijke README-doorloop en definitieve opleveringscontrole volgen. De CI-matrix bouwt en test CommandHub vanaf een schone checkout op Windows, Ubuntu en macOS. Een echte Inspector-client controleert op elke runner de toollijst, een geslaagde uitvoering en een validatiefout. De optionele toolafhankelijkheden hebben eigen installatievereisten. Zie de [voortgang](docs/voortgang.md) en de [F06-notitie](notities/F06-oplevering.md).
+Actief is [F06 — Platformcontrole en demonstratie](docs/features/F06-oplevering.md). De eigenaar heeft de demo met Claude Code als werkend bevestigd. De eigenaar heeft de README op 2026-11-11 goedgekeurd. De definitieve opleveringscontrole volgt. De CI-matrix bouwt en test CommandHub vanaf een schone checkout op Windows, Ubuntu en macOS. Een echte Inspector-client controleert op elke runner de toollijst, een geslaagde uitvoering en een validatiefout. De optionele toolafhankelijkheden hebben eigen installatievereisten. Zie de [voortgang](docs/voortgang.md) en de [F06-notitie](notities/F06-oplevering.md).
 
 ## Installeren en gebruiken
 
@@ -225,8 +225,10 @@ Cargo.lock hoort bij de applicatie en is opgenomen in de repository. Gebruik --l
 - [Rust MCP SDK](https://github.com/modelcontextprotocol/rust-sdk)
 
 
-## Opleverstatus en beperkingen
+## CI-afronding en opleverstatus
 
-De F06-platformcontrole van 2026-11-10 is geslaagd op Windows, Ubuntu en macOS met formatter, Clippy, tests, build en Inspector-basistest. De demo met Claude Code is bevestigd. De gezamenlijke README-doorloop, controles van de definitieve stand en opleverings-PR volgen nog. Zie het [testplan en de requirementdekking](docs/testplan.md).
+De F06-platformcontrole van 2026-11-10 is geslaagd op Windows, Ubuntu en macOS. Elke job bouwt vanaf een schone checkout en voert formatter, Clippy met warnings als errors, Rust-tests, build en de Inspector-basistest uit. Die basistest controleert startup, de geconfigureerde toollijst, git_version en de validatiefout van git_diff_view.
+
+Op 2026-11-11 bevestigt de eigenaar de demo met Claude Code, de README en de historische featuremerges tot en met F05, inclusief F07. Daarmee zijn de documentatie en requirementreview voor F06 afgerond. De controles op de definitieve opleverstand en de opleverings-PR naar main volgen. De beschikbare CI-resultaten en requirementdekking staan in het [testplan](docs/testplan.md).
 
 CommandHub is ingericht voor lokaal gebruik met de rechten van het serveraccount. Beheer executables, serveromgeving en gegevensmap zorgvuldig. Padcanonicalisatie kent bestandssysteemraces. Onverwacht clientdisconnect heeft nog geen afzonderlijk annuleringsbeleid. De optionele tools vragen eigen dependencies en bestandsformaten. De volledige grenzen staan in [security en beperkingen](docs/security.md).

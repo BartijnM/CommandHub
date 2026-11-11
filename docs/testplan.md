@@ -22,9 +22,9 @@ Bijgewerkt op 2026-11-11 voor F06. Deze matrix koppelt iedere requirement aan im
 | R14 Windows, Linux en macOS | process_checks gebruikt OS-specifieke API’s. De CI-matrix draait Rust-tests, build en MCP-basistest met drie platformprofielen. | Basisketen op drie platforms aangetoond. Optionele tools hebben eigen afhankelijkheden |
 | R15 Gedeelde kern | AppState deelt registry en ExecutionService. De kern gebruikt eigen fouttypen en serde_json. REST/MCP-consistentietest en gemengde capaciteitstest gebruiken dezelfde state. | Codecontrole en ketentests |
 | R16 Lokale binding en transportcontroles | main bindt aan 127.0.0.1:3000. transport_* controleert Host, Origin, contentonderhandeling, protocolheaders, sessies en bodygrenzen. | Codecontrole en automatische transporttests |
-| R17 Documentatie en demo | README, configuratiehandleiding, API, architectuur, security en demo zijn bijgewerkt. De eigenaar bevestigt de demo. De gezamenlijke README-doorloop volgt hierna. | Deels afgerond, README-doorloop nog open |
+| R17 Documentatie en demo | README, configuratiehandleiding, API, architectuur, security en demo zijn bijgewerkt. De eigenaar bevestigt de demo. De eigenaar keurt de README op 2026-11-11 goed. | Door eigenaar bevestigd |
 
-De testnamen verwijzen naar [src/tests](../src/tests). Details van de eisen staan in [requirements](requirements.md). R17 wordt afgerond nadat de geplande README-doorloop is bevestigd.
+De testnamen verwijzen naar [src/tests](../src/tests). Details van de eisen staan in [requirements](requirements.md). R17 is op 2026-11-11 bevestigd met de goedgekeurde README en de werkende demo.
 
 ## Overige requirements
 
@@ -95,7 +95,7 @@ De productgrenzen staan in [security](security.md). Historische resultaten, fout
 
 ## Laatste oplevercontroles
 
-Loop de README gezamenlijk vanaf de vereisten door en noteer eventuele verbeteringen. Controleer daarna de definitieve branchstand met de volgende commando’s en de drieplatform-CI.
+De eigenaar heeft de README goedgekeurd. Controleer de definitieve branchstand met de volgende commando’s en de drieplatform-CI.
 
 ~~~sh
 cargo fmt --check

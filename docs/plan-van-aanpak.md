@@ -1,6 +1,6 @@
 # Plan van aanpak
 
-Bijgewerkt op 2026-11-11. F06 rondt de lokale oplevering af. De configuratiegestuurde kern, REST, MCP, drieplatform-CI en demo zijn aanwezig. De gezamenlijke README-doorloop en definitieve opleveringscontrole volgen.
+Bijgewerkt op 2026-11-11. F06 rondt de lokale oplevering af. De configuratiegestuurde kern, REST, MCP, drieplatform-CI en demo zijn aanwezig. De README is door de eigenaar goedgekeurd. De definitieve opleveringscontrole volgt.
 
 ## Doel
 
@@ -30,7 +30,7 @@ Per feature onderbouw ik acceptatiecriteria met gerichte tests, volledige Cargo-
 
 ## Stand van de oplevering
 
-De platformprofielen en schone-checkout-MCP-basistest zijn op 2026-11-10 groen gemeld op Windows, Ubuntu en macOS. De eigenaar bevestigt op 2026-11-11 de volledige [demo](demo.md). De documentatie en requirementmatrix zijn bijgewerkt. De volgende stap is de gezamenlijke README-doorloop. Daarna volgen eindcontroles en de opleverings-PR naar main.
+De platformprofielen en schone-checkout-MCP-basistest zijn op 2026-11-10 groen gemeld op Windows, Ubuntu en macOS. De eigenaar bevestigt op 2026-11-11 de volledige [demo](demo.md). De documentatie en requirementmatrix zijn bijgewerkt. De README is door de eigenaar goedgekeurd. De volgende stap is de eindcontrole en het voorbereiden van de opleverings-PR naar main.
 
 ## Planning en Git-werkwijze
 

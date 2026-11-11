@@ -83,3 +83,9 @@ Loop README en handleidingen gezamenlijk door vanaf de installatievereisten, pro
 ### Documentcontrole na de wijzigingen
 
 Alle lokale Markdown-links en kopankers zijn gecontroleerd. De codeblokken zijn gesloten en de twaalf JSON-voorbeelden zijn als JSON geparseerd. De drie huidige configuratieprofielen bevatten elk achttien tools. De documentatiereview wijzigt 29 Markdown-bestanden. AGENTS.md, ADR-001 en de twee overzichtsbestanden blijven inhoudelijk geldig.
+
+## README en historische merges bevestigd op 2026-11-11
+
+De eigenaar bevestigt alle historische featuremerges tot en met F05, inclusief F07, en keurt de README goed met een verzoek om de CI-slottekst te actualiseren. F00, F01 en F04 staan nu eveneens op Klaar. De eerdere administratieve open mergevelden zijn hiermee afgehandeld.
+
+De README-slottekst beschrijft de geslaagde F06-platformcontrole van 2026-11-10 en de bevestigde demo en documentatiereview. R17 en alle F06-acceptatiecriteria zijn bevestigd. De volgende stap is de eindcontrole van de definitieve stand en de opleverings-PR naar main. F06 blijft In uitvoering totdat deze afronding is bevestigd. De Cargo-controles zijn bij deze documentatie-update niet herhaald.

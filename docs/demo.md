@@ -245,4 +245,4 @@ Noteer ook datum, besturingssysteem, commit, gebruikt profiel en Claude Code-ver
 | R13 | Veilige foutcategorieën en uitvoeringslogging |
 | R17 | Reproduceerbaar draaiboek met verwachte en vast te leggen werkelijke uitkomsten |
 
-Het [testplan](testplan.md) koppelt de demo en automatische tests aan alle Must-eisen. De gezamenlijke README-doorloop blijft onderdeel van de afronding van R17. De platformresultaten en open opleverpunten staan in [voortgang](voortgang.md). De instellingen van de client staan beschreven in de [officiële Claude Code-documentatie](https://code.claude.com/docs/en/mcp) en de [VS Code-handleiding](https://code.claude.com/docs/en/vs-code).
+Het [testplan](testplan.md) koppelt de demo en automatische tests aan alle Must-eisen. De eigenaar heeft de README op 2026-11-11 goedgekeurd. R17 is daarmee bevestigd. De platformresultaten en open opleverpunten staan in [voortgang](voortgang.md). De instellingen van de client staan beschreven in de [officiële Claude Code-documentatie](https://code.claude.com/docs/en/mcp) en de [VS Code-handleiding](https://code.claude.com/docs/en/vs-code).

@@ -61,6 +61,10 @@ De basis wordt inmiddels in de volledige applicatie gebruikt. De actuele oplever
 
 ## Opleverreview op 2026-11-11
 
-De projectbasis wordt gebruikt door de huidige applicatie. Cargo.lock staat in de repository en de F06-CI bouwt vanaf schone checkout op drie platforms. Het historische F01-mergeveld is nog niet afzonderlijk vastgelegd.
+De projectbasis wordt gebruikt door de huidige applicatie. Cargo.lock staat in de repository en de F06-CI bouwt vanaf schone checkout op drie platforms. De eigenaar bevestigt op 2026-11-11 de historische merge van F01.
 
 De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.
+
+## Mergebevestiging op 2026-11-11
+
+De eigenaar bevestigt de historische merge. De feature staat op Klaar. Eerdere open mergevermeldingen in de gedateerde werksessies beschrijven de toenmalige stand.
