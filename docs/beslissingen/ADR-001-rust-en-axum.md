@@ -1,6 +1,6 @@
 # ADR-001 — Rust en Axum
 
-Status: gekozen door de gebruiker op 2026-10-19.
+Status: gekozen op 2026-10-19.
 
 ## Context
 

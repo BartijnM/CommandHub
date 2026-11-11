@@ -1,0 +1,9 @@
+[package]
+name = "f00-mcp-probe"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8"
+rmcp = { version = "3.6.0", features = ["server", "schemars", "transport-streamable-http-server"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }

@@ -1,7 +1,7 @@
 ---
 id: F06
 prioriteit: Must
-status: Backlog
+status: Klaar
 milestone: "Oplevering"
 ---
 
@@ -21,36 +21,45 @@ R14, R17, R19.
 
 ## Scope
 
-Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot de scope niet stilzwijgend. Bij F01 is de minimale codebasis al aanwezig, maar lokale controle blijft nodig.
+Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eigen implementatiestap. Het actuele productcontract staat in [API en configuratie](../api-en-configuratie.md) en de opleverstand in [voortgang](../voortgang.md).
 
 ## Todo
 
-- [ ] Voorbeeldconfiguraties voor Windows en Linux afronden.
-- [ ] Schone installatie en volledige keten op beide platforms testen.
-- [ ] README, technische documentatie en notities actualiseren.
-- [ ] Demo van configuratie, ontdekking, uitvoering, fouten, logging en timeout voorbereiden.
-- [ ] Requirementdekking en resterende beperkingen nalopen.
-- [ ] Opleverings-PR naar main voorbereiden.
+- [x] Voorbeeldconfiguraties voor Windows, Linux en macOS afronden; bouw voort op F07.
+- [x] Schone installatie en volledige keten op alle drie platforms testen. De CI-basistest bouwt vanaf een schone checkout en controleert startup, ontdekking, uitvoering en validatiefout via Inspector.
+- [x] README, technische documentatie en notities actualiseren op 2026-11-11. Ik heb de README op 2026-11-11 beoordeeld en goedgekeurd.
+- [x] Demo van configuratie, ontdekking, uitvoering, fouten, logging en timeout voorbereiden. Ik heb de werking op 2026-11-11 bevestigd.
+- [x] Requirementdekking en resterende beperkingen nalopen en vastleggen in testplan en security.
 
 ## Acceptatiecriteria
 
-- [ ] Andere ontwikkelaar kan vanaf README bouwen en starten.
-- [ ] Nieuwe tool toevoegen werkt zonder rebuild.
-- [ ] Demo en testresultaten onderbouwen de Must-eisen.
-- [ ] Open beperkingen staan expliciet in de opleverdocumentatie.
+- [x] Andere ontwikkelaar kan vanaf README bouwen en starten. Ik heb de README op 2026-11-11 beoordeeld en goedgekeurd.
+- [x] Nieuwe tool toevoegen werkt zonder rebuild, bevestigd door mij via de demo.
+- [x] Demo, testresultaten en de goedgekeurde README onderbouwen de Must-eisen.
+- [x] Open beperkingen staan expliciet in de opleverdocumentatie.
 
 ## Bewijs en koppelingen
 
 - GitHub issue: nog aan te maken.
 - Branch: feature/F06-oplevering.
-- Pull request: nog niet aangemaakt.
-- Tests/handmatige verificatie: nog vast te leggen.
+- Feature gemerged naar develop, door mij bevestigd op 2026-11-11.
+- CI op 2026-11-10: de meest recente getoonde run is groen op Windows, Ubuntu en macOS. Elke runner gebruikt het eigen toolprofiel en draait de MCP-basistest. Afzonderlijke verificatie van alle optionele tools per platform blijft een gedocumenteerde beperking. De README is op 2026-11-11 door mij goedgekeurd.
+- [Demo-draaiboek](../demo.md) met Claude Code en verwachte uitkomsten. Ik heb op 2026-11-11 bevestigd dat de demo werkt.
 - [Featurenotitie](../../notities/F06-oplevering.md).
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd.
-- [ ] Documentatie en notitie bijgewerkt.
-- [ ] Voortgang bijgewerkt.
-- [ ] PR gemerged; pas daarna status Klaar.
+- [x] Relevante controles geslaagd volgens de vastgelegde drieplatform-CI van 2026-11-10.
+- [x] Documentatie en notitie bijgewerkt op 2026-11-11.
+- [x] Voortgang bijgewerkt op 2026-11-11.
+- [x] Feature gemerged naar develop, door mij bevestigd op 2026-11-11. Status Klaar.
 
+## Oplevering naar main
+
+Na de afgeronde feature volgt de oplevering vanuit develop.
+
+- [ ] Opleverings-PR van develop naar main voorbereiden.
+- [ ] CI van de opleverstand beoordelen.
+- [ ] Opleverings-PR naar main mergen.
+
+Ik voer deze opleveringsstappen uit. Requirementdekking staat in het [testplan](../testplan.md) en beperkingen in [security](../security.md).

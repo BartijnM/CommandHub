@@ -1,28 +1,44 @@
 # Huidige voortgang
 
-Bijgewerkt: 2026-10-19.
+Bijgewerkt op 2026-11-11.
 
-## Actief
+## Huidige status
 
-Projectvoorbereiding. De keuze voor Rust en Axum is gemaakt op basis van RustTest.
+[F06 — Platformcontrole en demonstratie](features/F06-oplevering.md) staat op **Klaar**. Ik heb de merge naar develop op 2026-11-11 bevestigd. De platformprofielen, schone-checkoutcontrole, demo en README-review zijn afgerond. Ik heb bevestigd dat het demo-draaiboek met Claude Code werkt.
 
-## Aanwezig
+## Afgerond voor F06
 
-Documentatieopzet, featureplannen, notities per feature en minimale Axum-statusroute met logging. Geen toolconfiguratie, executor of MCP geïmplementeerd.
-
-## Nog door mij te doen
-
-- Pakket in de nieuwe repository zetten.
-- Dependencies bouwen, Cargo.lock genereren en committen.
-- GET /status lokaal controleren.
-- Conceptdocumentatie nalopen en eigen keuzes bevestigen.
-- GitHub Issues en Project met datums inrichten.
-
-## Volgende sessie
-
-Begin met F00: een kleine MCP-proef en protocolkeuzes. Controleer F01 op de eigen machine. Werk daarna F02 verder uit.
+- Windows, Linux en macOS hebben elk een profiel met achttien tools. De standaardconfiguratie gebruikt python, de Unix-profielen python3.
+- CI bouwt en test op drie platforms. De Inspector-basistest controleert startup, toollijst, git_version en een validatiefout met het gekozen profiel.
+- De [demo](demo.md) toont ontdekking, projectonderzoek, foutafhandeling, logging, timeout met herstel en toevoegen van een tool zonder rebuild.
+- De documentatiereview heeft README, configuratiehandleiding, API-contract, architectuur, security, testplan, requirements, planning, featureplannen en notities gecontroleerd en actuele afwijkingen verwerkt.
+- Ik heb op 2026-11-11 de README en de historische featuremerges bevestigd.
+- Het [testplan](testplan.md) koppelt alle requirements aan implementatie, bewijs en resterende verificatie. [Security](security.md) bevat de opleveringsbeperkingen.
 
 ## Verificatie
 
-Zie START-HIER.md. Vul hier eigen resultaten in; behandel een gegenereerde opzet niet als afgeronde implementatie.
+| Bewijs | Resultaat |
+| --- | --- |
+| Windows F05-eindcontrole op 2026-11-09 | Formatter en Clippy geslaagd, 156 tests geslaagd en 7 proceshelpers, 9,77 s |
+| F05 CI-run #50 | Ubuntu, macOS en Windows geslaagd |
+| F06 CI op 2026-11-10 | Windows 4 min 47 s, Ubuntu 2 min 5 s, macOS 3 min 14 s, alle jobs geslaagd |
+| Claude Code-demo op 2026-11-11 | Door mij als werkend bevestigd |
+| README en historische featuremerges op 2026-11-11 | Door mij goedgekeurd en bevestigd |
+| F06-merge naar develop op 2026-11-11 | Door mij bevestigd |
 
+De F06-CI omvat formatter, Clippy, tests, build en Inspector vanaf schone checkout. De laatste screenshot bevat geen exact runnummer, commit-SHA of CI-testtotalen. De lokale aantallen hierboven zijn historische Windows-resultaten.
+
+## Volgende stap
+
+Ik commit de bijgewerkte afrondingsdocumentatie op develop en bereid de opleverings-PR van develop naar main voor. Ik beoordeel de CI van die opleverstand en voer daarna de merge naar main uit.
+
+## Aandachtspunten
+
+- Optionele tools vereisen eigen installatie van Python, rg, pdfinfo en ffprobe. De basisketen in CI controleert de beschikbare Git-tools. Een volledige optionele-toolmatrix is nog niet vastgelegd.
+- CommandHub gebruikt lokale binding en de rechten van het serveraccount. Remote authenticatie en autorisatie zijn later werk.
+- Padcanonicalisatie heeft bestandssysteemraces. Alleen bestaande absolute padparameters worden door de kern ondersteund. De Python-bestandstools hebben een afzonderlijk relatief padbeleid.
+- Onverwacht clientdisconnect heeft nog geen expliciet annuleringsbeleid. Expliciete MCP-annulering en server-shutdown zijn aangesloten.
+- De MCP-shutdowntestclient gebruikt NeverRetry. Windows-symlinks/junctions hebben geen afzonderlijke test.
+- De Node-runtimewaarschuwing bij actions/checkout@v4 is als onderhoudspunt vastgelegd.
+
+Details en oudere resultaten staan in de [F06-notitie](../notities/F06-oplevering.md), het [testplan](testplan.md) en de [eerdere featurenotities](../notities/README.md).

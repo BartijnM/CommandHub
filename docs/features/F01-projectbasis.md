@@ -1,7 +1,7 @@
 ---
 id: F01
 prioriteit: Must
-status: Backlog
+status: Klaar
 milestone: "Fundament"
 ---
 
@@ -21,34 +21,37 @@ R13, R15, R19.
 
 ## Scope
 
-Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot de scope niet stilzwijgend. Bij F01 is de minimale codebasis al aanwezig, maar lokale controle blijft nodig.
+Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eigen implementatiestap. Het actuele productcontract staat in [API en configuratie](../api-en-configuratie.md) en de opleverstand in [voortgang](../voortgang.md).
 
 ## Todo
 
-- [ ] Rust-project en minimale Axum-statusroute lokaal controleren.
-- [ ] Logging en Ctrl+C-afhandeling controleren.
-- [ ] Cargo.lock genereren en committen.
-- [ ] Formatter, Clippy en build controleren; CI voor Windows/Linux voorbereiden.
-- [ ] Repository, develop en GitHub Project inrichten.
+- [x] Rust-project en minimale Axum-statusroute lokaal controleren.
+- [x] Logging en Ctrl+C-afhandeling controleren.
+- [x] Cargo.lock opnemen in de repository. De F06-CI bouwt vanaf schone checkout met --locked.
+- [x] Formatter, Clippy en build controleren; CI voor Windows/Linux voorbereiden.
 
 ## Acceptatiecriteria
 
-- [ ] GET /status geeft 200 met status en applicatienaam.
-- [ ] cargo fmt --check en Clippy slagen.
-- [ ] Documentatie maakt duidelijk wat wel en niet geïmplementeerd is.
+- [x] GET /status geeft 200 met status en applicatienaam.
+- [x] cargo fmt --check en Clippy slagen.
+- [x] Documentatie maakt duidelijk wat wel en niet geïmplementeerd is.
 
 ## Bewijs en koppelingen
 
 - GitHub issue: nog aan te maken.
 - Branch: feature/F01-projectbasis.
-- Pull request: nog niet aangemaakt.
-- Tests/handmatige verificatie: nog vast te leggen.
+- Pull request gemerged, door mij bevestigd op 2026-11-11.
+- Tests/handmatige verificatie staan in de [F01-notitie](../../notities/F01-projectbasis.md). De latere F06-CI bevestigt de basis op Windows, Ubuntu en macOS.
 - [Featurenotitie](../../notities/F01-projectbasis.md).
 
 ## Afronden
 
-- [ ] Relevante controles geslaagd.
-- [ ] Documentatie en notitie bijgewerkt.
-- [ ] Voortgang bijgewerkt.
-- [ ] PR gemerged; pas daarna status Klaar.
+- [x] Relevante controles geslaagd.
+- [x] Documentatie en notitie bijgewerkt.
+- [x] Voortgang bijgewerkt.
+- [x] PR gemerged, door mij bevestigd op 2026-11-11.
 
+
+## Oplevercontext op 2026-11-11
+
+De projectbasis is in gebruik en de platform-CI controleert formatter, Clippy, tests en build. Ik heb op 2026-11-11 de historische merge bevestigd van F01. Status Klaar.
