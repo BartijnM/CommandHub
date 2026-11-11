@@ -95,7 +95,7 @@ De productgrenzen staan in [security](security.md). Historische resultaten, fout
 
 ## Laatste oplevercontroles
 
-Ik heb de README en de F06-merge naar develop bevestigd op 2026-11-11. F06 is afgerond. Voor de opleverings-PR naar main beoordeel ik de CI van de opleverstand. De bijbehorende lokale controles zijn hieronder reproduceerbaar opgenomen.
+Ik heb de README en de F06-merge naar develop bevestigd op 2026-11-11. F06 is afgerond. Ik heb de CI van de opleverstand beoordeeld. PR #17 is gemerged naar main en run #65 op e9790e6 is geslaagd op drie platforms. De bijbehorende lokale controles zijn hieronder reproduceerbaar opgenomen.
 
 ~~~sh
 cargo fmt --check
@@ -104,4 +104,16 @@ cargo test --locked
 cargo build --locked
 ~~~
 
-Leg aanvullend CI-bewijs voor de opleverstand vast wanneer dit beschikbaar is. De laatste vastgelegde F06-platformcontrole blijft die van 2026-11-10.
+De oplevercontrole op main is vastgelegd in de onderstaande run.
+
+## Oplevercontrole op main, 2026-11-11
+
+Ik heb develop via PR #17 naar main gemerged met mergecommit e9790e6. De screenshot van CI-run #65 toont Success met een totale duur van 4 min 39 s.
+
+| Runner | Resultaat | Jobduur |
+| --- | --- | --- |
+| Ubuntu | Geslaagd | 1 min 46 s |
+| Windows | Geslaagd | 4 min 36 s |
+| macOS | Geslaagd | 2 min 20 s |
+
+De workflow voert formatter, Clippy, Rust-tests, build en de Inspector-basistest uit. Exacte testtotalen zijn niet zichtbaar in de screenshot. De run bevat drie warnings en twee notices, waaronder de Node-runtimewaarschuwing bij actions/checkout@v4. De eerste oplevering is afgerond.

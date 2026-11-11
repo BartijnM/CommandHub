@@ -4,7 +4,7 @@ Bijgewerkt op 2026-11-11.
 
 ## Huidige status
 
-[F06 — Platformcontrole en demonstratie](features/F06-oplevering.md) staat op **Klaar**. Ik heb de merge naar develop op 2026-11-11 bevestigd. De platformprofielen, schone-checkoutcontrole, demo en README-review zijn afgerond. Ik heb bevestigd dat het demo-draaiboek met Claude Code werkt.
+[F06 — Platformcontrole en demonstratie](features/F06-oplevering.md) staat op **Klaar**. Ik heb de merge naar develop op 2026-11-11 bevestigd en daarna develop via PR #17 naar main gemerged. CI-run #65 op e9790e6 is geslaagd op Windows, Ubuntu en macOS. De eerste oplevering is afgerond. De platformprofielen, schone-checkoutcontrole, demo en README-review zijn afgerond. Ik heb bevestigd dat het demo-draaiboek met Claude Code werkt.
 
 ## Afgerond voor F06
 
@@ -25,12 +25,13 @@ Bijgewerkt op 2026-11-11.
 | Claude Code-demo op 2026-11-11 | Door mij als werkend bevestigd |
 | README en historische featuremerges op 2026-11-11 | Door mij goedgekeurd en bevestigd |
 | F06-merge naar develop op 2026-11-11 | Door mij bevestigd |
+| Oplevering op main op 2026-11-11 | PR #17 gemerged, commit e9790e6, CI-run #65 geslaagd op drie platforms |
 
 De F06-CI omvat formatter, Clippy, tests, build en Inspector vanaf schone checkout. De laatste screenshot bevat geen exact runnummer, commit-SHA of CI-testtotalen. De lokale aantallen hierboven zijn historische Windows-resultaten.
 
-## Volgende stap
+## Oplevering afgerond
 
-Ik commit de bijgewerkte afrondingsdocumentatie op develop en bereid de opleverings-PR van develop naar main voor. Ik beoordeel de CI van die opleverstand en voer daarna de merge naar main uit.
+Alle feature- en opleveringsstappen zijn afgerond. Ik heb de merge en groene CI op main vastgelegd. De hieronder beschreven beperkingen en onderhoudspunten blijven beschikbaar voor eventueel vervolgwerk.
 
 ## Aandachtspunten
 

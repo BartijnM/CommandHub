@@ -15,7 +15,7 @@ Feature-ID’s zijn stabiel en de tabelvolgorde is de bouwvolgorde. Ik heb alle 
 
 F07 is op verzoek vóór F04 ingevoegd. De macOS-ondersteuning is geïntegreerd en de platformcontroles zijn geslaagd op macOS, Ubuntu en Windows.
 
-F00 bewaart de oorspronkelijke MCP-proef. De productie-integratie uit F05 is afgerond. In F06 zijn de platformprofielen, CI-basisketen en demo bevestigd. Ik heb de README en historische merges bevestigd. F06 is naar develop gemerged. De opleverings-PR van develop naar main volgt, inclusief beoordeling van de CI op die stand.
+F00 bewaart de oorspronkelijke MCP-proef. De productie-integratie uit F05 is afgerond. In F06 zijn de platformprofielen, CI-basisketen en demo bevestigd. Ik heb de README en historische merges bevestigd. F06 is naar develop gemerged. Ik heb de opleverings-PR #17 van develop naar main gemerged. CI-run #65 op e9790e6 is groen op Windows, Ubuntu en macOS. De eerste oplevering is afgerond.
 
 ## GitHub Project
 

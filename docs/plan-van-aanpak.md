@@ -1,6 +1,6 @@
 # Plan van aanpak
 
-Bijgewerkt op 2026-11-11. F06 is afgerond en de merge naar develop is door mij bevestigd. De configuratiegestuurde kern, REST, MCP, drieplatform-CI en demo zijn aanwezig. De README is door mij goedgekeurd. De opleverings-PR van develop naar main volgt.
+Bijgewerkt op 2026-11-11. F06 is afgerond en de merge naar develop is door mij bevestigd. De configuratiegestuurde kern, REST, MCP, drieplatform-CI en demo zijn aanwezig. De README is door mij goedgekeurd. Ik heb develop via PR #17 naar main gemerged. CI-run #65 op e9790e6 is geslaagd op drie platforms. De eerste oplevering is afgerond.
 
 ## Doel
 
@@ -30,7 +30,7 @@ Per feature onderbouw ik acceptatiecriteria met gerichte tests, volledige Cargo-
 
 ## Stand van de oplevering
 
-De platformprofielen en schone-checkout-MCP-basistest zijn op 2026-11-10 groen gemeld op Windows, Ubuntu en macOS. Ik bevestig op 2026-11-11 de volledige [demo](demo.md). De documentatie en requirementmatrix zijn bijgewerkt. De README is door mij goedgekeurd. F06 is naar develop gemerged. De volgende stap is de opleverings-PR van develop naar main en beoordeling van de CI van de opleverstand.
+De platformprofielen en schone-checkout-MCP-basistest zijn op 2026-11-10 groen gemeld op Windows, Ubuntu en macOS. Ik bevestig op 2026-11-11 de volledige [demo](demo.md). De documentatie en requirementmatrix zijn bijgewerkt. De README is door mij goedgekeurd. F06 is naar develop gemerged. De opleverings-PR #17 naar main is gemerged en de CI op mergecommit e9790e6 is geslaagd in run #65. De eerste oplevering is afgerond.
 
 ## Planning en Git-werkwijze
 

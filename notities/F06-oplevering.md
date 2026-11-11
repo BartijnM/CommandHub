@@ -99,3 +99,9 @@ De opleverings-PR van develop naar main volgt na het vastleggen van deze documen
 ## Schrijfwijze van de documentatie op 2026-11-11
 
 Ik heb de projectbeschrijvingen, voortgang, featureplannen en notities naar mijn perspectief laten herschrijven. Mijn bevestigingen van demo, README en merges staan in de ik-vorm. De vastgelegde CI-resultaten en open opleveringsstappen behouden hun oorspronkelijke betekenis.
+
+## Eerste oplevering afgerond op 2026-11-11
+
+Ik heb develop via PR #17 naar main gemerged. De PR-screenshot bevestigt de richting main ← develop en mergecommit e9790e6. De daaropvolgende CI-run #65 is geslaagd op Windows, Ubuntu en macOS. De totale duur is 4 min 39 s. Ubuntu duurde 1 min 46 s, Windows 4 min 36 s en macOS 2 min 20 s.
+
+Ik heb de huidige status in README, voortgang, featureplan, roadmap, plan van aanpak, testplan en security bijgewerkt. Alle opleveringsstappen zijn afgevinkt. F06 en de eerste oplevering zijn afgerond. De resterende productbeperkingen en het CI-actiononderhoud staan in de bestaande documentatie. Bij deze documentatie-update zijn de Cargo-controles niet opnieuw uitgevoerd.

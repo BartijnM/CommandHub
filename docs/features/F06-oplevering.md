@@ -56,10 +56,10 @@ Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eige
 
 ## Oplevering naar main
 
-Na de afgeronde feature volgt de oplevering vanuit develop.
+Ik heb develop via PR #17 naar main gemerged op 2026-11-11. Mergecommit e9790e6 heeft een geslaagde CI-run #65.
 
-- [ ] Opleverings-PR van develop naar main voorbereiden.
-- [ ] CI van de opleverstand beoordelen.
-- [ ] Opleverings-PR naar main mergen.
+- [x] Opleverings-PR #17 van develop naar main voorbereid.
+- [x] CI-run #65 op main geslaagd op Windows, Ubuntu en macOS.
+- [x] Opleverings-PR #17 naar main gemerged, commit e9790e6.
 
-Ik voer deze opleveringsstappen uit. Requirementdekking staat in het [testplan](../testplan.md) en beperkingen in [security](../security.md).
+Ik heb de eerste oplevering afgerond. Requirementdekking staat in het [testplan](../testplan.md) en beperkingen in [security](../security.md).

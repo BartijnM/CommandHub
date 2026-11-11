@@ -4,7 +4,7 @@ CommandHub is een configuratiegestuurde MCP-server in Rust die externe commandli
 
 ## Huidige status
 
-Ik heb [F06 — Platformcontrole en demonstratie](docs/features/F06-oplevering.md) afgerond en op 2026-11-11 naar `develop` gemerged. Ik heb de demo met Claude Code en de README gecontroleerd en goedgekeurd. De CI-matrix bouwt en test op Windows, Ubuntu en macOS, inclusief een Inspector-basistest voor ontdekking, uitvoering en validatiefouten. De volgende stap is de opleverings-PR van `develop` naar `main`. Zie [voortgang](docs/voortgang.md).
+Ik heb de eerste versie van CommandHub opgeleverd op `main`. [F06 — Platformcontrole en demonstratie](docs/features/F06-oplevering.md) is afgerond. PR #17 heeft `develop` naar `main` gemerged met commit `e9790e6`. CI-run #65 is op 2026-11-11 geslaagd op Windows, Ubuntu en macOS, inclusief de Inspector-basistest. De demo met Claude Code en de README zijn gecontroleerd. Zie [voortgang](docs/voortgang.md).
 
 ## Installeren en gebruiken
 
@@ -229,6 +229,6 @@ Cargo.lock hoort bij de applicatie en is opgenomen in de repository. Gebruik --l
 
 De F06-platformcontrole van 2026-11-10 is geslaagd op Windows, Ubuntu en macOS. Elke job bouwt vanaf een schone checkout en voert formatter, Clippy met warnings als errors, Rust-tests, build en de Inspector-basistest uit. Die basistest controleert startup, de geconfigureerde toollijst, git_version en de validatiefout van git_diff_view.
 
-Op 2026-11-11 heb ik de demo met Claude Code, de README en de featuremerges bevestigd, inclusief F06 naar develop. F06 staat op Klaar. De oplevering van develop naar main volgt via een PR. Beoordeel daarbij de CI van de opleverstand. De beschikbare CI-resultaten en requirementdekking staan in het [testplan](docs/testplan.md).
+Op 2026-11-11 heb ik de demo met Claude Code, de README en de featuremerges bevestigd, inclusief F06 naar develop. F06 staat op Klaar. Ik heb develop via PR #17 naar main gemerged. CI-run #65 op mergecommit e9790e6 is geslaagd op alle drie platforms. Daarmee is de eerste oplevering afgerond. De beschikbare CI-resultaten en requirementdekking staan in het [testplan](docs/testplan.md).
 
 CommandHub is ingericht voor lokaal gebruik met de rechten van het serveraccount. Beheer executables, serveromgeving en gegevensmap zorgvuldig. Padcanonicalisatie kent bestandssysteemraces. Onverwacht clientdisconnect heeft nog geen afzonderlijk annuleringsbeleid. De optionele tools vragen eigen dependencies en bestandsformaten. De volledige grenzen staan in [security en beperkingen](docs/security.md).
