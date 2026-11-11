@@ -1,6 +1,6 @@
 # F04 handmatig testen
 
-De configuratie [config/tools.json](../config/tools.json) bevat drie nieuwe tools. Ze wijzigen geen repositorybestanden en gebruiken expliciete keuzelijsten. Git en rustc moeten via PATH beschikbaar zijn. Start vanuit de projectmap zodat Git de bedoelde repository gebruikt.
+De configuratie [config/tools.json](../config/tools.json) bevat onder andere de drie F04-voorbeeldtools. Ze wijzigen geen repositorybestanden en gebruiken expliciete keuzelijsten. Git en rustc moeten via PATH beschikbaar zijn. Start vanuit de projectmap zodat Git de bedoelde repository gebruikt.
 
 ## Server starten op Windows
 
@@ -31,14 +31,14 @@ GET /tools toont de waarden als enum en additionalProperties: false. De Git-tool
 
 Herhaal git_recent met elk van deze bodies. Verwacht HTTP 400 met code invalid_parameters (PowerShell meldt een fout bij niet-succesvolle HTTP-status):
 
-```json
+```jsonl
 {"count":"2"}
 {"count":3}
 {}
 {"count":"3","command":"other"}
 ```
 
-Dit controleert achtereenvolgens de keuzelijst, het stringtype, een verplicht veld en een onbekend veld. Voorbeeldtools en positieve uitvoering zijn lokaal automatisch getest. Deze handmatige stappen worden pas als uitgevoerd beschouwd nadat ik ze daadwerkelijk heb uitgevoerd en het resultaat heb vastgelegd.
+Dit controleert achtereenvolgens de keuzelijst, het stringtype, een verplicht veld en een onbekend veld. Voorbeeldtools en positieve uitvoering zijn lokaal automatisch getest. Dit is een aanvullende REST-handleiding. De bevestigde F06-demo gebruikt Claude Code. Deze afzonderlijke REST-doorloop heeft een eigen resultaatregistratie.
 
 ## Padbeleid handmatig proberen
 
@@ -60,16 +60,21 @@ Voeg desgewenst onderstaande tool toe aan de tools-array van een eigen kopie van
 }
 ```
 
-Herstart de server met die kopie. Body met path gelijk aan de absolute projectmap moet slagen. Een bestaand absoluut pad erbuiten moet 400 invalid_parameters geven; een relatief of niet-bestaand pad wordt eveneens afgewezen. Dezelfde Git-route is lokaal via HTTP-routertests gecontroleerd, inclusief een pad met src/.. dat binnen de root blijft. Symlinkdoelen moeten binnen de root vallen; Unix-verificatie volgt via Actions.
+Herstart de server met die kopie. Body met path gelijk aan de absolute projectmap moet slagen. Een bestaand absoluut pad erbuiten moet 400 invalid_parameters geven; een relatief of niet-bestaand pad wordt eveneens afgewezen. Dezelfde Git-route is lokaal via HTTP-routertests gecontroleerd, inclusief een pad met src/.. dat binnen de root blijft. Symlinkdoelen moeten binnen de root vallen; De Unix-symlinktest is via de geslaagde F04-CI op Ubuntu en macOS gecontroleerd. Een afzonderlijke Windows-symlink/junctiontest blijft een beperking.
 
 ## Standaardconfiguratie herstellen
 
 Stop de server. In de terminal waarin de configuratievariabele is ingesteld:
 
 ```powershell
-Remove-Item Env:COMMANDHUB_CONFIG
+Remove-Item Env:COMMANDHUB_CONFIG -ErrorAction SilentlyContinue
 cargo run --locked
 ```
+
+## Optioneel PowerShell-voorbeeld
+
+Het script [list-directory.ps1](../scripts/list-directory.ps1) kan als geconfigureerde tool directories tonen. Onderstaand voorbeeld gebruikt de oorspronkelijke lokale projectlocatie. Pas zowel het vaste scriptpad als allowed_roots aan naar jouw bestaande absolute projectmap. Voeg het object toe aan het actieve profiel en herstart de server.
+
 ```json
     {
       "name": "list_directory",
@@ -93,3 +98,5 @@ cargo run --locked
       "timeout": 10000
     }
 ```
+
+Voor de actuele volledige demo en de resultaatregistratie zie het [Claude Code-draaiboek](demo.md).

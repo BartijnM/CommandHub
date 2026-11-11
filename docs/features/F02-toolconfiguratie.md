@@ -21,7 +21,7 @@ R01, R02, R03, R12.
 
 ## Scope
 
-Zie onderstaande taken. Nieuwe uitbreidingen krijgen een apart issue; vergroot de scope niet stilzwijgend. Bij F01 is de minimale codebasis al aanwezig, maar lokale controle blijft nodig.
+Zie de taken en acceptatiecriteria hieronder. Dit featureplan beschrijft de eigen implementatiestap. Het actuele productcontract staat in [API en configuratie](../api-en-configuratie.md) en de opleverstand in [voortgang](../voortgang.md).
 
 ## Schema-afspraken
 
@@ -45,7 +45,7 @@ De keuze tussen absoluut pad en zoeken via `PATH` is gemaakt. De toegestane exec
 - [x] Ongeldige configuratie verhindert serverstart met bruikbare diagnose.
 - [x] Nieuwe tool wordt na herstart zichtbaar zonder rebuild.
 - [x] Dubbele namen en onbekende placeholders worden afgewezen.
-- [x] Configuratie staat placeholders alleen als volledig argument toe; clients kunnen de executable niet kiezen. Daadwerkelijke vervanging volgt in F04.
+- [x] Configuratie staat placeholders alleen als volledig argument toe; clients kunnen de executable niet kiezen. Daadwerkelijke vervanging is vervolgens in F04 gerealiseerd.
 
 ## Bewijs en koppelingen
 

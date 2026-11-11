@@ -9,9 +9,13 @@ tags:
 
 [Featureplan](../docs/features/F05-mcp-integratie.md)
 
+## Leeswijzer bij de oplevering
+
+Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvingen van oude ingangen, configuraties en open punten horen bij hun gedateerde stand. Het actuele gedrag staat in het [API-contract](../docs/api-en-configuratie.md), de [architectuur](../docs/architectuur.md) en de [voortgang](../docs/voortgang.md).
+
 ## Wat bouw ik en waarom?
 
-Ik voeg een MCP-adapter toe waarmee clients de geconfigureerde tools via Streamable HTTP kunnen ontdekken en uitvoeren. REST en MCP gebruiken dezelfde registry, inputschema's, parametervalidatie en uitvoeringsservice. F05 staat op Review. De annuleringsketen, productie-shutdown en gemengde belasting zijn op Windows getest. Lokale formatter, Clippy en de volledige suite slagen. MCP-padvalidatie is ook via de clientketen met REST vergeleken. Platform-CI is geslaagd op Ubuntu, macOS en Windows in run #50. PR-review/merge staat open.
+Ik voeg een MCP-adapter toe waarmee clients de geconfigureerde tools via Streamable HTTP kunnen ontdekken en uitvoeren. REST en MCP gebruiken dezelfde registry, inputschema's, parametervalidatie en uitvoeringsservice. F05 is inmiddels afgerond volgens de voortgang bij F06. De annuleringsketen, productie-shutdown en gemengde belasting zijn op Windows getest. Lokale formatter, Clippy en de volledige suite slagen. MCP-padvalidatie is ook via de clientketen met REST vergeleken. Platform-CI is geslaagd op Ubuntu, macOS en Windows in run #50. De latere afronding is in de F06-voortgang vastgelegd.
 
 ## Hoe werkt de code?
 
@@ -127,7 +131,7 @@ De algemene README bevat nu vastgezette Inspector CLI-commando’s voor tools/li
 
 Een screenshot van CI-run #50 legt de platformresultaten vast. De jobs Checks (ubuntu-latest), Checks (macos-latest) en Checks (windows-latest) zijn geslaagd. Op alle drie zijn cargo fmt --check, cargo clippy --all-targets --locked -- -D warnings, cargo test --locked en cargo build --locked groen. Exacte CI-testtotalen, commit-SHA en run-URL zijn niet zichtbaar in de screenshot. De lokale testtotalen hierboven blijven afzonderlijk vastgelegd. PR-review/merge is nog open.
 
-## Stoppunt en vervolg
+## Historisch stoppunt vóór F06
 
 F05 staat op Review. De lokale implementatie en acceptatiecriteria zijn aangetoond met de gedeelde Windows-resultaten. CI-run #50 is geslaagd op Ubuntu, macOS en Windows. Ik rond PR-review/merge af. Na bevestigde merge kan de status op Klaar.
 
@@ -139,4 +143,10 @@ Bestandstools gebruiken `CommandHub-data` in de thuismap van het serveraccount o
 
 De bestands-, notitie-, CSV-, hash-, schijf- en PDF-functies zijn met tijdelijke gegevens en de gebundelde Python-runtime gecontroleerd. De Windows-alias `python` startte in de testomgeving niet. Voor de mediatools is de foutmelding bij ontbrekende `ffprobe` gecontroleerd. De gezondheidscheck is getest met gesimuleerde HTTP-antwoorden doordat lokale socketverbindingen in de testomgeving geblokkeerd waren. Een volledige Inspector-run voor deze toolset staat nog open.
 
-Ik kan de nieuwe set via `tools/list` ontdekken en via `tools/call` aanroepen zodra de vereiste executables beschikbaar zijn. De voorbeelden in de [README](../README.md#mcp-handmatig-testen) gebruiken Inspector 2.11.0. Deze uitbreiding gebruikt de bestaande MCP- en REST-uitvoeringsroute. Het F05-mergepunt blijft open.
+Ik kan de nieuwe set via `tools/list` ontdekken en via `tools/call` aanroepen zodra de vereiste executables beschikbaar zijn. De voorbeelden in de [README](../README.md#mcp-handmatig-testen) gebruiken Inspector 2.11.0. Deze uitbreiding gebruikt de bestaande MCP- en REST-uitvoeringsroute. De latere F06-voortgang legt F05 als afgerond vast.
+
+## Opleverreview op 2026-11-11
+
+F05 is volgens de actuele voortgang afgerond bij de overgang naar F06. De MCP-keten wordt op alle drie platforms door Inspector gecontroleerd. De eigenaar bevestigt de volledige Claude Code-demo op 2026-11-11.
+
+De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.

@@ -9,9 +9,13 @@ tags:
 
 [Featureplan](../docs/features/F04-parameters.md)
 
+## Leeswijzer bij de oplevering
+
+Deze notitie bewaart de ontwikkeling en resultaten per werksessie. Beschrijvingen van oude ingangen, configuraties en open punten horen bij hun gedateerde stand. Het actuele gedrag staat in het [API-contract](../docs/api-en-configuratie.md), de [architectuur](../docs/architectuur.md) en de [voortgang](../docs/voortgang.md).
+
 ## Wat bouw ik en waarom?
 
-F04 maakt gecontroleerde dynamische invoer mogelijk zonder de client een executable te laten kiezen. De implementatie en lokale Windows-eindcontroles zijn afgerond. Status: Review, drieplatform-CI geslaagd; PR-review/merge is nog niet bevestigd. De actuele verificatie staat in de laatste werksessie hieronder.
+F04 maakt gecontroleerde dynamische invoer mogelijk zonder de client een executable te laten kiezen. De implementatie en lokale Windows-eindcontroles zijn afgerond. Status Klaar. Drieplatform-CI en de historische merge zijn bevestigd. De actuele verificatie staat in de laatste werksessie hieronder.
 
 ## Hoe werkt de code?
 
@@ -118,3 +122,13 @@ Plan voor 2026-11-05: Re-run failed jobs, macOS-resultaat beoordelen. Bij groen 
 
 De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
 
+
+## Opleverreview op 2026-11-11
+
+Parameter- en padvalidatie worden door REST en MCP gedeeld. F04-CI is geslaagd op drie platforms. De huidige configuraties bevatten elk achttien tools. De eigenaar bevestigt op 2026-11-11 de historische merge van F04.
+
+De actuele requirementdekking staat in het [testplan](../docs/testplan.md). De [F06-notitie](F06-oplevering.md) bevat de resterende opleveringsstappen. De oorspronkelijke resultaten hierboven behouden hun datum en scope.
+
+## Mergebevestiging op 2026-11-11
+
+De eigenaar bevestigt de historische merge. De feature staat op Klaar. Eerdere open mergevermeldingen in de gedateerde werksessies beschrijven de toenmalige stand.

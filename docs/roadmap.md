@@ -1,6 +1,6 @@
 # Roadmap
 
-ID's zijn stabiel; de tabelvolgorde is de bouwvolgorde. Alle toekomstige features hebben status Backlog. Datums worden in GitHub gepland.
+Feature-ID’s zijn stabiel en de tabelvolgorde is de bouwvolgorde. F06 is actief op 2026-11-11. De featurebestanden bevatten de checklists en de [voortgang](voortgang.md) beschrijft de actuele opleverstand.
 
 | ID | Resultaat | Afhankelijkheid | Milestone |
 | --- | --- | --- | --- |
@@ -13,9 +13,9 @@ ID's zijn stabiel; de tabelvolgorde is de bouwvolgorde. Alle toekomstige feature
 | F05 | MCP via HTTP verbonden met dezelfde kern | F00, F04 | MCP-keten |
 | F06 | Windows/Linux/macOS-controles en reproduceerbare demo | F05 | Oplevering |
 
-F07 is op verzoek vóór F04 ingevoegd; bestaande feature-ID’s veranderen niet. De eerste macOS-CI is geslaagd, evenals Ubuntu en Windows; F07 staat op Review tot review/merge.
+F07 is op verzoek vóór F04 ingevoegd. De macOS-ondersteuning is geïntegreerd en de platformcontroles zijn geslaagd op macOS, Ubuntu en Windows.
 
-F00 is een korte technische proef; schrijf de definitieve executor niet alvast. F01 heeft al een minimale codebasis in dit pakket, maar lokale verificatie en repository-inrichting blijven nodig.
+F00 bewaart de oorspronkelijke MCP-proef. De productie-integratie uit F05 is afgerond. In F06 zijn de platformprofielen, CI-basisketen en demo bevestigd. De eigenaar heeft de README en historische merges bevestigd. Eindcontrole en opleverings-PR volgen.
 
 ## GitHub Project
 
@@ -26,4 +26,3 @@ Velden: status, feature-ID, MoSCoW, milestone, Start Date, End Date en weeklabel
 main = oplevering; develop = integratie; feature/Fxx-naam = samenhangend werk. Voor grotere features kunnen meerdere opeenvolgende issues/PR's worden gebruikt. Houd scope klein en merge alleen gecontroleerde resultaten.
 
 Documentatie en tests horen bij de featurebranch. Maak geen afzonderlijke lange documentatiebranch die losloopt van de implementatie.
-

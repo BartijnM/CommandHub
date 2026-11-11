@@ -1,131 +1,151 @@
 # API- en configuratiecontract
 
-Status op 2026-11-09. REST en MCP via /mcp delen registry, inputschema’s, validatie en procesuitvoering. De lokale F05-eindcontroles op Windows slagen met 156 tests en 7 proceshelpers. F05 staat op Review. Platform-CI is geslaagd op Ubuntu, macOS en Windows in run #50. PR-review/merge staat open. Het F05-contract staat onderaan dit document.
+Bijgewerkt op 2026-11-11. REST en MCP gebruiken dezelfde registry, inputschema’s, parametervalidatie en procesuitvoering.
 
-## HTTP
+## REST-routes
 
-| Route | Doel |
+| Methode en route | Resultaat |
 | --- | --- |
-| GET /status | Lokale beschikbaarheid |
-| GET /tools | Toolbeschrijvingen en parameters opvragen |
-| POST /tools/{toolname} | Tool uitvoeren met een JSON-object als invoer |
+| GET /status | HTTP 200 met status en applicatienaam |
+| GET /tools | Object met tools-array met name, description en inputSchema |
+| POST /tools/{toolname} | Tool uitvoeren met een JSON-object als parameters |
 
-Een optionele GET /tools/{toolname} kan later worden toegevoegd. Niet nodig om de eerste scope groter te maken.
+De productielistener gebruikt 127.0.0.1:3000. GET /tools publiceert de geconfigureerde metadata en het inputschema. Executable, vaste argumenten en interne padroots worden weggelaten.
 
-Het uitvoeringsresultaat heeft deze vorm:
+Een POST gebruikt Content-Type application/json. Parameterloze tools ontvangen een leeg object. Een succesvolle uitvoering heeft bijvoorbeeld deze response.
 
-```json
+~~~json
 {
   "success": true,
-  "stdout": "...",
+  "stdout": "git version ...\n",
   "stderr": "",
   "exitCode": 0,
   "duration": 12
 }
-```
+~~~
 
-duration is milliseconden. exitCode kan null zijn wanneer het OS geen numerieke code levert. Een niet-nul exitcode is een afgeronde uitvoering met success=false; een uitvoeringsfout is een afzonderlijke foutcategorie.
+duration is een getal in milliseconden. exitCode kan null zijn wanneer het OS geen numerieke exitcode levert. Een afgerond proces met niet-nul exitcode geeft HTTP 200 met success gelijk aan false. Procesoutput wordt als tekst met UTF-8-vervanging teruggegeven.
 
-Voor de huidige HTTP-route geldt deze foutmapping:
+### REST-fouten
 
-| Situatie | HTTP-status | Gedrag |
+| Situatie | Status | Code |
 | --- | --- | --- |
-| Ongeldige JSON of ongeldige invoer | 400 | Geen proces starten |
-| Ontbrekende, onbekende of ongeldige parameter, of afgewezen pad | 400 | Niet starten; `invalid_parameters` met vaste fouttekst |
-| Onbekende tool | 404 | Geen proces starten |
-| Requestbody groter dan 16 KiB | 413 | Request afwijzen vóór JSON-deserialisatie |
-| Capaciteit van vier uitvoeringen bereikt | 503 | Direct afwijzen, niet in een wachtrij plaatsen |
-| Annulering of uitvoering na begonnen shutdown | 503 | `execution_cancelled`; bij actieve annulering eerst opruiming proberen |
-| Interne processtart-, lees-, wacht- of beëindigingsfout | 500 | `execution_failed`, zonder interne foutdetails |
-| Timeout | 504 | Procesboom beëindigen |
-| Gecombineerde stdout/stderr groter dan 1 MiB | 502 | Procesboom beëindigen; geen afgekapt succesresultaat teruggeven |
-| Proces gestart met niet-nul exitcode | 200 | Normaal uitvoeringsresultaat met `success: false` en de exitcode |
+| JSON-/contenttype-extractiefout | 400 | invalid_json |
+| Geldige JSON met een andere vorm dan een object | 400 | invalid_input |
+| Ontbrekende, onbekende of ongeldige parameter of afgewezen pad | 400 | invalid_parameters |
+| Onbekende tool | 404 | unknown_tool |
+| Body groter dan 16 KiB | 413 | request_too_large |
+| Vier uitvoeringsplekken bezet | 503 | capacity_exceeded |
+| Annulering of uitvoering na begonnen shutdown | 503 | execution_cancelled |
+| Timeout | 504 | execution_timeout |
+| Gecombineerde stdout/stderr boven 1 MiB | 502 | output_limit_exceeded |
+| Interne start-, lees-, wacht- of beëindigingsfout | 500 | execution_failed |
 
-De route vereist Content-Type application/json en een JSON-object. Andere JSON-vormen geven 400 invalid_input; extractiefouten geven 400 invalid_json. De service zoekt daarna de tool op (404 unknown_tool) en valideert parameters (400 invalid_parameters). Een object met onbekende velden naar een onbekende tool levert dus 404; bij een bekende tool worden onbekende velden afgewezen. Parameterloze tools accepteren uitsluitend een leeg object. Precies 16 KiB is toegestaan; daarboven volgt 413 request_too_large vóór deserialisatie.
+Foutresponses bevatten code en message.
 
-Foutresponses hebben het vaste formaat:
-
-```json
+~~~json
 {
-  "code": "unknown_tool",
-  "message": "Onbekende tool"
+  "code": "invalid_parameters",
+  "message": "Parameterwaarde is niet toegestaan"
 }
-```
+~~~
 
-Overige codes zijn `capacity_exceeded` (503), `execution_timeout` (504) en `output_limit_exceeded` (502). De response bevat geen interne OS-fouttekst. Een onbekende tool geeft 404 na geldige JSON-objectcontrole. Volgorde: extractor → objectvorm → toolselectie → parametervalidatie → uitvoering.
+De afhandelvolgorde is body/extractie, objectvorm, toolselectie, parametervalidatie en uitvoering. Een geldig object voor een onbekende tool geeft unknown_tool. Precies 16 KiB is toegestaan. De uitvoeringsfoutresponse schermt interne OS-foutdetails af.
 
-Handmatig gecontroleerd op Windows op 2026-10-30: `POST /tools/git_version` met `{}` gaf `success: true`, stdout met Git-versie 2.55.0.windows.3, lege stderr, exitcode 0 en duration 61 ms. Een herhaalde uitvoering kan een andere duur opleveren.
+## JSON-configuratie
 
-## Configuratie
+De server leest bij startup config/tools.json of het pad uit COMMANDHUB_CONFIG. Relatieve paden worden opgelost vanaf de serverwerkmap. Na aanpassen van JSON of serveromgeving is een herstart nodig. De bestaande executable kan dezelfde configuratie opnieuw laden.
 
-Het eerste formaat sluit aan op het configuratievoorbeeld uit de opdracht: tools met `name`, `description`, `command`, `arguments`, `parameters` en optioneel `timeout`. `parameters` ondersteunen aanvankelijk `name`, `type` (`string`) en `required`. Zie [configuratievoorbeelden](../config/README.md).
+~~~json
+{
+  "tools": [
+    {
+      "name": "git_recent",
+      "description": "Toon een begrensd aantal recente commits",
+      "command": "git",
+      "arguments": ["--no-pager", "log", "-n", "{count}", "--oneline", "--no-decorate", "--"],
+      "parameters": [
+        {
+          "name": "count",
+          "type": "string",
+          "required": true,
+          "allowed_values": ["1", "3", "5"]
+        }
+      ],
+      "timeout": 10000
+    }
+  ]
+}
+~~~
 
-### Eerste schema-keuzes
+| Veld | Contract |
+| --- | --- |
+| tools | Verplichte array met tooldefinities |
+| name | Verplichte unieke niet-lege toolnaam |
+| description | Verplichte string voor clientontdekking |
+| command | Verplichte niet-lege executable-naam op server-PATH of executablepad |
+| arguments | Verplichte array met afzonderlijke strings en volledige placeholders |
+| parameters | Verplichte array, leeg voor parameterloze tools |
+| timeout | Optioneel, standaard 10.000 ms, toegestaan bereik 1–60.000 ms |
 
-De casus geeft richting en voorbeelden, maar legt niet alle randgevallen of limietwaarden vast. Voor de eerste versie gelden deze keuzes:
+Toolnamen, commands en parameternamen met uitsluitend witruimte worden afgewezen. De validatie gebruikt trim voor de controle en behoudt de oorspronkelijke waarde. Onbekende velden, ontbrekende verplichte velden, dubbele namen en ongeldige placeholders verhinderen startup. Startupdiagnostiek noemt het configuratiebestand en de oorzaak.
 
-- De server leest standaard `config/tools.json`, relatief aan de huidige werkdirectory. De beheerder kan dit pad overschrijven met de omgevingsvariabele `COMMANDHUB_CONFIG`.
-- Ondersteun als parametertype alleen `string` en een `required`-boolean. Breid dit pas uit als een feature dat nodig maakt.
-- Een placeholder heeft de vorm `{naam}` en mag alleen een volledig argument innemen, bijvoorbeeld `"{path}"`. Plak geen vaste tekst en placeholder aan elkaar; zo blijft elk procesargument een afzonderlijk item.
-- `command` en de vaste argumenten komen uitsluitend uit beheerdersconfiguratie. `command` mag een absoluut pad of een executable-naam zijn die via de `PATH` van het serverproces wordt gevonden. Een HTTP- of MCP-client kan geen executable kiezen of de `PATH` aanpassen.
-- Wijs lege toolnamen, parameternamen en commands af, ook als ze alleen witruimte bevatten. Waarden worden gecontroleerd met trim(), maar niet automatisch aangepast.
-- Wijs onbekende configuratievelden af, zodat typefouten niet ongemerkt worden genegeerd. Wijs ook ontbrekende verplichte velden, ongeldige waarden, dubbele toolnamen en placeholders die niet bij een parameter horen af.
-- `timeout` is optioneel per tool en wordt uitgedrukt in milliseconden. Zonder deze instelling geldt een standaardtimeout van 10.000 ms (10 seconden). Een ingestelde timeout moet groter zijn dan 0 en mag maximaal 60.000 ms (60 seconden) zijn; grotere waarden worden afgewezen.
-- De configuratie blijft na startup onveranderlijk; een gewijzigde configuratie wordt actief na een herstart, niet via hot-reload.
+De beheerder bepaalt executable en vaste argumenten. Scripts gebruiken een expliciet geconfigureerde interpreter. Childprocessen erven de serveromgeving en werkdirectory. Stdin is gesloten. De client levert uitsluitend parameters uit het schema.
 
-De beheerder stelt `command` en de vaste argumenten in; de server laat de client dit niet overschrijven. De beheerder kan dus een absoluut pad of een naam gebruiken die via de server-`PATH` wordt gevonden. F03 start native executables. Een script mag alleen worden uitgevoerd wanneer de beheerder de interpreter expliciet als `command` configureert en het script als vast argument opgeeft. De server start niet automatisch een shell en dispatcht niet impliciet naar Windows `.bat`- of `.cmd`-bestanden.
+### Parameters en argumenten
 
-### Uitvoeringsgrenzen voor F03
+Een parameter heeft name, type en required. Alleen type string is ondersteund. allowed_values en allowed_roots zijn optionele velden met exact deze snake_case-namen. Ontbrekende optionele beleidsvelden betekenen dat die beperking niet is ingesteld.
 
-F03 hanteert maximaal 1 MiB gecombineerde stdout en stderr, maximaal 16 KiB requestbody en maximaal vier gelijktijdige uitvoeringen. Een volle capaciteit wordt direct afgewezen. Bij overschrijding van de outputlimiet wordt de procesboom beëindigd en als expliciete fout gemeld; afgekorte uitvoer mag niet op een normale succesvolle uitvoering lijken. De standaardtimeout blijft 10.000 ms; de configureerbare bovengrens blijft 60.000 ms.
+- Iedere parameter moet aan minstens één volledige placeholder zoals {count} gekoppeld zijn. Een placeholder beslaat één argument. Herhaling van dezelfde verplichte placeholder is toegestaan.
+- Verplichte ontbrekende parameters, onbekende invoervelden, niet-stringwaarden en NUL worden afgewezen.
+- allowed_values is een niet-lege lijst strings zonder NUL. Vergelijking is exact. Een lege string mag als expliciet toegestane waarde voorkomen.
+- Zonder allowed_values is een waarde met - als eerste teken verboden. Zonder allowed_values én allowed_roots worden ook / en @ als eerste teken afgewezen.
+- Een lege string blijft één argument. Spaties, quotes, Unicode en shelltekens worden behouden binnen dat argument.
+- Een ontbrekende optionele placeholder wordt weggelaten. Er mag maximaal één optionele placeholder voorkomen, uitsluitend als laatste argument. Dezelfde tool mag dan geen vaste argumenten hebben die met - of / beginnen, inclusief --.
 
-Het childproces erft de omgeving en werkdirectory van het serverproces. De client kan deze niet instellen. Beheer van de serveromgeving is daarom onderdeel van het vertrouwensbeleid; omgevingswaarden worden niet gelogd.
+### Absolute padparameters in de kern
 
-Timeout, outputoverschrijding en expliciete annulering worden in de F03-kern afgehandeld. `process-wrap` 10.0.1 met `tokio1` gebruikt Unix `ProcessGroup`, Windows `JobObject` en `KillOnDrop`. Windows-tests controleren subprocess-PID's na timeout, outputoverschrijding, annulering, shutdown, future-drop en taakafbreking, ook bij een eerder afgerond direct child. Run #20 controleerde Linux-status en Unix-groepsopruiming succesvol, maar run #21 vond een ESRCH-race in de testhelper. De correctie is daarna via run #22 op Ubuntu en Windows gecontroleerd; het HTTP-contract is ongewijzigd.
+allowed_roots is een niet-lege lijst bestaande absolute directorypaden. Bij gebruik moet de clientwaarde een bestaand absoluut pad zijn. De kern canonicaliseert pad en roots en vergelijkt directorycomponenten. Het canonieke pad wordt aan het proces doorgegeven. De root zelf is toegestaan.
 
-De annuleerbare kernmethode ontvangt een `oneshot::Receiver<()>`. Een expliciet bericht leidt na de opruimroute tot `Cancelled`; een opruimfout kan die fout vervangen. Sluiten zonder bericht annuleert niet. Shutdown gebruikt daarnaast een `watch`-signaal, weigert nieuwe uitvoeringen en wacht op capaciteitsvrijgave. Ctrl+C is hierop aangesloten. De HTTP-mapping voor `Cancelled` is 503. Dit levert geen publiek annuleringsendpoint op; expliciet clientdisconnectbeleid blijft open. MCP-mapping is in F05 aangesloten.
+Relatieve paden, niet-bestaande doelen, doelen buiten roots en paden die niet als UTF-8-argument kunnen worden doorgegeven leveren invalid_parameters. Symlinkdoelen moeten binnen een toegestane root liggen. De [securitydocumentatie](security.md) beschrijft de grenzen rond bestandssysteemwijzigingen en races.
 
-## MCP
+### Persoonlijke bestandstools
 
-De voorbeeld-REST-routes zijn geen volledige MCP-implementatie. Gebruik de officiële SDK en kies in F00 een passende protocolversie en HTTP-transport. Laat zowel REST als MCP dezelfde registry en uitvoeringskern gebruiken.
+De meegeleverde Python-tools gebruiken een eigen relatief padbeleid binnen CommandHub-data of COMMANDHUB_DATA_DIR. Deze stringparameters krijgen hun mapcontrole in tools/personal_tools.py. Hun JSON-uitvoer staat als tekst in stdout. Afhankelijkheden, filters en grenzen staan in de [configuratiehandleiding](../config/README.md).
 
-F00 legt client, protocolversie, initialisatie/onderhandeling, toollisting, toolcalls, schema's en toepasselijke beveiligingsregels vast. De MCP-resultaatstructuur volgt het protocol en is niet simpelweg dezelfde body als REST.
-## Historische aanvullende verificatie — vóór ESRCH-correctie
+## Uitvoeringsgrenzen en logging
 
-Op 2026-11-02 slagen 59 tests en alle Windows-Cargo-eindcontroles. Echte TCP-verzoeken bevestigen vier actieve uitvoeringen, afwijzing van het vijfde verzoek met 503 en herstel na afloop. Actieve server-shutdown via hetzelfde afsluitpad als Ctrl+C geeft 503 aan het lopende request, sluit de server en ruimt child en subprocess op. De integratietest injecteert het signaal; hij verstuurt geen OS-Ctrl+C. Logging bevat alleen geselecteerde metadata, geen argumentwaarden of procesoutput. Linux is lokaal niet uitgevoerd, maar daarna via de geslaagde Ubuntu-CI geverifieerd (run #20, aangeleverde screenshot).
+REST en MCP delen vier gelijktijdige uitvoeringsplekken. Bij volle capaciteit volgt direct capacity_exceeded. Beide adapters begrenzen requests op 16 KiB. De executor begrenst de gecombineerde ruwe stdout/stderr-bytes op 1 MiB per uitvoering.
 
-## Reviewstand — 2026-11-03
+Timeout, outputoverschrijding, expliciete annulering en shutdown activeren procesopruiming. Een fout bij opruimen kan als execution_failed terugkomen. De daadwerkelijke tijd tot afronding omvat ook processtart en opruiming. De server logt per uitvoering toolnaam, uitkomst, exitcode of foutcategorie en duration_ms.
 
-Het HTTP-contract is ongewijzigd. Configuratie wijst nu ook lege namen en commands af. De huidige Windows-suite slaagt met 64 tests en 4 proceshelpers; de Windows-statushelper gebruikt handles. CI van deze refactor is op Ubuntu en Windows geslaagd voor commit 105e69b; oudere resultaten hierboven zijn historie. Zie de F03-notitie voor de eindcontrole.
+## MCP via Streamable HTTP
 
-## macOS-configuratie (F07)
+/mcp gebruikt rmcp 3.6.0 met tools-capability, Streamable HTTP en legacy_session_mode. De SDK-ketentest rapporteert protocolversie 2025-11-25. De SDK verzorgt initialisatie, JSON-RPC en sessiebeheer.
 
-Het HTTP-contract blijft gelijk. Kies op macOS config/tools.macos.json via COMMANDHUB_CONFIG; de standaardbestandskeuze verandert niet. Platformgeschikte vaste argumenten blijven door de beheerder bepaald. macOS-procescontrole en de macOS-CI-job zijn toegevoegd; de aangeleverde screenshot bevestigt geslaagde jobs op macOS, Ubuntu en Windows. Zie [F07](features/F07-macos-ondersteuning.md).
+| MCP-methode | Gedrag |
+| --- | --- |
+| tools/list | Volledige geconfigureerde lijst met name, description en inputSchema |
+| tools/call | Geconfigureerde toolnaam en parameters aan de gedeelde kern doorgeven |
 
-## F04-parametercontract — 2026-11-04
+inputSchema gebruikt object, properties, required, enum voor allowed_values en additionalProperties met waarde false. Ontbrekende arguments worden een leeg object.
 
-Alleen type string wordt ondersteund. Parameters hebben name, type, required en optioneel allowed_values en allowed_roots (exact deze snake_case-veldnamen). Ontbrekende velden betekenen geen ingestelde lijst. allowed_values vereist een niet-lege lijst zonder NUL; waarden worden exact vergeleken. Clientstrings met NUL worden afgewezen.
+Een afgeronde uitvoering levert success, stdout, stderr, exitCode en duration als structuredContent en als JSON-tekst in content. isError volgt de omgekeerde success-waarde. Validatie-, capaciteits-, timeout-, output- en annuleringsfouten zijn toolresultaten met isError true en veilige code/message. Een onbekende tool levert de protocolfout METHOD_NOT_FOUND. Interne procesbeheerfouten worden execution_failed.
 
-Zonder allowed_values is een beginteken - verboden. Zonder allowed_values en allowed_roots zijn ook / en @ als eerste teken verboden. Dit vervangt geen beoordeling van de argumentbetekenis per tool. Een expliciete lijst mag optieachtige waarden toestaan.
+### MCP-transportinstellingen
 
-allowed_roots is een niet-lege lijst absolute bestaande directorypaden. Een gebruikte padparameter moet een bestaand absoluut pad bevatten; pad en roots worden gecanonicaliseerd en per component vergeleken. Het gecanonicaliseerde pad wordt doorgegeven. Niet-bestaande paden, doelen buiten roots en niet als UTF-8 door te geven paden worden afgewezen. Symlinkdoelen worden gecontroleerd; bestandssysteemraces blijven mogelijk.
+| Instelling | Waarde |
+| --- | --- |
+| Listener | 127.0.0.1:3000 |
+| Toegestane Hosts | 127.0.0.1:3000 en localhost:3000 |
+| Toegestane aanwezige Origins | http://127.0.0.1:3000 en http://localhost:3000 |
+| Ontbrekende Origin | Toegestaan voor native clients |
+| Bodylimiet | 16 KiB |
+| Sessiebeheer | LocalSessionManager, legacy_session_mode ingeschakeld |
 
-Een placeholder blijft één volledig argument. Spaties worden niet gesplitst, een lege string blijft aanwezig. Een ontbrekende optionele placeholder wordt weggelaten. Configuratie staat maximaal één optionele placeholder toe, uitsluitend als laatste argument, zonder vaste argumenten met prefix - of /. Ook -- valt onder deze beperking.
+### Getoetste MCP-transportfouten
 
-GET /tools toont type, required, enum voor allowed_values en additionalProperties: false. Roots worden niet als interne serverpaden gepubliceerd. Iedere parameter moet minstens één volledige placeholder hebben. De voorbeeldconfiguratie config/tools.json bevat drie geteste dynamische tools; zie F04-handmatig-testen.md. Eerdere F03-verificatiebeschrijvingen zijn historie en bewijzen F04 niet.
-
-## CI-afronding — 2026-11-04
-
-De aangeleverde screenshot van run #39 voor commit 1fb8d71 op feature/F04-parameters toont Success: macOS 57 s, Ubuntu 40 s en Windows 1 m 50 s; totale duur 1 m 54 s. De workflow voert formatter, Clippy, tests en build uit. Hiermee is ook de macOS-platformverificatie bevestigd; de eerdere runnercapaciteitsmelding is geen open blokkade meer. Exacte CI-testtotalen zijn niet zichtbaar. De werking is lokaal bevestigd. Alleen PR-review/merge en branchafsluiting resten; status pas Klaar na bevestigde merge. Bij deze documentatie-update zijn geen broncode gewijzigd, tests herhaald of Git-mutaties uitgevoerd.
-
-
-## F05-contract op 2026-11-09
-
-/mcp gebruikt rmcp 3.6.0 en Streamable HTTP. tools/list publiceert naam, beschrijving en inputSchema uit dezelfde schemaopbouw als REST. tools/call gebruikt de gedeelde kern. Ontbrekende arguments worden een leeg object. Resultaten bevatten success, stdout, stderr, exitCode en duration in structuredContent en als JSON-tekst. Een niet-succesvolle exit geeft isError true. UnknownTool wordt METHOD_NOT_FOUND. Overige kernfouten geven een toolresultaat met isError true en veilige code/message.
-
-De productielistener bindt aan 127.0.0.1:3000. Toegestane Hosts zijn 127.0.0.1:3000 en localhost:3000. Aanwezige Origins zijn beperkt tot http://127.0.0.1:3000 en http://localhost:3000. Requests zonder Origin zijn toegestaan. De bodylimiet is 16 KiB. legacy_session_mode is true. De echte SDK-ketentest onderhandelt 2025-11-25. De sessieheader bij legacy-initialisatie is gecontroleerd.
-
-| Geval | Gecontroleerde HTTP-status van rmcp 3.6.0 |
+| Geval | HTTP-status in rmcp 3.6.0 |
 | --- | --- |
 | Ongeldige JSON of ongeldige JSON-RPC-body | 415 |
 | Content-Type text/plain | 415 |
@@ -133,8 +153,14 @@ De productielistener bindt aan 127.0.0.1:3000. Toegestane Hosts zijn 127.0.0.1:3
 | Onbekende MCP-Protocol-Version-header | 400 |
 | Onbekende MCP-sessie | 404 |
 | Niet-toegestane Host of aanwezige Origin | 403 |
-| Body boven 16 KiB | 413 |
+| Body groter dan 16 KiB | 413 |
 
-De parsehelper van deze SDK-versie gebruikt 415 bij deserialisatiefouten. De MCP-adapter volgt die afhandeling. REST heeft zijn eigen eerder beschreven foutmapping.
+Deze statussen horen bij transportafhandeling. Toolfouten worden via het MCP-resultaatmodel teruggegeven.
 
-Een expliciete requestannulering bereikt de kern via context.ct en oneshot. De clienttest controleert dat het proces stopt en vervolgaanroepen slagen. Bij serverafsluiting kan de actieve clientcall een annuleringsresultaat of transportfout opleveren. De shutdowntestclient schakelt SSE-herverbinden uit met NeverRetry. Gedrag van onverwacht clientdisconnect vraagt nog een expliciet beleid. MCP-padvalidatie is via de echte SDK-client met REST vergeleken. F05-platform-CI is geslaagd op Ubuntu, macOS en Windows in run #50. Handmatige Inspector-commando’s staan in de [README](../README.md#mcp-handmatig-testen).
+### Annulering en shutdown
+
+De MCP-adapter vertaalt context.ct naar een expliciet oneshot-bericht aan de kern en wacht de uitvoeringsafhandeling af. server::serve signaleert uitvoeringsshutdown, sluit MCP-streams en wacht op capaciteitsvrijgave. Een actieve clientcall kan tijdens serverafsluiting een annuleringsresultaat of transportfout ontvangen. De shutdowntestclient gebruikt NeverRetry en schakelt sessieherinitialisatie uit. Een afzonderlijk beleid voor onverwacht clientdisconnect blijft open.
+
+## Voorbeelden en bewijs
+
+De [README](../README.md) beschrijft starten en Inspector-aanroepen. Het [demo-draaiboek](demo.md) gebruikt Claude Code. [F04 handmatig testen](F04-handmatig-testen.md) bevat aanvullende REST- en padvoorbeelden. De requirementdekking en vastgelegde controles staan in het [testplan](testplan.md). Historische resultaten blijven bewaard in de [featurenotities](../notities/README.md).
