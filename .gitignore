@@ -4,3 +4,13 @@
 !.env.example
 *.log
 .obsidian/
+
+# Lokale AI-instructies en clientinstellingen
+AGENTS.md
+AGENTS.override.md
+CLAUDE.md
+GEMINI.md
+/.mcp.json
+/.claude/
+/.codex/
+/.cursor/

@@ -51,7 +51,7 @@ Ik heb bevestigd dat de demo werkt. Die bevestiging is voldoende als handmatig b
 
 ### Documentatiereview
 
-Alle 33 Markdown-bestanden in de repository zijn gelezen. De primaire documenten zijn vergeleken met Cargo.toml, configuratieprofielen, de Rust-kern, REST/MCP-adapters, tests, CI, .mcp.json, het PowerShell-voorbeeld en het Python-toolscript.
+Alle 33 Markdown-bestanden in de repository zijn gelezen. De primaire documenten zijn vergeleken met Cargo.toml, configuratieprofielen, de Rust-kern, REST/MCP-adapters, tests, CI, de lokale MCP-clientconfiguratie, het PowerShell-voorbeeld en het Python-toolscript.
 
 | Bestanden | Uitkomst van de controle |
 | --- | --- |
@@ -68,7 +68,6 @@ Alle 33 Markdown-bestanden in de repository zijn gelezen. De primaire documenten
 | docs/F04-handmatig-testen.md | Aanvullende REST-stappen en het PowerShell-voorbeeld verduidelijkt, Unix-verificatie bijgewerkt |
 | docs/beslissingen/ADR-001-rust-en-axum.md | Historische technologiekeuze blijft geldig |
 | docs/beslissingen/ADR-002-mcp-proef.md | Latere F05-productiekeuzes toegevoegd bij de oorspronkelijke proef |
-| AGENTS.md | Werk- en leerafspraken blijven toepasbaar |
 
 De oude F03- en F07-featurechecklists bevestigen een merge. De tegenstrijdige Review-frontmatter is daarmee gelijkgetrokken. F05 staat als afgerond in de bestaande voortgang en is hierop afgestemd. Voor F00, F01 en F04 ontbreken expliciete historische mergegegevens in hun plannen. Die administratieve velden blijven herkenbaar. Ze worden afzonderlijk van de technische requirementdekking behandeld.
 
@@ -82,7 +81,7 @@ Loop README en handleidingen gezamenlijk door vanaf de installatievereisten, pro
 
 ### Documentcontrole na de wijzigingen
 
-Alle lokale Markdown-links en kopankers zijn gecontroleerd. De codeblokken zijn gesloten en de twaalf JSON-voorbeelden zijn als JSON geparseerd. De drie huidige configuratieprofielen bevatten elk achttien tools. De documentatiereview wijzigt 29 Markdown-bestanden. AGENTS.md, ADR-001 en de twee overzichtsbestanden blijven inhoudelijk geldig.
+Alle lokale Markdown-links en kopankers zijn gecontroleerd. De codeblokken zijn gesloten en de twaalf JSON-voorbeelden zijn als JSON geparseerd. De drie huidige configuratieprofielen bevatten elk achttien tools. De documentatiereview wijzigt 29 Markdown-bestanden. ADR-001 en de twee overzichtsbestanden blijven inhoudelijk geldig.
 
 ## README en historische merges bevestigd op 2026-11-11
 
@@ -105,3 +104,15 @@ Ik heb de projectbeschrijvingen, voortgang, featureplannen en notities naar mijn
 Ik heb develop via PR #17 naar main gemerged. De PR-screenshot bevestigt de richting main ← develop en mergecommit e9790e6. De daaropvolgende CI-run #65 is geslaagd op Windows, Ubuntu en macOS. De totale duur is 4 min 39 s. Ubuntu duurde 1 min 46 s, Windows 4 min 36 s en macOS 2 min 20 s.
 
 Ik heb de huidige status in README, voortgang, featureplan, roadmap, plan van aanpak, testplan en security bijgewerkt. Alle opleveringsstappen zijn afgevinkt. F06 en de eerste oplevering zijn afgerond. De resterende productbeperkingen en het CI-actiononderhoud staan in de bestaande documentatie. Bij deze documentatie-update zijn de Cargo-controles niet opnieuw uitgevoerd.
+
+## Codereview en repository-opruiming op 2026-11-11
+
+Ik heb na de oplevering een statische review laten uitvoeren op productiecode, dependencies, testhelpers en platformprofielen. Er is geen duidelijk ongebruikte productiecode gevonden. Traitmethoden, de RAII-budgetpermits en genegeerde subprocesshelpers hebben een functie in de uitvoering of tests.
+
+De review levert een functioneel vervolgpunt op bij csv_preview. Het bestand mag tot 1 MiB groot zijn, maar csv.reader gebruikt zonder expliciete instelling een kleinere veldlimiet. In CPython 3.10 is de standaard 128 KiB. Een geldige rij met een groter veld veroorzaakt daardoor csv.Error voordat de uitvoer tot 160 tekens wordt ingekort. De foutafhandeling meldt vervolgens een ongeldige CSV-rij. Dit scenario is via codecontrole vastgesteld en nog niet lokaal uitgevoerd. De parserlimiet moet met de bestaande bestandsgrens worden afgestemd. [CPython-bron](https://github.com/python/cpython/blob/3.10/Modules/_csv.c).
+
+Een kleiner onderhoudspunt is de herhaalde veilige foutcode-/berichtmapping in de REST- en MCP-adapters. Het huidige gedrag is consistent, maar een aanpassing moet op beide plekken worden doorgevoerd.
+
+Ik heb persoonlijke begeleidingsbestanden en de projectgebonden MCP-clientconfiguratie uit de werkmap verwijderd. Een lokale reservekopie staat buiten de repository. De README beschrijft nu registratie via de persoonlijke Claude Code-configuratie. De ignore-regels voorkomen dat lokale instructie- en clientbestanden opnieuw worden toegevoegd. Een achtergebleven reviewinstructie in een broncomment is verwijderd.
+
+Bestandsverwijzingen, codeblokken en configuratie-JSON zijn statisch gecontroleerd. Cargo-controles zijn tijdens deze review niet opnieuw uitgevoerd. De verwijderingen worden onderdeel van de repositoryversie na commit en push. Eerdere commits bevatten de historische bestanden nog.

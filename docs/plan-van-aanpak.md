@@ -10,7 +10,7 @@ Ik bouw een generieke server waarmee een HTTP- of MCP-client vooraf geconfiguree
 
 CommandHub gebruikt Rust editie 2024, Axum, Tokio, Serde/serde_json, tracing, process-wrap en de officiële Rust MCP SDK rmcp 3.6.0. Streamable HTTP is op /mcp aangesloten. De getoetste protocolonderhandeling is 2025-11-25. De oorspronkelijke keuzes en proef staan in [ADR-001](beslissingen/ADR-001-rust-en-axum.md) en [ADR-002](beslissingen/ADR-002-mcp-proef.md).
 
-Ik heb ervaring met Laravel en .NET en verdiep mij met dit project in ownership, expliciete foutafhandeling, concurrency en procesbeheer. Kleine werkende stappen met uitleg en gerichte controles vormen de leerwerkwijze. De afspraken staan in [AGENTS.md](../AGENTS.md).
+Ik heb ervaring met Laravel en .NET en verdiep mij met dit project in ownership, expliciete foutafhandeling, concurrency en procesbeheer. Kleine werkende stappen met uitleg en gerichte controles vormen de leerwerkwijze.
 
 ## Eerste oplevering
 

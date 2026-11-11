@@ -43,3 +43,7 @@ Alle feature- en opleveringsstappen zijn afgerond. Ik heb de merge en groene CI 
 - De Node-runtimewaarschuwing bij actions/checkout@v4 is als onderhoudspunt vastgelegd.
 
 Details en oudere resultaten staan in de [F06-notitie](../notities/F06-oplevering.md), het [testplan](testplan.md) en de [eerdere featurenotities](../notities/README.md).
+
+## Review na oplevering op 2026-11-11
+
+Ik heb de code statisch laten controleren op dubbele en ongebruikte onderdelen. Het functionele vervolgpunt is de CSV-parserlimiet voor grote geldige velden. Een kleiner onderhoudspunt is herhaalde foutmapping tussen REST en MCP. De bevindingen en de repository-opruiming staan in de [F06-notitie](../notities/F06-oplevering.md). Cargo-controles zijn bij deze review niet herhaald.

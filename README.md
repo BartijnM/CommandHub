@@ -88,7 +88,13 @@ De response bevat `success`, `stdout`, `stderr`, `exitCode` en `duration` in mil
 
 ## MCP met Claude Code
 
-De repository bevat [.mcp.json](.mcp.json) met CommandHub als HTTP-server op http://127.0.0.1:3000/mcp. Start CommandHub met het profiel voor je platform. Open het project in VS Code en open `/mcp` in het chatpaneel van de Claude Code-extensie. Sta de projectserver toe wanneer de client daarom vraagt en gebruik **Reconnect**. Verwacht **Connected** en de geconfigureerde toollijst.
+Start CommandHub met het profiel voor je platform. Registreer de HTTP-server vanuit de projecthoofdmap in de lokale Claude Code-configuratie. Hiervoor moet het commando `claude` beschikbaar zijn.
+
+```sh
+claude mcp add --transport http --scope local CommandHub http://127.0.0.1:3000/mcp
+```
+
+Deze registratie wordt in je persoonlijke Claude Code-configuratie opgeslagen. Open het project in VS Code en open `/mcp` in het chatpaneel van de Claude Code-extensie. Gebruik **Reconnect** voor een bestaande verbinding. Verwacht **Connected** en de geconfigureerde toollijst.
 
 Vraag Claude vervolgens het volgende.
 

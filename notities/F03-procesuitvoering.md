@@ -100,7 +100,7 @@ De bestaande CI-matrix bevat Ubuntu en Windows en voert formatter, Clippy, tests
 - Geleerd: `Option::take()` haalt een pipe uit `Child`; als de test die pipe al heeft weggehaald, kan de helper hem niet opnieuw ophalen. De test hoort de pipes daarom aan de helper over te laten. Ook is een geslaagde read-helper nog geen volledige procescoördinatie.
 - Gecontroleerd: de bovenstaande gerichte tests zijn als geslaagd gerapporteerd. Geen volledige suite of Clippy/formattercontrole gemeld.
 - Werkwijze: eerst een kleine werkende verticale slice maken, die gericht verifiëren en daarna uitbreiden tot de acceptatiecriteria. Code in korte fragmenten aanbieden met bestand/plek en syntax-uitleg; na het invoeren volgt een gerichte controle voordat de volgende stap begint. Documentatie alleen aanpassen op verzoek.
-- Open: resultaatcoördinatie, timeout, echte outputoverschrijding met opruiming, annulering, procesboomgedrag en HTTP-route. Zie ook de [projectbrede leerwerkwijze](../AGENTS.md#leerbegeleiding).
+- Open: resultaatcoördinatie, timeout, echte outputoverschrijding met opruiming, annulering, procesboomgedrag en HTTP-route.
 
 ### 2026-10-27 — Resultaat, timeout en outputlimiet
 
